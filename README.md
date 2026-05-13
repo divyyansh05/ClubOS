@@ -64,59 +64,9 @@ Create the folder: `mkdir -p docs/screenshots`
 
 ---
 
-## Quick Start
-
-### 1. Install dependencies
-
-```bash
-./scripts/bootstrap.sh
-```
-
-This creates Python venv + installs all dependencies.
-
-**Manual install:**
-```bash
-# Python dependencies
-python3.11 -m venv clubosvenv
-source clubosvenv/bin/activate
-pip install -r requirements/dev.txt
-
-# Frontend dependencies
-cd apps/clubos-web
-npm install
-```
-
-### 2. Run the application
-
-**Terminal 1 - Backend:**
-```bash
-cd backend/api
-source ../../clubosvenv/bin/activate
-uvicorn app.main:app --reload
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd apps/clubos-web
-npm run dev
-```
-
-**Terminal 3 - Tests:**
-```bash
-./scripts/run_all_tests.sh
-```
-
-### 3. Open the app
-
-Navigate to: **http://localhost:5173**
-
-Default landing: **Priority Board** (hero feature)
-
----
-
 ## First Time Here? Complete Setup Guide
 
-Write this for someone who found this repo on GitHub and has never used a terminal, Git, or Python before. Every command on its own line in a code block. Every step numbered. Every technical term explained in plain English in parentheses when first used.
+For those new to Git, Python, or terminal commands — follow these steps to get ClubOS running on your computer.
 
 ### Before You Start — Install These Three Things
 
@@ -226,6 +176,58 @@ You will land on the Priority Board. The tool is fully loaded with pre-built dat
 | Frontend shows blank page | Make sure Step 3 is running in another terminal |
 | `ModuleNotFoundError` | Re-run `pip install -r requirements/dev.txt` |
 | Page loads but no data | Check terminal 1 for error messages |
+
+---
+
+## Quick Start
+
+For users familiar with development environments.
+
+### 1. Install dependencies
+
+```bash
+./scripts/bootstrap.sh
+```
+
+This creates Python venv + installs all dependencies.
+
+**Manual install:**
+```bash
+# Python dependencies
+python3.11 -m venv clubosvenv
+source clubosvenv/bin/activate
+pip install -r requirements/dev.txt
+
+# Frontend dependencies
+cd apps/clubos-web
+npm install
+```
+
+### 2. Run the application
+
+**Terminal 1 - Backend:**
+```bash
+cd backend/api
+source ../../clubosvenv/bin/activate
+uvicorn app.main:app --reload
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd apps/clubos-web
+npm run dev
+```
+
+**Terminal 3 - Tests:**
+```bash
+./scripts/run_all_tests.sh
+```
+
+### 3. Open the app
+
+Navigate to: **http://localhost:5173**
+
+Default landing: **Priority Board** (hero feature)
 
 ---
 
