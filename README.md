@@ -20,6 +20,31 @@ Every month: **new data in → same workflow → clear priorities out.**
 
 ---
 
+## The Five Screens
+
+| Screen | URL | What it answers |
+|--------|-----|----------------|
+| Priority Board | /priorities | What should we fix first this month? |
+| Command Center | /command-center | How healthy is our entire digital portfolio? |
+| Peer Benchmark | /benchmark | Where do we stand vs competitor clubs? |
+| Signal Engine | /signals | What is going to change in the next 1-3 months? |
+| Monthly Briefing | /briefing | What does leadership need to know right now? |
+
+---
+
+## Screenshots
+
+> Add screenshots of each screen here after taking them.
+> Suggested: take a screenshot of each screen and save to docs/screenshots/
+
+To take screenshots quickly:
+- Mac: Cmd+Shift+4, drag to select the browser window
+- Windows: Windows+Shift+S
+
+Create the folder: `mkdir -p docs/screenshots`
+
+---
+
 ## Current State
 
 **MVP Complete** ✅
@@ -33,7 +58,7 @@ Every month: **new data in → same workflow → clear priorities out.**
 
 **Demo-ready:**
 - Run `./scripts/run_all_tests.sh` → all tests pass
-- Navigate to `http://localhost:5176` → Priority Board loads
+- Navigate to `http://localhost:5173` → Priority Board loads
 - Click "View evidence" → score breakdown modal works
 - All 6 MVP pages accessible
 
@@ -83,9 +108,124 @@ npm run dev
 
 ### 3. Open the app
 
-Navigate to: **http://localhost:5176**
+Navigate to: **http://localhost:5173**
 
 Default landing: **Priority Board** (hero feature)
+
+---
+
+## First Time Here? Complete Setup Guide
+
+Write this for someone who found this repo on GitHub and has never used a terminal, Git, or Python before. Every command on its own line in a code block. Every step numbered. Every technical term explained in plain English in parentheses when first used.
+
+### Before You Start — Install These Three Things
+
+**Git** (downloads code from the internet)
+Check if installed:
+```bash
+git --version
+```
+If you see a version number you have it. If not:
+- Mac: https://git-scm.com/download/mac
+- Windows: https://git-scm.com/download/win
+
+**Python 3.11** (runs the data engine)
+Check if installed:
+```bash
+python3 --version
+```
+You need version 3.11.x. If not installed or wrong version:
+https://www.python.org/downloads/ — download 3.11 specifically.
+
+**Node.js** (runs the visual interface)
+Check if installed:
+```bash
+node --version
+```
+You need version 20 or higher. If not:
+https://nodejs.org — click the LTS download button.
+
+---
+
+### Step 1 — Download the project
+
+Open Terminal (Mac: press Cmd+Space, type Terminal, press Enter) or Command Prompt (Windows: press Windows key, type cmd, press Enter).
+
+Run these two commands:
+```bash
+git clone https://github.com/divyyansh05/clubos.git
+cd clubos
+```
+This downloads the entire project to your computer and moves you into the project folder.
+
+---
+
+### Step 2 — Set up the data engine (backend)
+
+Run the bootstrap script which installs everything automatically:
+```bash
+./scripts/bootstrap.sh
+```
+
+If that does not work on Windows, run manually:
+```bash
+python3.11 -m venv clubosvenv
+source clubosvenv/bin/activate
+pip install -r requirements/dev.txt
+```
+
+---
+
+### Step 3 — Start the data engine
+
+Open Terminal window 1 and run:
+```bash
+cd backend/api
+source ../../clubosvenv/bin/activate
+uvicorn app.main:app --reload
+```
+
+Leave this window open. You will see text appearing — that is normal. The data engine is running when you see: "Uvicorn running on http://127.0.0.1:8000"
+
+Verify it works: open http://localhost:8000/docs in your browser. You should see an API documentation page.
+
+---
+
+### Step 4 — Start the visual interface
+
+Open a NEW Terminal window (do not close window 1) and run:
+```bash
+cd clubos
+cd apps/clubos-web
+npm install
+npm run dev
+```
+
+Wait until you see a line containing "Local: http://localhost:5173"
+
+---
+
+### Step 5 — Open ClubOS
+
+Open your browser and go to:
+
+**http://localhost:5173**
+
+You will land on the Priority Board. The tool is fully loaded with pre-built data — no configuration needed.
+
+---
+
+### Troubleshooting
+
+| Problem | What to do |
+|---------|-----------|
+| `pip: command not found` | Try `pip3` instead of `pip` |
+| `npm: command not found` | Node.js is not installed — see Before You Start |
+| `source: command not found` (Windows) | Use `clubosvenv\Scripts\activate` instead |
+| Port 8000 already in use | Run `lsof -i :8000` then `kill -9 [the number shown]` |
+| Frontend shows blank page | Make sure Step 3 is running in another terminal |
+| `ModuleNotFoundError` | Re-run `pip install -r requirements/dev.txt` |
+| Page loads but no data | Check terminal 1 for error messages |
 
 ---
 
@@ -291,9 +431,10 @@ Proprietary - Real Madrid Internship Project
 
 ---
 
-## Contact
+## Built By
 
-For questions about this repository:
-- Check [`docs/delivery/project_execution_memory.md`](docs/delivery/project_execution_memory.md) for build history
-- Review [`AGENTS.md`](AGENTS.md) for AI agent constraints
-- See [`docs/demos/demo_script.md`](docs/demos/demo_script.md) for demo walkthrough
+**Divyansh Shrivastava**
+Senior Data Engineer · MSc Sports Analytics, Universidad Europea de Madrid
+Built using AI-assisted development (Claude Code) as a core part of the engineering workflow — architecture, analytical design, scoring methodology, and quality validation directed by the engineer.
+
+[LinkedIn](https://linkedin.com/in/divyyansh05) · divyyansh99@gmail.com
