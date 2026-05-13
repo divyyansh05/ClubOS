@@ -1,0 +1,7 @@
+run_id,table_name,check_name,severity,status,issue_count,issue_details,run_timestamp
+0192107c-70ee-4c09-83b2-6c2f57472014,clubos_silver.silver_internal_asset_metrics,No null months,REQUIRED,PASS,0,month IS NOT NULL,2026-05-09T22:29:24.718693+00:00
+0192107c-70ee-4c09-83b2-6c2f57472014,clubos_silver.silver_internal_asset_metrics,No null metric values,REQUIRED,PASS,0,metric_value IS NOT NULL,2026-05-09T22:29:24.718693+00:00
+0192107c-70ee-4c09-83b2-6c2f57472014,clubos_silver.silver_internal_asset_metrics,"No duplicate keys on (month, asset_name, metric_name)",REQUIRED,PASS,0,Duplicate key groups,2026-05-09T22:29:24.718693+00:00
+0192107c-70ee-4c09-83b2-6c2f57472014,clubos_silver.silver_benchmark_asset_metrics,"No duplicate keys on (month, asset_name, metric_name, club)",REQUIRED,PASS,0,Duplicate key groups,2026-05-09T22:29:24.718693+00:00
+0192107c-70ee-4c09-83b2-6c2f57472014,clubos_silver.silver_benchmark_asset_metrics,Exactly 5 benchmark clubs per month+asset+metric,REQUIRED,PASS,0,Expected club_count == 5,2026-05-09T22:29:24.718693+00:00
+0192107c-70ee-4c09-83b2-6c2f57472014,clubos_silver.silver_internal_asset_metrics,Rate and recurrence metrics bounded between 0 and 1,REQUIRED,FAIL,412,"Found rate-like metric outside [0,1]",2026-05-09T22:29:24.718693+00:00

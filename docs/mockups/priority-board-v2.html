@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClubOS - Priority Board</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Newsprint-inspired but modernized -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Serif:wght@400;600;700&display=swap');
+  </style>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* Font system */
+    .font-headline { font-family: 'DM Serif Display', serif; }
+    .font-body { font-family: 'IBM Plex Serif', serif; }
+    .font-sans { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Subtle texture - newsprint inspired */
+    .paper-texture {
+      background-image:
+        linear-gradient(0deg, transparent 98%, rgba(0,0,0,0.015) 100%),
+        linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.015) 100%);
+      background-size: 4px 4px;
+    }
+
+    .dark .paper-texture {
+      background-image:
+        linear-gradient(0deg, transparent 98%, rgba(255,255,255,0.02) 100%),
+        linear-gradient(90deg, transparent 98%, rgba(255,255,255,0.02) 100%);
+    }
+
+    /* Data table styling */
+    .data-table {
+      border-collapse: collapse;
+    }
+
+    .data-table td,
+    .data-table th {
+      border: 1px solid;
+    }
+
+    /* Smooth transitions */
+    * {
+      transition-property: background-color, border-color, color, transform;
+      transition-duration: 150ms;
+      transition-timing-function: ease-out;
+    }
+
+    /* Remove transition from transform-heavy elements */
+    .no-transition {
+      transition: none;
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            // Light mode - warm newsprint palette
+            paper: '#FAFAF8',
+            ink: '#1A1A1A',
+            stone: {
+              50: '#FAFAF8',
+              100: '#F5F5F3',
+              200: '#E8E8E5',
+              300: '#D1D1CC',
+              400: '#A3A39E',
+              500: '#75756F',
+              600: '#5C5C56',
+              700: '#434340',
+              800: '#2B2B28',
+              900: '#1A1A18',
+            },
+            // Solid minimalist colors - retro + modern
+            critical: {
+              light: '#DC2626',
+              dark: '#EF4444',
+            },
+            warning: {
+              light: '#EA580C',
+              dark: '#F97316',
+            },
+            info: {
+              light: '#2563EB',
+              dark: '#3B82F6',
+            },
+            good: {
+              light: '#16A34A',
+              dark: '#22C55E',
+            },
+            accent: {
+              light: '#9333EA',
+              dark: '#A855F7',
+            },
+          },
+          fontFamily: {
+            headline: ['DM Serif Display', 'serif'],
+            body: ['IBM Plex Serif', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-paper dark:bg-stone-900 text-ink dark:text-stone-100 font-sans paper-texture">
+
+  <!-- Header - newspaper masthead inspired -->
+  <header class="border-b-2 border-ink dark:border-stone-700 bg-paper/95 dark:bg-stone-900/95 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-screen-xl mx-auto px-6">
+      <!-- Top metadata bar -->
+      <div class="py-2 border-b border-stone-300 dark:border-stone-700 flex items-center justify-between">
+        <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">
+          Vol. 1.0 · Edition: January 2026
+        </div>
+        <button id="theme-toggle"
+                class="font-mono text-[10px] uppercase tracking-widest hover:text-earth-600 dark:hover:text-sage-500"
+                aria-label="Toggle theme">
+          <span class="dark:hidden">Dark</span>
+          <span class="hidden dark:inline">Light</span>
+        </button>
+      </div>
+
+      <!-- Main header -->
+      <div class="py-6 flex items-center justify-between">
+        <div class="cursor-pointer" onclick="alert('Navigate to Dashboard')">
+          <h1 class="font-headline text-4xl md:text-5xl tracking-tight">ClubOS</h1>
+          <p class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mt-1">
+            Real Madrid Commercial Intelligence
+          </p>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="hidden md:flex gap-8 font-sans text-sm">
+          <a href="#" class="uppercase tracking-wider hover:text-earth-600 dark:hover:text-sage-500 border-b-2 border-ink dark:border-stone-300 pb-1">Board</a>
+          <a href="#" class="uppercase tracking-wider hover:text-earth-600 dark:hover:text-sage-500">Center</a>
+          <a href="#" class="uppercase tracking-wider hover:text-earth-600 dark:hover:text-sage-500">Benchmark</a>
+          <a href="#" class="uppercase tracking-wider hover:text-earth-600 dark:hover:text-sage-500">Signals</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-screen-xl mx-auto px-6 py-12">
+
+    <!-- Hero - newspaper headline style -->
+    <div class="border-b-4 border-ink dark:border-stone-600 pb-8 mb-12">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+        Priority Intelligence Report
+      </div>
+      <h1 class="font-headline text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
+        Commercial<br/>Priority Board
+      </h1>
+      <p class="font-body text-lg md:text-xl text-stone-600 dark:text-stone-400 leading-relaxed max-w-2xl">
+        Top 20 commercial concerns requiring immediate attention this month, ranked by severity, persistence, and competitive gap.
+      </p>
+    </div>
+
+    <!-- Summary Statistics - data table style -->
+    <div class="mb-12 border border-ink dark:border-stone-700">
+      <div class="grid grid-cols-2 md:grid-cols-4 data-table border-ink dark:border-stone-700">
+
+        <button onclick="filterPriorities('critical')"
+                class="p-6 hover:bg-stone-100 dark:hover:bg-stone-800 text-left group border-l-4 border-[#DC2626] dark:border-[#EF4444] transition-all active:bg-stone-200 dark:active:bg-stone-700">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2 group-hover:text-stone-700 dark:group-hover:text-stone-300">
+            Critical
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            3
+          </div>
+          <div class="h-1 bg-[#DC2626] dark:bg-[#EF4444]"></div>
+        </button>
+
+        <button onclick="filterPriorities('opportunity')"
+                class="p-6 hover:bg-stone-100 dark:hover:bg-stone-800 text-left group border-l-4 border-[#16A34A] dark:border-[#22C55E] transition-all active:bg-stone-200 dark:active:bg-stone-700">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2 group-hover:text-stone-700 dark:group-hover:text-stone-300">
+            Opportunity
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            1
+          </div>
+          <div class="h-1 bg-[#16A34A] dark:bg-[#22C55E]"></div>
+        </button>
+
+        <button onclick="filterPriorities('benchmark')"
+                class="p-6 hover:bg-stone-100 dark:hover:bg-stone-800 text-left group border-l-4 border-[#2563EB] dark:border-[#3B82F6] transition-all active:bg-stone-200 dark:active:bg-stone-700">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2 group-hover:text-stone-700 dark:group-hover:text-stone-300">
+            Benchmark
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            5
+          </div>
+          <div class="h-1 bg-[#2563EB] dark:bg-[#3B82F6]"></div>
+        </button>
+
+        <button onclick="filterPriorities('all')"
+                class="p-6 hover:bg-stone-100 dark:hover:bg-stone-800 text-left group border-l-4 border-[#9333EA] dark:border-[#A855F7] transition-all active:bg-stone-200 dark:active:bg-stone-700">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2 group-hover:text-stone-700 dark:group-hover:text-stone-300">
+            Total
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            20
+          </div>
+          <div class="h-1 bg-[#9333EA] dark:bg-[#A855F7]"></div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Priority Grid - newspaper column layout -->
+    <div class="grid grid-cols-1 gap-px bg-ink dark:bg-stone-700 border border-ink dark:border-stone-700">
+
+      <!-- Priority #1 -->
+      <article class="bg-paper dark:bg-stone-900 p-8 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer group border-l-4 border-[#DC2626] dark:border-[#EF4444] transition-all"
+               onclick="openModal('modal-1')">
+
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-6 pb-4 border-b border-stone-300 dark:border-stone-700">
+          <div class="flex items-baseline gap-4">
+            <div class="font-headline text-6xl leading-none text-[#DC2626] dark:text-[#EF4444]">
+              1
+            </div>
+            <div>
+              <div class="font-mono text-[10px] uppercase tracking-widest text-[#DC2626] dark:text-[#EF4444] mb-1">
+                Critical Priority
+              </div>
+              <h2 class="font-headline text-3xl md:text-4xl leading-tight tracking-tight">
+                eCommerce Conversion Weakness
+              </h2>
+            </div>
+          </div>
+          <button onclick="event.stopPropagation(); alert('Bookmark priority')"
+                  class="p-2 hover:bg-stone-200 dark:hover:bg-stone-700 border border-transparent hover:border-ink dark:hover:border-stone-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Metadata Grid -->
+        <div class="grid grid-cols-3 gap-6 mb-6 font-mono text-xs">
+          <button onclick="event.stopPropagation(); alert('View Website dashboard')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Asset</div>
+            <div class="font-semibold text-ink dark:text-stone-100">Website</div>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View metric history')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Metric</div>
+            <div class="font-semibold text-ink dark:text-stone-100">Conversion Rate</div>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View peer comparison')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Rank</div>
+            <div class="font-semibold text-ink dark:text-stone-100">#4 of 5</div>
+          </button>
+        </div>
+
+        <!-- Score Visualization - horizontal bar chart style -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              Priority Score
+            </span>
+            <span class="font-mono text-lg font-bold text-[#DC2626] dark:text-[#EF4444]">0.96</span>
+          </div>
+          <div class="h-8 border-2 border-[#DC2626] dark:border-[#EF4444] flex">
+            <div class="bg-[#DC2626] dark:bg-[#EF4444] flex items-center justify-end px-2" style="width: 96%">
+              <span class="font-mono text-xs font-bold text-white">96%</span>
+            </div>
+            <div class="bg-stone-100 dark:bg-stone-800 flex-1"></div>
+          </div>
+        </div>
+
+        <!-- Current Value -->
+        <div class="p-4 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 mb-6">
+          <div class="font-body text-sm leading-relaxed">
+            <strong class="font-semibold">Current Performance:</strong> 0.0058 conversion rate ·
+            79% behind peer median ·
+            5+ months sustained weakness ·
+            Estimated €2.1M annual revenue loss
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button onclick="event.stopPropagation(); alert('Filter by eCommerce')"
+                  class="px-3 py-1 border border-[#DC2626] dark:border-[#EF4444] font-mono text-[10px] uppercase tracking-widest text-[#DC2626] dark:text-[#EF4444] hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700">
+            eCommerce
+          </button>
+          <button onclick="event.stopPropagation(); alert('Filter by Conversion')"
+                  class="px-3 py-1 border border-[#DC2626] dark:border-[#EF4444] font-mono text-[10px] uppercase tracking-widest text-[#DC2626] dark:text-[#EF4444] hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700">
+            Conversion
+          </button>
+        </div>
+
+        <!-- Action -->
+        <button class="w-full md:w-auto px-6 py-3 bg-[#DC2626] dark:bg-[#EF4444] text-white font-mono text-xs uppercase tracking-widest hover:bg-[#B91C1C] dark:hover:bg-[#DC2626] shadow-sm hover:shadow-md">
+          View Full Evidence →
+        </button>
+
+      </article>
+
+      <!-- Priority #2 -->
+      <article class="bg-paper dark:bg-stone-900 p-8 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer group border-l-4 border-[#EA580C] dark:border-[#F97316] transition-all"
+               onclick="openModal('modal-2')">
+
+        <div class="flex items-start justify-between mb-6 pb-4 border-b border-stone-300 dark:border-stone-700">
+          <div class="flex items-baseline gap-4">
+            <div class="font-headline text-6xl leading-none text-[#EA580C] dark:text-[#F97316]">
+              2
+            </div>
+            <div>
+              <div class="font-mono text-[10px] uppercase tracking-widest text-[#EA580C] dark:text-[#F97316] mb-1">
+                Critical Priority
+              </div>
+              <h2 class="font-headline text-3xl md:text-4xl leading-tight tracking-tight">
+                Stadium Revenue Decline
+              </h2>
+            </div>
+          </div>
+          <button onclick="event.stopPropagation(); alert('Bookmark priority')"
+                  class="p-2 hover:bg-stone-200 dark:hover:bg-stone-700 border border-transparent hover:border-ink dark:hover:border-stone-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6 mb-6 font-mono text-xs">
+          <button onclick="event.stopPropagation(); alert('View Ticketing dashboard')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Asset</div>
+            <div class="font-semibold text-ink dark:text-stone-100">Ticketing</div>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View metric history')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Metric</div>
+            <div class="font-semibold text-ink dark:text-stone-100">Avg Revenue/Match</div>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View trend')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Trend</div>
+            <div class="font-semibold text-[#EA580C] dark:text-[#F97316]">-12% YoY</div>
+          </button>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              Priority Score
+            </span>
+            <span class="font-mono text-lg font-bold text-[#EA580C] dark:text-[#F97316]">0.80</span>
+          </div>
+          <div class="h-8 border-2 border-[#EA580C] dark:border-[#F97316] flex">
+            <div class="bg-[#EA580C] dark:bg-[#F97316] flex items-center justify-end px-2" style="width: 80%">
+              <span class="font-mono text-xs font-bold text-white">80%</span>
+            </div>
+            <div class="bg-stone-100 dark:bg-stone-800 flex-1"></div>
+          </div>
+        </div>
+
+        <div class="p-4 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 mb-6">
+          <div class="font-body text-sm leading-relaxed">
+            <strong class="font-semibold">Current Performance:</strong> €4.2M per match ·
+            Sustained 4-month decline ·
+            Premium seats -18%, general admission -9%
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button onclick="event.stopPropagation(); alert('Filter by Ticketing')"
+                  class="px-3 py-1 border border-[#EA580C] dark:border-[#F97316] font-mono text-[10px] uppercase tracking-widest text-[#EA580C] dark:text-[#F97316] hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700">
+            Ticketing
+          </button>
+          <button onclick="event.stopPropagation(); alert('Filter by Revenue')"
+                  class="px-3 py-1 border border-[#EA580C] dark:border-[#F97316] font-mono text-[10px] uppercase tracking-widest text-[#EA580C] dark:text-[#F97316] hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700">
+            Revenue
+          </button>
+        </div>
+
+        <button class="w-full md:w-auto px-6 py-3 bg-[#EA580C] dark:bg-[#F97316] text-white font-mono text-xs uppercase tracking-widest hover:bg-[#C2410C] dark:hover:bg-[#EA580C] shadow-sm hover:shadow-md">
+          View Full Evidence →
+        </button>
+
+      </article>
+
+      <!-- Priority #3 - Opportunity -->
+      <article class="bg-paper dark:bg-stone-900 p-8 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer group border-l-4 border-[#16A34A] dark:border-[#22C55E] transition-all">
+
+        <div class="flex items-start justify-between mb-6 pb-4 border-b border-stone-300 dark:border-stone-700">
+          <div class="flex items-baseline gap-4">
+            <div class="font-headline text-6xl leading-none text-[#16A34A] dark:text-[#22C55E]">
+              3
+            </div>
+            <div>
+              <div class="font-mono text-[10px] uppercase tracking-widest text-[#16A34A] dark:text-[#22C55E] mb-1">
+                Growth Opportunity
+              </div>
+              <h2 class="font-headline text-3xl md:text-4xl leading-tight tracking-tight">
+                Merchandise Growth Momentum
+              </h2>
+            </div>
+          </div>
+          <button onclick="event.stopPropagation(); alert('Bookmark priority')"
+                  class="p-2 hover:bg-paper/10 dark:hover:bg-stone-700 border border-transparent hover:border-paper dark:hover:border-stone-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6 mb-6 font-mono text-xs">
+          <button onclick="event.stopPropagation(); alert('View Store dashboard')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Asset</div>
+            <div class="font-semibold text-ink dark:text-stone-100">Online Store</div>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View metric history')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Metric</div>
+            <div class="font-semibold text-ink dark:text-stone-100">Sales Growth</div>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View trend')"
+                  class="text-left hover:bg-stone-100 dark:hover:bg-stone-800 p-2 -m-2 rounded transition-colors">
+            <div class="uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Trend</div>
+            <div class="font-semibold text-[#16A34A] dark:text-[#22C55E]">+24% MoM</div>
+          </button>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              Priority Score
+            </span>
+            <span class="font-mono text-lg font-bold text-[#16A34A] dark:text-[#22C55E]">0.72</span>
+          </div>
+          <div class="h-8 border-2 border-[#16A34A] dark:border-[#22C55E] flex">
+            <div class="bg-[#16A34A] dark:bg-[#22C55E] flex items-center justify-end px-2" style="width: 72%">
+              <span class="font-mono text-xs font-bold text-white">72%</span>
+            </div>
+            <div class="bg-stone-100 dark:bg-stone-800 flex-1"></div>
+          </div>
+        </div>
+
+        <div class="p-4 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 mb-6">
+          <div class="font-body text-sm leading-relaxed">
+            <strong class="font-semibold">Current Performance:</strong> +24% month-over-month growth ·
+            +18pp vs peer median ·
+            Strong signal to scale marketing investment
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button onclick="event.stopPropagation(); alert('Filter by Merchandise')"
+                  class="px-3 py-1 border border-[#16A34A] dark:border-[#22C55E] font-mono text-[10px] uppercase tracking-widest text-[#16A34A] dark:text-[#22C55E] hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700">
+            Merchandise
+          </button>
+          <button onclick="event.stopPropagation(); alert('Filter by Growth')"
+                  class="px-3 py-1 border border-[#16A34A] dark:border-[#22C55E] font-mono text-[10px] uppercase tracking-widest text-[#16A34A] dark:text-[#22C55E] hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700">
+            Growth
+          </button>
+        </div>
+
+        <button class="w-full md:w-auto px-6 py-3 bg-[#16A34A] dark:bg-[#22C55E] text-white font-mono text-xs uppercase tracking-widest hover:bg-[#15803D] dark:hover:bg-[#16A34A] shadow-sm hover:shadow-md">
+          View Full Evidence →
+        </button>
+
+      </article>
+
+    </div>
+
+  </main>
+
+  <!-- Evidence Modal -->
+  <div id="modal-1" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-ink/80 dark:bg-stone-950/90">
+
+    <div class="relative bg-paper dark:bg-stone-900 border-2 border-ink dark:border-stone-700 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+
+      <!-- Modal Header - newspaper masthead style -->
+      <div class="border-b-2 border-ink dark:border-stone-700 p-8 sticky top-0 bg-paper dark:bg-stone-900 z-10">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+              Priority Evidence Report · #1
+            </div>
+            <h2 class="font-headline text-4xl md:text-5xl leading-tight tracking-tight mb-2">
+              eCommerce Conversion Weakness
+            </h2>
+            <div class="font-mono text-xs text-stone-600 dark:text-stone-400">
+              Website · Conversion Rate · Rank #4/5
+            </div>
+          </div>
+          <button onclick="closeModal('modal-1')"
+                  class="p-2 hover:bg-stone-200 dark:hover:bg-stone-800 border border-transparent hover:border-ink dark:hover:border-stone-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Quick stats table -->
+        <div class="grid grid-cols-4 gap-px bg-ink dark:bg-stone-700 border border-ink dark:border-stone-700">
+          <button onclick="alert('View category')"
+                  class="bg-paper dark:bg-stone-900 p-3 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+            <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Category</div>
+            <div class="font-mono text-sm font-semibold mt-1 text-ink dark:text-stone-100">eCommerce</div>
+          </button>
+          <button onclick="alert('View score')"
+                  class="bg-paper dark:bg-stone-900 p-3 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+            <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Score</div>
+            <div class="font-mono text-sm font-semibold mt-1 text-[#DC2626] dark:text-[#EF4444]">0.96</div>
+          </button>
+          <button onclick="alert('View rank')"
+                  class="bg-paper dark:bg-stone-900 p-3 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+            <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Rank</div>
+            <div class="font-mono text-sm font-semibold mt-1 text-ink dark:text-stone-100">#1/20</div>
+          </button>
+          <button onclick="alert('View status')"
+                  class="bg-paper dark:bg-stone-900 p-3 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+            <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Status</div>
+            <div class="font-mono text-sm font-semibold mt-1 text-[#DC2626] dark:text-[#EF4444]">Critical</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-8 space-y-8">
+
+        <!-- Score Breakdown - data table -->
+        <section>
+          <h3 class="font-headline text-2xl mb-4 pb-2 border-b border-stone-300 dark:border-stone-700">
+            Score Breakdown
+          </h3>
+
+          <div class="border border-ink dark:border-stone-700">
+            <table class="w-full data-table border-ink dark:border-stone-700 font-mono text-sm">
+              <thead>
+                <tr class="bg-stone-100 dark:bg-stone-800">
+                  <th class="text-left p-3 font-semibold uppercase text-xs tracking-widest">Component</th>
+                  <th class="text-right p-3 font-semibold uppercase text-xs tracking-widest">Value</th>
+                  <th class="text-left p-3 font-semibold uppercase text-xs tracking-widest">Visual</th>
+                  <th class="text-left p-3 font-semibold uppercase text-xs tracking-widest">Interpretation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-colors" onclick="alert('View Severity details')">
+                  <td class="p-3 text-ink dark:text-stone-100">Severity</td>
+                  <td class="p-3 text-right font-bold text-[#DC2626] dark:text-[#EF4444]">0.80</td>
+                  <td class="p-3">
+                    <div class="h-2 border border-[#DC2626] dark:border-[#EF4444] w-32">
+                      <div class="h-full bg-[#DC2626] dark:bg-[#EF4444]" style="width: 80%"></div>
+                    </div>
+                  </td>
+                  <td class="p-3 text-xs text-stone-600 dark:text-stone-400">High deviation from target</td>
+                </tr>
+                <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-colors" onclick="alert('View Persistence details')">
+                  <td class="p-3 text-ink dark:text-stone-100">Persistence</td>
+                  <td class="p-3 text-right font-bold text-[#EA580C] dark:text-[#F97316]">0.60</td>
+                  <td class="p-3">
+                    <div class="h-2 border border-[#EA580C] dark:border-[#F97316] w-32">
+                      <div class="h-full bg-[#EA580C] dark:bg-[#F97316]" style="width: 60%"></div>
+                    </div>
+                  </td>
+                  <td class="p-3 text-xs text-stone-600 dark:text-stone-400">5+ months sustained</td>
+                </tr>
+                <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-colors" onclick="alert('View Peer Gap details')">
+                  <td class="p-3 text-ink dark:text-stone-100">Peer Gap</td>
+                  <td class="p-3 text-right font-bold text-[#2563EB] dark:text-[#3B82F6]">0.75</td>
+                  <td class="p-3">
+                    <div class="h-2 border border-[#2563EB] dark:border-[#3B82F6] w-32">
+                      <div class="h-full bg-[#2563EB] dark:bg-[#3B82F6]" style="width: 75%"></div>
+                    </div>
+                  </td>
+                  <td class="p-3 text-xs text-stone-600 dark:text-stone-400">79% behind median</td>
+                </tr>
+                <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-colors" onclick="alert('View Commercial Impact details')">
+                  <td class="p-3 text-ink dark:text-stone-100">Commercial</td>
+                  <td class="p-3 text-right font-bold text-[#16A34A] dark:text-[#22C55E]">0.70</td>
+                  <td class="p-3">
+                    <div class="h-2 border border-[#16A34A] dark:border-[#22C55E] w-32">
+                      <div class="h-full bg-[#16A34A] dark:bg-[#22C55E]" style="width: 70%"></div>
+                    </div>
+                  </td>
+                  <td class="p-3 text-xs text-stone-600 dark:text-stone-400">€2.1M revenue loss</td>
+                </tr>
+                <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-colors" onclick="alert('View Evidence details')">
+                  <td class="p-3 text-ink dark:text-stone-100">Evidence</td>
+                  <td class="p-3 text-right font-bold text-[#9333EA] dark:text-[#A855F7]">0.50</td>
+                  <td class="p-3">
+                    <div class="h-2 border border-[#9333EA] dark:border-[#A855F7] w-32">
+                      <div class="h-full bg-[#9333EA] dark:bg-[#A855F7]" style="width: 50%"></div>
+                    </div>
+                  </td>
+                  <td class="p-3 text-xs text-stone-600 dark:text-stone-400">Moderate signals</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Supporting Metrics Chart - better viz -->
+        <section>
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-300 dark:border-stone-700">
+            <h3 class="font-headline text-2xl">Supporting Metrics</h3>
+            <button onclick="alert('Export data')"
+                    class="font-mono text-xs uppercase tracking-widest hover:text-earth-600 dark:hover:text-sage-500">
+              Export
+            </button>
+          </div>
+
+          <div class="border border-ink dark:border-stone-700 p-6 bg-stone-50 dark:bg-stone-800 cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-700 active:bg-stone-200 dark:active:bg-stone-600 transition-colors"
+               onclick="alert('View detailed metrics')">
+            <canvas id="supportingMetricsChart" height="250"></canvas>
+          </div>
+        </section>
+
+        <!-- Peer Context - data viz -->
+        <section>
+          <h3 class="font-headline text-2xl mb-4 pb-2 border-b border-stone-300 dark:border-stone-700">
+            Peer Context
+          </h3>
+
+          <div class="border border-ink dark:border-stone-700 p-6">
+            <!-- Position scale -->
+            <div class="flex items-center justify-between mb-8">
+              <button onclick="alert('Leader details')"
+                      class="text-center hover:scale-105 transition-transform">
+                <div class="w-16 h-16 border-2 border-[#16A34A] dark:border-[#22C55E] flex items-center justify-center mb-2 font-headline text-2xl text-[#16A34A] dark:text-[#22C55E]">
+                  1
+                </div>
+                <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Leader</div>
+                <div class="font-mono text-sm font-bold mt-1">0.0112</div>
+              </button>
+
+              <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700 mx-4"></div>
+
+              <button onclick="alert('Median details')"
+                      class="text-center hover:scale-105 transition-transform">
+                <div class="w-16 h-16 border-2 border-[#2563EB] dark:border-[#3B82F6] flex items-center justify-center mb-2 font-headline text-2xl text-[#2563EB] dark:text-[#3B82F6]">
+                  M
+                </div>
+                <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Median</div>
+                <div class="font-mono text-sm font-bold mt-1">0.0104</div>
+              </button>
+
+              <div class="flex-1 h-px bg-stone-300 dark:bg-stone-700 mx-4"></div>
+
+              <button onclick="alert('RM details')"
+                      class="text-center hover:scale-105 transition-transform">
+                <div class="w-16 h-16 border-2 border-[#DC2626] dark:border-[#EF4444] bg-[#DC2626] dark:bg-[#EF4444] flex items-center justify-center mb-2 font-headline text-2xl text-white">
+                  4
+                </div>
+                <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Real Madrid</div>
+                <div class="font-mono text-sm font-bold mt-1 text-[#DC2626] dark:text-[#EF4444]">0.0058</div>
+              </button>
+            </div>
+
+            <!-- Gap stats -->
+            <div class="grid grid-cols-2 gap-px bg-ink dark:bg-stone-700 border border-ink dark:border-stone-700">
+              <button onclick="alert('Gap to median analysis')"
+                      class="bg-paper dark:bg-stone-900 p-4 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+                <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
+                  Gap to Median
+                </div>
+                <div class="font-mono text-xl font-bold text-ink dark:text-stone-100">-0.0046</div>
+                <div class="font-mono text-sm text-stone-600 dark:text-stone-400">(-79%)</div>
+              </button>
+              <button onclick="alert('Gap to leader analysis')"
+                      class="bg-paper dark:bg-stone-900 p-4 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+                <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
+                  Gap to Leader
+                </div>
+                <div class="font-mono text-xl font-bold text-ink dark:text-stone-100">-0.0054</div>
+                <div class="font-mono text-sm text-stone-600 dark:text-stone-400">(-93%)</div>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Next Steps -->
+        <section class="border-t-2 border-ink dark:border-stone-700 pt-8">
+          <h3 class="font-headline text-2xl mb-4">Recommended Investigation</h3>
+          <div class="font-body text-base leading-relaxed mb-6">
+            Review checkout flow analytics to identify friction points. Check correlation with recent site updates or UX changes.
+            Compare mobile vs desktop conversion rates. Investigate bounce rates at key funnel stages.
+          </div>
+          <div class="flex gap-4">
+            <button onclick="alert('Opening analytics')"
+                    class="px-6 py-3 bg-[#DC2626] dark:bg-[#EF4444] text-white font-mono text-xs uppercase tracking-widest hover:bg-[#B91C1C] dark:hover:bg-[#DC2626] shadow-sm hover:shadow-md">
+              Open Analytics
+            </button>
+            <button onclick="alert('Creating task')"
+                    class="px-6 py-3 border-2 border-[#DC2626] dark:border-[#EF4444] text-[#DC2626] dark:text-[#EF4444] font-mono text-xs uppercase tracking-widest hover:bg-[#DC2626] hover:text-white dark:hover:bg-[#EF4444]">
+              Create Task
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Modal #2 placeholder -->
+  <div id="modal-2" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-ink/80 dark:bg-stone-950/90">
+    <div class="relative bg-paper dark:bg-stone-900 border-2 border-ink dark:border-stone-700 max-w-5xl w-full p-8">
+      <button onclick="closeModal('modal-2')" class="absolute top-4 right-4 p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+      <h2 class="font-headline text-3xl">Priority #2 Evidence</h2>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      if (window.supportingMetricsChart) {
+        updateChartTheme();
+      }
+    });
+
+    // Modal functions
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      document.getElementById(id).classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      document.getElementById(id).classList.remove('flex');
+      document.body.style.overflow = 'auto';
+    }
+
+    // Filter placeholder
+    function filterPriorities(type) {
+      alert(`Filtering: ${type}`);
+    }
+
+    // Chart - diverging bar chart (best for comparison with baseline)
+    const ctx = document.getElementById('supportingMetricsChart');
+    let supportingMetricsChart;
+
+    if (ctx) {
+      const isDark = document.documentElement.classList.contains('dark');
+
+      supportingMetricsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Cart Abandonment', 'Checkout Time', 'Mobile UX', 'Load Speed', 'Error Rate'],
+          datasets: [{
+            label: 'Real Madrid',
+            data: [68, 45, 62, 52, 78],
+            backgroundColor: isDark ? '#EF4444' : '#DC2626',
+            borderWidth: 0,
+            borderRadius: 0
+          }, {
+            label: 'Peer Median',
+            data: [45, 30, 75, 40, 50],
+            backgroundColor: isDark ? '#3B82F6' : '#2563EB',
+            borderWidth: 0,
+            borderRadius: 0
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: isDark ? '#E8E8E5' : '#1A1A1A',
+                font: {
+                  family: 'JetBrains Mono',
+                  size: 11,
+                  weight: '500'
+                },
+                padding: 16,
+                usePointStyle: true,
+                pointStyle: 'rect'
+              }
+            },
+            tooltip: {
+              backgroundColor: isDark ? '#1A1A18' : '#FAFAF8',
+              titleColor: isDark ? '#FAFAF8' : '#1A1A1A',
+              bodyColor: isDark ? '#E8E8E5' : '#434340',
+              borderColor: isDark ? '#434340' : '#D1D1CC',
+              borderWidth: 1,
+              padding: 12,
+              titleFont: {
+                family: 'JetBrains Mono',
+                size: 11
+              },
+              bodyFont: {
+                family: 'JetBrains Mono',
+                size: 11
+              },
+              callbacks: {
+                label: (context) => context.dataset.label + ': ' + context.parsed.x + '%'
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              max: 100,
+              border: {
+                color: isDark ? '#434340' : '#D1D1CC'
+              },
+              ticks: {
+                color: isDark ? '#A3A39E' : '#75756F',
+                font: {
+                  family: 'JetBrains Mono',
+                  size: 10
+                },
+                callback: (value) => value + '%'
+              },
+              grid: {
+                color: isDark ? '#43434020' : '#D1D1CC20',
+                lineWidth: 1
+              }
+            },
+            y: {
+              border: {
+                display: false
+              },
+              ticks: {
+                color: isDark ? '#E8E8E5' : '#1A1A1A',
+                font: {
+                  family: 'JetBrains Mono',
+                  size: 10
+                }
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+
+      window.supportingMetricsChart = supportingMetricsChart;
+    }
+
+    function updateChartTheme() {
+      if (!supportingMetricsChart) return;
+      const isDark = document.documentElement.classList.contains('dark');
+
+      supportingMetricsChart.data.datasets[0].backgroundColor = isDark ? '#EF4444' : '#DC2626';
+      supportingMetricsChart.data.datasets[1].backgroundColor = isDark ? '#3B82F6' : '#2563EB';
+
+      supportingMetricsChart.options.plugins.legend.labels.color = isDark ? '#E8E8E5' : '#1A1A1A';
+      supportingMetricsChart.options.plugins.tooltip.backgroundColor = isDark ? '#1A1A18' : '#FAFAF8';
+      supportingMetricsChart.options.plugins.tooltip.titleColor = isDark ? '#FAFAF8' : '#1A1A1A';
+      supportingMetricsChart.options.plugins.tooltip.bodyColor = isDark ? '#E8E8E5' : '#434340';
+      supportingMetricsChart.options.plugins.tooltip.borderColor = isDark ? '#434340' : '#D1D1CC';
+
+      supportingMetricsChart.options.scales.x.border.color = isDark ? '#434340' : '#D1D1CC';
+      supportingMetricsChart.options.scales.x.ticks.color = isDark ? '#A3A39E' : '#75756F';
+      supportingMetricsChart.options.scales.x.grid.color = isDark ? '#43434020' : '#D1D1CC20';
+      supportingMetricsChart.options.scales.y.ticks.color = isDark ? '#E8E8E5' : '#1A1A1A';
+
+      supportingMetricsChart.update();
+    }
+  </script>
+
+</body>
+</html>

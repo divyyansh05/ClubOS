@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClubOS Product Mockup</title>
+    <style>
+      :root {
+        --bg: #0a0b0f;
+        --bg-deep: #06070a;
+        --surface: rgba(255, 255, 255, 0.06);
+        --surface-2: rgba(255, 255, 255, 0.09);
+        --line: rgba(255, 255, 255, 0.1);
+        --text: #f5f1e8;
+        --muted: #c8c0b3;
+        --soft: #918777;
+        --gold: #d2b36c;
+        --gold-soft: rgba(210, 179, 108, 0.16);
+        --blue: #66aef6;
+        --green: #6ed79f;
+        --purple: #9e83f6;
+        --red: #eb7a70;
+        --yellow: #e8ca75;
+        --radius: 24px;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top right, rgba(102, 174, 246, 0.09), transparent 24rem),
+          radial-gradient(circle at 10% 12%, rgba(210, 179, 108, 0.14), transparent 28rem),
+          linear-gradient(180deg, #050608 0%, #0b0d12 46%, #11131b 100%);
+        color: var(--text);
+        font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      }
+
+      body {
+        padding: 20px;
+      }
+
+      .frame {
+        min-height: calc(100vh - 40px);
+        display: grid;
+        grid-template-columns: 290px minmax(0, 1fr) 320px;
+        gap: 18px;
+      }
+
+      .panel {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.03));
+        border: 1px solid var(--line);
+        border-radius: 30px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .sidebar {
+        padding: 26px 20px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .brand-mark {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--gold);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+      }
+
+      .brand-title {
+        margin: 16px 0 8px;
+        font-size: 46px;
+        line-height: 0.92;
+        letter-spacing: -0.07em;
+      }
+
+      .brand-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .nav-group {
+        margin-top: 28px;
+      }
+
+      .nav-label {
+        margin: 0 0 10px;
+        color: var(--soft);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+      }
+
+      .screen-tab {
+        width: 100%;
+        margin-bottom: 8px;
+        border: 1px solid transparent;
+        border-radius: 18px;
+        background: transparent;
+        color: var(--muted);
+        text-align: left;
+        padding: 14px 14px 13px;
+        cursor: pointer;
+        transition: 180ms ease;
+        font: inherit;
+      }
+
+      .screen-tab:hover,
+      .screen-tab.active {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(210, 179, 108, 0.2);
+        color: var(--text);
+        transform: translateX(4px);
+      }
+
+      .screen-tab strong {
+        display: block;
+        font-size: 14px;
+      }
+
+      .screen-tab span {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--soft);
+      }
+
+      .sidebar-note {
+        margin-top: auto;
+        padding: 16px;
+        border-radius: 18px;
+        background: var(--gold-soft);
+        border: 1px solid rgba(210, 179, 108, 0.2);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .main {
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        padding: 10px 8px 18px;
+      }
+
+      .topbar h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.04em;
+      }
+
+      .topbar p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .topbar-meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .chip {
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .chip strong {
+        color: var(--text);
+      }
+
+      .screen {
+        display: none;
+        gap: 16px;
+        flex: 1;
+      }
+
+      .screen.active {
+        display: grid;
+      }
+
+      .hero-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .metric-card,
+      .subcard {
+        padding: 18px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .metric-card .label,
+      .subcard .label,
+      .chart-card .label {
+        color: var(--soft);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+      }
+
+      .metric-card .value {
+        margin-top: 10px;
+        font-size: 34px;
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .metric-card .meta {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .metric-card .badge {
+        display: inline-flex;
+        margin-top: 10px;
+        padding: 5px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .badge.green {
+        color: var(--green);
+        background: rgba(110, 215, 159, 0.13);
+      }
+
+      .badge.red {
+        color: var(--red);
+        background: rgba(235, 122, 112, 0.12);
+      }
+
+      .badge.gold {
+        color: var(--yellow);
+        background: rgba(232, 202, 117, 0.13);
+      }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.9fr);
+        gap: 16px;
+      }
+
+      .column {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+
+      .chart-card {
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .chart-title-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+
+      .chart-title {
+        font-size: 18px;
+        margin: 0;
+      }
+
+      .chart-desc {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .chart-box {
+        height: 220px;
+        padding: 14px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+        border: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .priority-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .priority-item {
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .priority-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: baseline;
+      }
+
+      .priority-head h3 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .priority-score {
+        color: var(--gold);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .priority-item p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .bars {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 120px 1fr 42px;
+        gap: 10px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .bar-track {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.08);
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: 999px;
+      }
+
+      .bar-fill.gold { background: linear-gradient(90deg, #d2b36c, #f0d18b); }
+      .bar-fill.blue { background: linear-gradient(90deg, #4a8cff, #75c3ff); }
+      .bar-fill.green { background: linear-gradient(90deg, #44b97c, #7ae0a5); }
+      .bar-fill.red { background: linear-gradient(90deg, #e16f67, #f09a90); }
+      .bar-fill.purple { background: linear-gradient(90deg, #8d75e9, #b199ff); }
+
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .table th,
+      .table td {
+        padding: 12px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: left;
+      }
+
+      .table th {
+        color: var(--soft);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+      }
+
+      .table tr.highlight td {
+        background: rgba(210, 179, 108, 0.08);
+      }
+
+      .insight {
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(210, 179, 108, 0.12);
+        border: 1px solid rgba(210, 179, 108, 0.22);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .insight strong {
+        color: var(--text);
+      }
+
+      .module-explainer {
+        padding: 24px 20px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .module-explainer h2 {
+        margin: 8px 0 4px;
+        font-size: 28px;
+        line-height: 1;
+        letter-spacing: -0.04em;
+      }
+
+      .module-explainer p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .explain-card {
+        margin-top: 18px;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .explain-card h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+
+      .explain-card ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .mock-window {
+        padding: 12px 12px 0;
+        border-radius: 26px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .mock-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 12px 14px;
+      }
+
+      .window-controls {
+        display: flex;
+        gap: 6px;
+      }
+
+      .window-controls span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: block;
+        background: rgba(255,255,255,0.22);
+      }
+
+      .screen-name {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .footer-note {
+        margin-top: auto;
+        padding-top: 16px;
+        color: var(--soft);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      .later-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        color: var(--yellow);
+        background: rgba(232, 202, 117, 0.1);
+        font-size: 11px;
+        border: 1px solid rgba(232, 202, 117, 0.2);
+      }
+
+      @media (max-width: 1320px) {
+        .frame {
+          grid-template-columns: 250px minmax(0, 1fr);
+        }
+
+        .module-explainer {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (max-width: 1080px) {
+        .frame {
+          grid-template-columns: 1fr;
+        }
+
+        .content-grid,
+        .hero-strip,
+        .mini-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar-note {
+          margin-top: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <aside class="panel sidebar">
+        <div class="brand-mark">Frontend Product Preview</div>
+        <div class="brand-title">ClubOS</div>
+        <p class="brand-copy">
+          This is a visual mockup of what the built product can look like after the core logic is connected to the frontend.
+        </p>
+
+        <div class="nav-group">
+          <div class="nav-label">Main Screens</div>
+          <button class="screen-tab active" data-screen="priority">
+            <strong>Priority Board</strong>
+            <span>Hero view with ranked issues, score breakdown, and evidence.</span>
+          </button>
+          <button class="screen-tab" data-screen="command">
+            <strong>Command Center</strong>
+            <span>Overall digital health across website, eCommerce, streaming, and app.</span>
+          </button>
+          <button class="screen-tab" data-screen="benchmark">
+            <strong>Peer Benchmark</strong>
+            <span>Rank, gap, and trend versus peer clubs.</span>
+          </button>
+          <button class="screen-tab" data-screen="signals">
+            <strong>Commercial Signal Engine</strong>
+            <span>1–3 month leading signals tied to commercial outcomes.</span>
+          </button>
+          <button class="screen-tab" data-screen="briefing">
+            <strong>Monthly Briefing</strong>
+            <span>Leadership summary and what to watch this month.</span>
+          </button>
+          <button class="screen-tab" data-screen="event">
+            <strong>Event Intelligence</strong>
+            <span>Later module for historical context and event fingerprints.</span>
+          </button>
+        </div>
+
+        <div class="sidebar-note">
+          Best way to present this page: click through the screens from top to bottom and explain that these are not just tabs, they are the actual recurring workflow of the product.
+        </div>
+      </aside>
+
+      <section class="panel main">
+        <div class="topbar">
+          <div>
+            <h1 id="screen-title">Priority Board</h1>
+            <p id="screen-subtitle">
+              The first screen of the product. It ranks the top issues and opportunities for the latest reporting month.
+            </p>
+          </div>
+          <div class="topbar-meta">
+            <div class="chip"><strong>Month:</strong> Jan 2026</div>
+            <div class="chip"><strong>Refresh:</strong> 23 Apr 2026</div>
+            <div class="chip"><strong>Status:</strong> Action needed</div>
+          </div>
+        </div>
+
+        <div class="mock-window">
+          <div class="mock-header">
+            <div class="window-controls"><span></span><span></span><span></span></div>
+            <div class="screen-name" id="window-name">Priority Board / Hero Workflow</div>
+            <div class="chip">ClubOS UI Mock</div>
+          </div>
+
+          <div id="priority" class="screen active">
+            <div class="hero-strip">
+              <div class="metric-card">
+                <div class="label">Critical priorities</div>
+                <div class="value">3</div>
+                <div class="meta">Top 3 require action this month</div>
+                <div class="badge red">Action needed</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Opportunities</div>
+                <div class="value">2</div>
+                <div class="meta">Strong signals with upside</div>
+                <div class="badge gold">Opportunity</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Benchmark underperformance</div>
+                <div class="value">4</div>
+                <div class="meta">Tracked on supported peer KPIs</div>
+                <div class="badge red">Behind peers</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Active leading signals</div>
+                <div class="value">2</div>
+                <div class="meta">Validated 1–3 month relationships</div>
+                <div class="badge green">Watch next</div>
+              </div>
+            </div>
+
+            <div class="content-grid">
+              <div class="column">
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Top 5 this month</div>
+                      <h2 class="chart-title">Ranked Priority Cards</h2>
+                    </div>
+                    <div class="chip">Default landing page</div>
+                  </div>
+                  <p class="chart-desc">
+                    Each card combines severity, persistence, peer gap, commercial weight, and supporting evidence.
+                  </p>
+
+                  <div class="priority-list">
+                    <div class="priority-item">
+                      <div class="priority-head">
+                        <h3>#1 Checkout conversion weakness</h3>
+                        <div class="priority-score">0.86</div>
+                      </div>
+                      <p>
+                        eCommerce conversion is below baseline and below peer median for 4 straight months. Upstream demand is healthy, so the weakness looks like conversion friction rather than traffic shortage.
+                      </p>
+                      <div class="bars">
+                        <div class="bar-row"><span>Severity</span><div class="bar-track"><div class="bar-fill red" style="width: 92%;"></div></div><span>0.92</span></div>
+                        <div class="bar-row"><span>Persistence</span><div class="bar-track"><div class="bar-fill purple" style="width: 100%;"></div></div><span>1.00</span></div>
+                        <div class="bar-row"><span>Peer gap</span><div class="bar-track"><div class="bar-fill gold" style="width: 80%;"></div></div><span>0.80</span></div>
+                        <div class="bar-row"><span>Commercial</span><div class="bar-track"><div class="bar-fill green" style="width: 100%;"></div></div><span>1.00</span></div>
+                        <div class="bar-row"><span>Evidence</span><div class="bar-track"><div class="bar-fill blue" style="width: 60%;"></div></div><span>0.60</span></div>
+                      </div>
+                    </div>
+
+                    <div class="priority-item">
+                      <div class="priority-head">
+                        <h3>#2 Fan app loyalty softening</h3>
+                        <div class="priority-score">0.73</div>
+                      </div>
+                      <p>
+                        Heavy users are trending down while matchday visits remain strong. This suggests matchday spikes are not translating into deeper app stickiness.
+                      </p>
+                    </div>
+
+                    <div class="priority-item">
+                      <div class="priority-head">
+                        <h3>#3 Streaming strength not monetized</h3>
+                        <div class="priority-score">0.69</div>
+                      </div>
+                      <p>
+                        Streaming engagement is recovering faster than subscriptions. The product would surface this as a monetization opportunity, not just a content win.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column">
+                <div class="chart-card">
+                  <div class="label">Right rail</div>
+                  <h2 class="chart-title">What supports the hero screen</h2>
+                  <div class="mini-grid">
+                    <div class="subcard">
+                      <div class="label">Top anomaly</div>
+                      <h3 style="margin: 10px 0 6px;">App recurrence dipped</h3>
+                      <p style="margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6;">
+                        Largest drop vs seasonal expectation among non-revenue KPIs.
+                      </p>
+                    </div>
+                    <div class="subcard">
+                      <div class="label">Top benchmark change</div>
+                      <h3 style="margin: 10px 0 6px;">Cart value improved</h3>
+                      <p style="margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6;">
+                        Gap to peer median narrowed over the last 12 months.
+                      </p>
+                    </div>
+                    <div class="subcard">
+                      <div class="label">Signal to watch</div>
+                      <h3 style="margin: 10px 0 6px;">Heavy users → sales</h3>
+                      <p style="margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6;">
+                        Positive 1-month lag signal tied to eCommerce sales.
+                      </p>
+                    </div>
+                    <div class="subcard">
+                      <div class="label">Action box</div>
+                      <h3 style="margin: 10px 0 6px;">View evidence</h3>
+                      <p style="margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6;">
+                        Every priority card opens score breakdown, peer proof, signals, and next investigation.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="command" class="screen">
+            <div class="hero-strip">
+              <div class="metric-card">
+                <div class="label">Website health</div>
+                <div class="value">Stable</div>
+                <div class="meta">Traffic soft but recurrence intact</div>
+                <div class="badge gold">Watch closely</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">eCommerce health</div>
+                <div class="value">Review</div>
+                <div class="meta">Conversion below seasonal baseline</div>
+                <div class="badge red">Needs action</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Streaming health</div>
+                <div class="value">Good</div>
+                <div class="meta">Engagement improving vs history</div>
+                <div class="badge green">Positive</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Fan app health</div>
+                <div class="value">Mixed</div>
+                <div class="meta">Strong matchday usage, weaker loyalty</div>
+                <div class="badge gold">Mixed</div>
+              </div>
+            </div>
+
+            <div class="content-grid">
+              <div class="column">
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Top row of app</div>
+                      <h2 class="chart-title">Asset Health Cards</h2>
+                    </div>
+                    <div class="chip">Main website / eCommerce / Streaming / Fan app</div>
+                  </div>
+                  <div class="mini-grid">
+                    <div class="subcard">
+                      <div class="label">Main website</div>
+                      <h3 style="margin: 10px 0 6px;">Unique visitors</h3>
+                      <div style="font-size: 28px;">8.4M</div>
+                      <p style="color: var(--muted); font-size: 13px;">-3.2% vs prev month, +1.1% vs same month last year</p>
+                    </div>
+                    <div class="subcard">
+                      <div class="label">eCommerce</div>
+                      <h3 style="margin: 10px 0 6px;">Net sales</h3>
+                      <div style="font-size: 28px;">€3.8M*</div>
+                      <p style="color: var(--muted); font-size: 13px;">+4.8% vs prev month, but conversion remains weak</p>
+                    </div>
+                    <div class="subcard">
+                      <div class="label">Streaming</div>
+                      <h3 style="margin: 10px 0 6px;">Subscriptions</h3>
+                      <div style="font-size: 28px;">154K</div>
+                      <p style="color: var(--muted); font-size: 13px;">Strongest month in recent quarter</p>
+                    </div>
+                    <div class="subcard">
+                      <div class="label">Fan app</div>
+                      <h3 style="margin: 10px 0 6px;">Heavy users</h3>
+                      <div style="font-size: 28px;">18.2%</div>
+                      <p style="color: var(--muted); font-size: 13px;">Down from seasonal norm despite strong visits</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Middle of screen</div>
+                      <h2 class="chart-title">Cross-Asset Overview</h2>
+                    </div>
+                    <div class="chip">High-level only</div>
+                  </div>
+                  <p class="chart-desc">
+                    A compact ecosystem view that helps leadership see where strength and weakness are concentrated before drilling into signals.
+                  </p>
+                  <div class="chart-box">
+                    <svg viewBox="0 0 820 220" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stop-color="#66aef6" stop-opacity="0.9"/>
+                          <stop offset="100%" stop-color="#9e83f6" stop-opacity="0.9"/>
+                        </linearGradient>
+                      </defs>
+                      <rect x="0" y="0" width="820" height="220" fill="rgba(255,255,255,0.01)"/>
+                      <line x1="150" y1="60" x2="400" y2="110" stroke="url(#g1)" stroke-width="5" opacity="0.7"/>
+                      <line x1="150" y1="60" x2="630" y2="74" stroke="#6ed79f" stroke-width="4" opacity="0.55"/>
+                      <line x1="400" y1="110" x2="630" y2="74" stroke="#d2b36c" stroke-width="4" opacity="0.6"/>
+                      <line x1="400" y1="110" x2="625" y2="164" stroke="#eb7a70" stroke-width="6" opacity="0.7"/>
+                      <circle cx="150" cy="60" r="34" fill="#182434" stroke="#66aef6" stroke-width="2"/>
+                      <circle cx="400" cy="110" r="38" fill="#231f31" stroke="#9e83f6" stroke-width="2"/>
+                      <circle cx="630" cy="74" r="38" fill="#222318" stroke="#d2b36c" stroke-width="2"/>
+                      <circle cx="625" cy="164" r="34" fill="#2b1d1c" stroke="#eb7a70" stroke-width="2"/>
+                      <text x="150" y="66" fill="#f5f1e8" font-size="13" text-anchor="middle">Website</text>
+                      <text x="400" y="116" fill="#f5f1e8" font-size="13" text-anchor="middle">Streaming</text>
+                      <text x="630" y="80" fill="#f5f1e8" font-size="13" text-anchor="middle">eCommerce</text>
+                      <text x="625" y="170" fill="#f5f1e8" font-size="13" text-anchor="middle">Fan App</text>
+                    </svg>
+                  </div>
+                  <div class="legend">
+                    <span><i class="dot" style="background: var(--blue);"></i> Website contributes top-of-funnel reach</span>
+                    <span><i class="dot" style="background: var(--purple);"></i> Streaming drives engagement</span>
+                    <span><i class="dot" style="background: var(--yellow);"></i> eCommerce is the commercial focus</span>
+                    <span><i class="dot" style="background: var(--red);"></i> App loyalty needs attention</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column">
+                <div class="chart-card">
+                  <div class="label">Bottom of screen</div>
+                  <h2 class="chart-title">Monthly Notes</h2>
+                  <div class="insight">
+                    <strong>Biggest improvement:</strong> Streaming video play rate is above seasonal expectation for the second month in a row.
+                  </div>
+                  <div class="insight" style="margin-top: 12px;">
+                    <strong>Biggest decline:</strong> Fan app recurrence is weaker than baseline despite strong matchday visits.
+                  </div>
+                  <div class="insight" style="margin-top: 12px;">
+                    <strong>Watch next month:</strong> If heavy users do not recover, app loyalty may stop supporting eCommerce growth.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="benchmark" class="screen">
+            <div class="hero-strip">
+              <div class="metric-card">
+                <div class="label">Selected KPI</div>
+                <div class="value">Conversion rate</div>
+                <div class="meta">eCommerce benchmark-supported</div>
+                <div class="badge gold">Peer-enabled</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Current rank</div>
+                <div class="value">4/6</div>
+                <div class="meta">Below peer median this month</div>
+                <div class="badge red">Behind peers</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Gap to median</div>
+                <div class="value">-14.3%</div>
+                <div class="meta">RM versus peer median</div>
+                <div class="badge red">Negative gap</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">12-month movement</div>
+                <div class="value">+0.2</div>
+                <div class="meta">Gap improved slightly vs last year</div>
+                <div class="badge green">Recovering</div>
+              </div>
+            </div>
+
+            <div class="content-grid">
+              <div class="column">
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Top panel</div>
+                      <h2 class="chart-title">Rank Snapshot</h2>
+                    </div>
+                    <div class="chip">This is what leadership sees first</div>
+                  </div>
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Rank</th>
+                        <th>Club</th>
+                        <th>Value</th>
+                        <th>Gap vs RM</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>1</td><td>fc_baviera</td><td>3.3%</td><td>+0.9 pts</td></tr>
+                      <tr><td>2</td><td>citizens</td><td>3.0%</td><td>+0.6 pts</td></tr>
+                      <tr><td>3</td><td>merseyside_red</td><td>2.8%</td><td>+0.4 pts</td></tr>
+                      <tr class="highlight"><td>4</td><td>Real Madrid</td><td>2.4%</td><td>—</td></tr>
+                      <tr><td>5</td><td>gunners_fc</td><td>2.3%</td><td>-0.1 pts</td></tr>
+                      <tr><td>6</td><td>masia_fc</td><td>2.1%</td><td>-0.3 pts</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Middle panel</div>
+                      <h2 class="chart-title">Gap Trend Over Time</h2>
+                    </div>
+                    <div class="chip">RM vs peer median vs leader</div>
+                  </div>
+                  <div class="chart-box">
+                    <svg viewBox="0 0 820 220" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="rmLine" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stop-color="#d2b36c"/>
+                          <stop offset="100%" stop-color="#f1d794"/>
+                        </linearGradient>
+                      </defs>
+                      <g stroke="rgba(255,255,255,0.08)">
+                        <line x1="40" y1="180" x2="790" y2="180"/>
+                        <line x1="40" y1="135" x2="790" y2="135"/>
+                        <line x1="40" y1="90" x2="790" y2="90"/>
+                        <line x1="40" y1="45" x2="790" y2="45"/>
+                      </g>
+                      <polyline fill="none" stroke="#66aef6" stroke-width="4" points="50,116 130,118 210,115 290,112 370,106 450,103 530,99 610,94 690,91 770,88"/>
+                      <polyline fill="none" stroke="url(#rmLine)" stroke-width="5" points="50,134 130,136 210,139 290,135 370,128 450,121 530,118 610,116 690,113 770,108"/>
+                      <polyline fill="none" stroke="#6ed79f" stroke-width="4" points="50,84 130,85 210,82 290,80 370,77 450,73 530,69 610,66 690,63 770,58"/>
+                    </svg>
+                  </div>
+                  <div class="legend">
+                    <span><i class="dot" style="background: var(--gold);"></i> Real Madrid</span>
+                    <span><i class="dot" style="background: var(--blue);"></i> Peer median</span>
+                    <span><i class="dot" style="background: var(--green);"></i> Leader</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column">
+                <div class="chart-card">
+                  <div class="label">Bottom-right panel</div>
+                  <h2 class="chart-title">Divergence moments</h2>
+                  <div class="priority-list">
+                    <div class="priority-item">
+                      <div class="priority-head"><h3>Mar 2024</h3><div class="priority-score">Gap widened</div></div>
+                      <p>Conversion weakened after traffic improved, implying the issue is further down the funnel.</p>
+                    </div>
+                    <div class="priority-item">
+                      <div class="priority-head"><h3>Sep 2025</h3><div class="priority-score">Recovery</div></div>
+                      <p>Cart value and checkout rate improved together, narrowing the commercial gap to peers.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="signals" class="screen">
+            <div class="hero-strip">
+              <div class="metric-card">
+                <div class="label">Validated signals</div>
+                <div class="value">2</div>
+                <div class="meta">Only strong, kept relationships shown</div>
+                <div class="badge green">Strictly filtered</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Top signal</div>
+                <div class="value">Heavy users → sales</div>
+                <div class="meta">1-month positive lead</div>
+                <div class="badge gold">Commercially relevant</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Signal strength</div>
+                <div class="value">0.71</div>
+                <div class="meta">Example correlation strength</div>
+                <div class="badge green">Strong enough</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">If weak</div>
+                <div class="value">Hidden</div>
+                <div class="meta">No fake signals shown in the product</div>
+                <div class="badge red">Trust rule</div>
+              </div>
+            </div>
+
+            <div class="content-grid">
+              <div class="column">
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Main visual</div>
+                      <h2 class="chart-title">Signal Cards</h2>
+                    </div>
+                    <div class="chip">Only 2–3 signals in MVP</div>
+                  </div>
+                  <div class="priority-list">
+                    <div class="priority-item">
+                      <div class="priority-head">
+                        <h3>Fan App heavy users → eCommerce net sales</h3>
+                        <div class="priority-score">Lag: 1 month</div>
+                      </div>
+                      <p>When heavy user share rises, net sales tend to strengthen in the following month. This is shown as a leading signal, not a guaranteed prediction.</p>
+                      <div class="bars">
+                        <div class="bar-row"><span>Strength</span><div class="bar-track"><div class="bar-fill green" style="width:71%;"></div></div><span>0.71</span></div>
+                        <div class="bar-row"><span>Confidence</span><div class="bar-track"><div class="bar-fill gold" style="width:78%;"></div></div><span>0.78</span></div>
+                      </div>
+                    </div>
+                    <div class="priority-item">
+                      <div class="priority-head">
+                        <h3>Main website bounce rate → eCommerce conversion</h3>
+                        <div class="priority-score">Lag: 2 months</div>
+                      </div>
+                      <p>Higher bounce rate can precede weaker eCommerce conversion later. This becomes a warning signal inside Priority Board evidence.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column">
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Supporting chart</div>
+                      <h2 class="chart-title">Lead-Lag View</h2>
+                    </div>
+                    <div class="chip">Month t vs month t+1</div>
+                  </div>
+                  <div class="chart-box">
+                    <svg viewBox="0 0 820 220" preserveAspectRatio="none">
+                      <g stroke="rgba(255,255,255,0.08)">
+                        <line x1="40" y1="180" x2="790" y2="180"/>
+                        <line x1="40" y1="140" x2="790" y2="140"/>
+                        <line x1="40" y1="100" x2="790" y2="100"/>
+                        <line x1="40" y1="60" x2="790" y2="60"/>
+                      </g>
+                      <polyline fill="none" stroke="#9e83f6" stroke-width="5" points="50,140 130,132 210,118 290,126 370,102 450,90 530,88 610,72 690,80 770,66"/>
+                      <polyline fill="none" stroke="#6ed79f" stroke-width="5" points="50,160 130,152 210,144 290,132 370,126 450,112 530,103 610,96 690,92 770,84"/>
+                    </svg>
+                  </div>
+                  <div class="legend">
+                    <span><i class="dot" style="background: var(--purple);"></i> Heavy users this month</span>
+                    <span><i class="dot" style="background: var(--green);"></i> Net sales next month</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="briefing" class="screen">
+            <div class="hero-strip">
+              <div class="metric-card">
+                <div class="label">Briefing style</div>
+                <div class="value">Executive</div>
+                <div class="meta">Short, readable, action-focused</div>
+                <div class="badge gold">Leadership-ready</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Inputs used</div>
+                <div class="value">4</div>
+                <div class="meta">Priorities, health, benchmark, signals</div>
+                <div class="badge green">Structured</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">AI role</div>
+                <div class="value">Supportive</div>
+                <div class="meta">Explains, does not score</div>
+                <div class="badge red">Guarded</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Output style</div>
+                <div class="value">Monthly memo</div>
+                <div class="meta">A recurring leadership summary</div>
+                <div class="badge gold">Reusable</div>
+              </div>
+            </div>
+
+            <div class="content-grid">
+              <div class="column">
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Main content area</div>
+                      <h2 class="chart-title">Monthly Briefing Screen</h2>
+                    </div>
+                    <div class="chip">What leaders will read fast</div>
+                  </div>
+                  <div class="insight">
+                    <strong>January summary:</strong> eCommerce remains the main pressure point. Traffic and cart value are not the issue; conversion is. Streaming is showing the strongest positive momentum in the ecosystem, while fan app loyalty remains the clearest retention concern.
+                  </div>
+                  <div class="insight" style="margin-top: 12px;">
+                    <strong>Benchmark note:</strong> Real Madrid sits below peer median in conversion rate but is narrowing the cart value gap. This suggests value capture is improving more than funnel completion.
+                  </div>
+                  <div class="insight" style="margin-top: 12px;">
+                    <strong>Signal note:</strong> Heavy users remain the best leading signal for next-month commercial strength. If that metric softens again, expect pressure on net sales.
+                  </div>
+                </div>
+              </div>
+              <div class="column">
+                <div class="chart-card">
+                  <div class="label">Right rail</div>
+                  <h2 class="chart-title">What this screen contains</h2>
+                  <div class="priority-list">
+                    <div class="priority-item"><p><strong>Top 3 priorities</strong><br/>Directly pulled from Priority Board.</p></div>
+                    <div class="priority-item"><p><strong>Best improvement</strong><br/>Most positive change vs seasonal expectation.</p></div>
+                    <div class="priority-item"><p><strong>Benchmark note</strong><br/>Best peer-related takeaway for the month.</p></div>
+                    <div class="priority-item"><p><strong>Next-month watchlist</strong><br/>Signals and weak spots worth monitoring.</p></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="event" class="screen">
+            <div class="hero-strip">
+              <div class="metric-card">
+                <div class="label">Module status</div>
+                <div class="value">Later</div>
+                <div class="meta">Useful, but not hero</div>
+                <div class="badge gold">Phase 2</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Purpose</div>
+                <div class="value">Context</div>
+                <div class="meta">Explains major historical shifts</div>
+                <div class="badge green">Support layer</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Input</div>
+                <div class="value">Annotated events</div>
+                <div class="meta">COVID, UCL wins, transfers</div>
+                <div class="badge gold">Curated</div>
+              </div>
+              <div class="metric-card">
+                <div class="label">Use in demo</div>
+                <div class="value">Optional</div>
+                <div class="meta">Only after core product is trusted</div>
+                <div class="badge red">Not first</div>
+              </div>
+            </div>
+
+            <div class="content-grid">
+              <div class="column">
+                <div class="chart-card">
+                  <div class="chart-title-row">
+                    <div>
+                      <div class="label">Future screen</div>
+                      <h2 class="chart-title">Event Timeline</h2>
+                    </div>
+                    <div class="later-badge">Later, not hero</div>
+                  </div>
+                  <div class="chart-box">
+                    <svg viewBox="0 0 820 220" preserveAspectRatio="none">
+                      <line x1="50" y1="110" x2="770" y2="110" stroke="rgba(255,255,255,0.12)" stroke-width="4"/>
+                      <circle cx="130" cy="110" r="12" fill="#9e83f6"/>
+                      <circle cx="290" cy="110" r="12" fill="#eb7a70"/>
+                      <circle cx="470" cy="110" r="12" fill="#6ed79f"/>
+                      <circle cx="650" cy="110" r="12" fill="#d2b36c"/>
+                      <text x="130" y="82" fill="#f5f1e8" font-size="13" text-anchor="middle">UCL Win</text>
+                      <text x="290" y="82" fill="#f5f1e8" font-size="13" text-anchor="middle">COVID</text>
+                      <text x="470" y="82" fill="#f5f1e8" font-size="13" text-anchor="middle">Major Signing</text>
+                      <text x="650" y="82" fill="#f5f1e8" font-size="13" text-anchor="middle">Kit Launch</text>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column">
+                <div class="chart-card">
+                  <div class="label">Why it is later</div>
+                  <h2 class="chart-title">Role in the product</h2>
+                  <div class="priority-list">
+                    <div class="priority-item"><p>Helps explain history, but does not drive the recurring workflow.</p></div>
+                    <div class="priority-item"><p>Useful for storytelling and context after the product trust layer is built.</p></div>
+                    <div class="priority-item"><p>Should not distract from Priority Board, Benchmark, and Signals.</p></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel module-explainer">
+        <div class="brand-mark">Screen Explainer</div>
+        <h2 id="explain-title">Priority Board</h2>
+        <p id="explain-copy">
+          This is the first screen because it answers the most important business question: what deserves attention first this month?
+        </p>
+
+        <div class="explain-card">
+          <h3>What this screen contains</h3>
+          <ul id="contains-list">
+            <li>Top summary strip with counts of critical priorities and opportunities</li>
+            <li>Ranked cards with score, category, why it matters, and suggested next investigation</li>
+            <li>Supporting right rail with anomaly, benchmark note, and active signal</li>
+          </ul>
+        </div>
+
+        <div class="explain-card">
+          <h3>What the user learns</h3>
+          <ul id="learns-list">
+            <li>Which issue matters most right now</li>
+            <li>What evidence supports that issue</li>
+            <li>Whether it is a benchmark problem, conversion problem, or opportunity</li>
+          </ul>
+        </div>
+
+        <div class="explain-card">
+          <h3>What to say in the meeting</h3>
+          <ul id="say-list">
+            <li>This is the hero module because it changes the product from reporting to decision support.</li>
+            <li>Everything else exists to explain and support this ranked list.</li>
+          </ul>
+        </div>
+
+        <div class="footer-note">
+          Use this page for group alignment: “this is what the product will look like,” not “this is the final implemented UI.”
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      const content = {
+        priority: {
+          title: "Priority Board",
+          subtitle:
+            "The first screen of the product. It ranks the top issues and opportunities for the latest reporting month.",
+          window: "Priority Board / Hero Workflow",
+          explainTitle: "Priority Board",
+          explainCopy:
+            "This is the first screen because it answers the most important business question: what deserves attention first this month?",
+          contains: [
+            "Top summary strip with counts of critical priorities and opportunities",
+            "Ranked cards with score, category, why it matters, and suggested next investigation",
+            "Supporting right rail with anomaly, benchmark note, and active signal"
+          ],
+          learns: [
+            "Which issue matters most right now",
+            "What evidence supports that issue",
+            "Whether it is a benchmark problem, conversion problem, or opportunity"
+          ],
+          say: [
+            "This is the hero module because it changes the product from reporting to decision support.",
+            "Everything else exists to explain and support this ranked list."
+          ]
+        },
+        command: {
+          title: "Command Center",
+          subtitle:
+            "A one-page monthly overview showing how the four digital businesses are performing against baseline expectations.",
+          window: "Command Center / Monthly Health View",
+          explainTitle: "Command Center",
+          explainCopy:
+            "This screen is for fast orientation. It tells leadership what looks healthy, weak, or mixed across the whole digital ecosystem.",
+          contains: [
+            "4 asset health cards for website, eCommerce, streaming, and fan app",
+            "Cross-asset overview showing how the ecosystem is moving together",
+            "Monthly notes for biggest improvement, decline, and thing to watch"
+          ],
+          learns: [
+            "How the overall ecosystem looks this month",
+            "Which asset is currently under pressure",
+            "Which area is improving and which area needs watching"
+          ],
+          say: [
+            "This is the quick health layer, not the ranking layer.",
+            "It helps the team understand the whole ecosystem before they drill into priorities."
+          ]
+        },
+        benchmark: {
+          title: "Peer Benchmark Engine",
+          subtitle:
+            "A peer comparison screen for the KPIs the benchmark dataset genuinely supports.",
+          window: "Peer Benchmark / Rank + Gap + Trend",
+          explainTitle: "Peer Benchmark Engine",
+          explainCopy:
+            "This screen tells us where Real Madrid stands versus peer clubs, by how much, and whether the gap is improving or worsening.",
+          contains: [
+            "Rank snapshot table for the selected KPI",
+            "Gap trend chart with RM, peer median, and leader",
+            "Divergence moments where the competitive story changed sharply"
+          ],
+          learns: [
+            "Where RM is ahead or behind peers",
+            "Whether the gap to peers is widening or narrowing",
+            "Which competitive changes deserve business attention"
+          ],
+          say: [
+            "We only show benchmark comparisons where the source data actually supports it.",
+            "This is competitive intelligence, not a generic dashboard chart."
+          ]
+        },
+        signals: {
+          title: "Commercial Signal Engine",
+          subtitle:
+            "A small, disciplined set of leading relationships that help explain what may matter next.",
+          window: "Signal Engine / Leading Relationships",
+          explainTitle: "Commercial Signal Engine",
+          explainCopy:
+            "This screen does not try to predict everything. It only shows a few stable, explainable signals that passed the validation logic.",
+          contains: [
+            "Signal cards with source metric, target metric, lag, and strength",
+            "Lead-lag chart to explain the relationship visually",
+            "Clear business-language explanation of what the signal means"
+          ],
+          learns: [
+            "Which internal metrics tend to move before commercial outcomes",
+            "How far ahead the signal tends to lead",
+            "Which signals are strong enough to support Priority Board evidence"
+          ],
+          say: [
+            "If a signal is weak, it should be hidden rather than forced into the UI.",
+            "The point here is disciplined business evidence, not flashy pseudo-prediction."
+          ]
+        },
+        briefing: {
+          title: "Monthly Briefing",
+          subtitle:
+            "A leadership-facing monthly summary built from structured outputs, not hand-written reporting every time.",
+          window: "Monthly Briefing / Leadership Summary",
+          explainTitle: "Monthly Briefing",
+          explainCopy:
+            "This turns the product outputs into a short monthly memo for decision-makers who do not want to inspect every screen themselves.",
+          contains: [
+            "Executive summary paragraph",
+            "Priority highlights and benchmark note",
+            "What to watch in the next month"
+          ],
+          learns: [
+            "What changed in one page",
+            "What matters most this month",
+            "What needs to be watched next"
+          ],
+          say: [
+            "This is where the product becomes easier to use by leadership, not just analysts.",
+            "AI can help with phrasing here, but the underlying inputs stay deterministic."
+          ]
+        },
+        event: {
+          title: "Event Intelligence",
+          subtitle:
+            "A later support module for event context and historical fingerprints, not the main product workflow.",
+          window: "Event Intelligence / Later Support Module",
+          explainTitle: "Event Intelligence",
+          explainCopy:
+            "This screen is useful for explaining history, but it should not distract from the core monthly operating workflow.",
+          contains: [
+            "Annotated timeline of major events",
+            "Event windows and pre/post context",
+            "Historical reference for storytelling and explanation"
+          ],
+          learns: [
+            "What happened around major historical moments",
+            "How a metric moved before and after a known event",
+            "Why this is context, not the main decision screen"
+          ],
+          say: [
+            "This helps tell the story, but it is not the product hero.",
+            "Priority Board, Benchmark, and Signals come first."
+          ]
+        }
+      };
+
+      const tabs = document.querySelectorAll(".screen-tab");
+      const screens = document.querySelectorAll(".screen");
+
+      const screenTitle = document.getElementById("screen-title");
+      const screenSubtitle = document.getElementById("screen-subtitle");
+      const windowName = document.getElementById("window-name");
+      const explainTitle = document.getElementById("explain-title");
+      const explainCopy = document.getElementById("explain-copy");
+      const containsList = document.getElementById("contains-list");
+      const learnsList = document.getElementById("learns-list");
+      const sayList = document.getElementById("say-list");
+
+      function setList(el, items) {
+        el.innerHTML = items.map((item) => `<li>${item}</li>`).join("");
+      }
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const key = tab.dataset.screen;
+          const data = content[key];
+
+          tabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+
+          screens.forEach((screen) => {
+            screen.classList.toggle("active", screen.id === key);
+          });
+
+          screenTitle.textContent = data.title;
+          screenSubtitle.textContent = data.subtitle;
+          windowName.textContent = data.window;
+          explainTitle.textContent = data.explainTitle;
+          explainCopy.textContent = data.explainCopy;
+          setList(containsList, data.contains);
+          setList(learnsList, data.learns);
+          setList(sayList, data.say);
+        });
+      });
+    </script>
+  </body>
+</html>

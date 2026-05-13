@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClubOS - Command Center</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Serif:wght@400;600;700&display=swap');
+
+    .font-headline { font-family: 'DM Serif Display', serif; }
+    .font-body { font-family: 'IBM Plex Serif', serif; }
+    .font-sans { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    .paper-texture {
+      background-image:
+        linear-gradient(0deg, transparent 98%, rgba(0,0,0,0.015) 100%),
+        linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.015) 100%);
+      background-size: 4px 4px;
+    }
+
+    .dark .paper-texture {
+      background-image:
+        linear-gradient(0deg, transparent 98%, rgba(255,255,255,0.02) 100%),
+        linear-gradient(90deg, transparent 98%, rgba(255,255,255,0.02) 100%);
+    }
+
+    .data-table {
+      border-collapse: collapse;
+    }
+
+    .data-table td,
+    .data-table th {
+      border: 1px solid;
+    }
+
+    * {
+      transition-property: background-color, border-color, color, transform;
+      transition-duration: 150ms;
+      transition-timing-function: ease-out;
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            paper: '#FAFAF8',
+            ink: '#1A1A1A',
+            stone: {
+              50: '#FAFAF8',
+              100: '#F5F5F3',
+              200: '#E8E8E5',
+              300: '#D1D1CC',
+              400: '#A3A39E',
+              500: '#75756F',
+              600: '#5C5C56',
+              700: '#434340',
+              800: '#2B2B28',
+              900: '#1A1A18',
+            },
+          },
+          fontFamily: {
+            headline: ['DM Serif Display', 'serif'],
+            body: ['IBM Plex Serif', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-paper dark:bg-stone-900 text-ink dark:text-stone-100 font-sans paper-texture">
+
+  <!-- Header -->
+  <header class="border-b-2 border-ink dark:border-stone-700 bg-paper/95 dark:bg-stone-900/95 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-screen-xl mx-auto px-6">
+      <div class="py-2 border-b border-stone-300 dark:border-stone-700 flex items-center justify-between">
+        <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">
+          Vol. 1.0 · Edition: January 2026
+        </div>
+        <button id="theme-toggle"
+                class="font-mono text-[10px] uppercase tracking-widest hover:text-[#2563EB] dark:hover:text-[#3B82F6]"
+                aria-label="Toggle theme">
+          <span class="dark:hidden">Dark</span>
+          <span class="hidden dark:inline">Light</span>
+        </button>
+      </div>
+
+      <div class="py-6 flex items-center justify-between">
+        <div class="cursor-pointer" onclick="alert('Navigate to Dashboard')">
+          <h1 class="font-headline text-4xl md:text-5xl tracking-tight">ClubOS</h1>
+          <p class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mt-1">
+            Real Madrid Commercial Intelligence
+          </p>
+        </div>
+
+        <nav class="hidden md:flex gap-8 font-sans text-sm">
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Board</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6] border-b-2 border-ink dark:border-stone-300 pb-1">Center</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Benchmark</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Signals</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-screen-xl mx-auto px-6 py-12">
+
+    <!-- Hero -->
+    <div class="border-b-4 border-ink dark:border-stone-600 pb-8 mb-12">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+        Ecosystem Health Monitor
+      </div>
+      <h1 class="font-headline text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
+        Command<br/>Center
+      </h1>
+      <p class="font-body text-lg md:text-xl text-stone-600 dark:text-stone-400 leading-relaxed max-w-2xl">
+        Real-time health overview of 59 commercial metrics across all assets, categorized by performance status and deviation from target.
+      </p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="mb-12 border border-ink dark:border-stone-700">
+      <div class="grid grid-cols-2 md:grid-cols-4 data-table border-ink dark:border-stone-700">
+
+        <button onclick="filterMetrics('all')"
+                class="p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left group border-l-4 border-[#9333EA] dark:border-[#A855F7] transition-all">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+            Total Metrics
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            59
+          </div>
+          <div class="h-1 bg-[#9333EA] dark:bg-[#A855F7]"></div>
+        </button>
+
+        <button onclick="filterMetrics('good')"
+                class="p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left group border-l-4 border-[#16A34A] dark:border-[#22C55E] transition-all">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+            Good Health
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            23
+          </div>
+          <div class="h-1 bg-[#16A34A] dark:bg-[#22C55E]"></div>
+        </button>
+
+        <button onclick="filterMetrics('review')"
+                class="p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left group border-l-4 border-[#EA580C] dark:border-[#F97316] transition-all">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+            Review Needed
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            23
+          </div>
+          <div class="h-1 bg-[#EA580C] dark:bg-[#F97316]"></div>
+        </button>
+
+        <button onclick="filterMetrics('stable')"
+                class="p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left group border-l-4 border-[#2563EB] dark:border-[#3B82F6] transition-all">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+            Stable Status
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            13
+          </div>
+          <div class="h-1 bg-[#2563EB] dark:bg-[#3B82F6]"></div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Health Breakdown -->
+    <section class="mb-12">
+      <h2 class="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+        Health Distribution
+      </h2>
+
+      <div class="border border-ink dark:border-stone-700 p-8 bg-stone-50 dark:bg-stone-800">
+        <canvas id="healthChart" height="120"></canvas>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-px bg-ink dark:bg-stone-700 border border-ink dark:border-stone-700">
+        <button onclick="alert('View Good Health metrics')"
+                class="bg-paper dark:bg-stone-900 p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+          <div class="flex items-center justify-between mb-4">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              Good Health
+            </div>
+            <div class="font-mono text-2xl font-bold text-[#16A34A] dark:text-[#22C55E]">
+              39%
+            </div>
+          </div>
+          <div class="h-3 border border-[#16A34A] dark:border-[#22C55E]">
+            <div class="h-full bg-[#16A34A] dark:bg-[#22C55E]" style="width: 39%"></div>
+          </div>
+          <p class="font-body text-sm mt-3 text-stone-600 dark:text-stone-400">
+            23 metrics performing within target range
+          </p>
+        </button>
+
+        <button onclick="alert('View Review Needed metrics')"
+                class="bg-paper dark:bg-stone-900 p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+          <div class="flex items-center justify-between mb-4">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              Review Needed
+            </div>
+            <div class="font-mono text-2xl font-bold text-[#EA580C] dark:text-[#F97316]">
+              39%
+            </div>
+          </div>
+          <div class="h-3 border border-[#EA580C] dark:border-[#F97316]">
+            <div class="h-full bg-[#EA580C] dark:bg-[#F97316]" style="width: 39%"></div>
+          </div>
+          <p class="font-body text-sm mt-3 text-stone-600 dark:text-stone-400">
+            23 metrics deviating from expected performance
+          </p>
+        </button>
+
+        <button onclick="alert('View Stable metrics')"
+                class="bg-paper dark:bg-stone-900 p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 text-left transition-colors">
+          <div class="flex items-center justify-between mb-4">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              Stable Status
+            </div>
+            <div class="font-mono text-2xl font-bold text-[#2563EB] dark:text-[#3B82F6]">
+              22%
+            </div>
+          </div>
+          <div class="h-3 border border-[#2563EB] dark:border-[#3B82F6]">
+            <div class="h-full bg-[#2563EB] dark:bg-[#3B82F6]" style="width: 22%"></div>
+          </div>
+          <p class="font-body text-sm mt-3 text-stone-600 dark:text-stone-400">
+            13 metrics showing no significant change
+          </p>
+        </button>
+      </div>
+    </section>
+
+    <!-- Metrics by Asset -->
+    <section class="mb-12">
+      <h2 class="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+        Metrics by Asset
+      </h2>
+
+      <div class="border border-ink dark:border-stone-700">
+        <table class="w-full data-table border-ink dark:border-stone-700 font-mono text-sm">
+          <thead>
+            <tr class="bg-stone-100 dark:bg-stone-800">
+              <th class="text-left p-4 font-semibold uppercase text-xs tracking-widest">Asset</th>
+              <th class="text-center p-4 font-semibold uppercase text-xs tracking-widest">Total</th>
+              <th class="text-center p-4 font-semibold uppercase text-xs tracking-widest">Good</th>
+              <th class="text-center p-4 font-semibold uppercase text-xs tracking-widest">Review</th>
+              <th class="text-center p-4 font-semibold uppercase text-xs tracking-widest">Stable</th>
+              <th class="text-right p-4 font-semibold uppercase text-xs tracking-widest">Health %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors" onclick="alert('View Website metrics')">
+              <td class="p-4 text-ink dark:text-stone-100 font-semibold">Website</td>
+              <td class="p-4 text-center">12</td>
+              <td class="p-4 text-center text-[#16A34A] dark:text-[#22C55E] font-bold">4</td>
+              <td class="p-4 text-center text-[#EA580C] dark:text-[#F97316] font-bold">6</td>
+              <td class="p-4 text-center text-[#2563EB] dark:text-[#3B82F6] font-bold">2</td>
+              <td class="p-4 text-right font-bold">33%</td>
+            </tr>
+            <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors" onclick="alert('View Social metrics')">
+              <td class="p-4 text-ink dark:text-stone-100 font-semibold">Social Media</td>
+              <td class="p-4 text-center">15</td>
+              <td class="p-4 text-center text-[#16A34A] dark:text-[#22C55E] font-bold">6</td>
+              <td class="p-4 text-center text-[#EA580C] dark:text-[#F97316] font-bold">7</td>
+              <td class="p-4 text-center text-[#2563EB] dark:text-[#3B82F6] font-bold">2</td>
+              <td class="p-4 text-right font-bold">40%</td>
+            </tr>
+            <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors" onclick="alert('View Ticketing metrics')">
+              <td class="p-4 text-ink dark:text-stone-100 font-semibold">Ticketing</td>
+              <td class="p-4 text-center">8</td>
+              <td class="p-4 text-center text-[#16A34A] dark:text-[#22C55E] font-bold">3</td>
+              <td class="p-4 text-center text-[#EA580C] dark:text-[#F97316] font-bold">3</td>
+              <td class="p-4 text-center text-[#2563EB] dark:text-[#3B82F6] font-bold">2</td>
+              <td class="p-4 text-right font-bold">38%</td>
+            </tr>
+            <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors" onclick="alert('View Merchandise metrics')">
+              <td class="p-4 text-ink dark:text-stone-100 font-semibold">Merchandise</td>
+              <td class="p-4 text-center">10</td>
+              <td class="p-4 text-center text-[#16A34A] dark:text-[#22C55E] font-bold">5</td>
+              <td class="p-4 text-center text-[#EA580C] dark:text-[#F97316] font-bold">3</td>
+              <td class="p-4 text-center text-[#2563EB] dark:text-[#3B82F6] font-bold">2</td>
+              <td class="p-4 text-right font-bold">50%</td>
+            </tr>
+            <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors" onclick="alert('View Sponsorship metrics')">
+              <td class="p-4 text-ink dark:text-stone-100 font-semibold">Sponsorship</td>
+              <td class="p-4 text-center">14</td>
+              <td class="p-4 text-center text-[#16A34A] dark:text-[#22C55E] font-bold">5</td>
+              <td class="p-4 text-center text-[#EA580C] dark:text-[#F97316] font-bold">4</td>
+              <td class="p-4 text-center text-[#2563EB] dark:text-[#3B82F6] font-bold">5</td>
+              <td class="p-4 text-right font-bold">36%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Deviation Indicator -->
+    <section>
+      <h2 class="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+        Overall Deviation Index
+      </h2>
+
+      <div class="border-2 border-ink dark:border-stone-700 p-12 text-center">
+        <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+          Average Deviation from Target
+        </div>
+        <div class="font-headline text-9xl mb-4 text-[#EA580C] dark:text-[#F97316]">
+          -8.2%
+        </div>
+        <div class="flex items-center justify-center gap-2 font-mono text-sm">
+          <span class="text-stone-500 dark:text-stone-400">Trend:</span>
+          <span class="text-[#DC2626] dark:text-[#EF4444] font-bold">↓ Declining</span>
+        </div>
+        <p class="font-body text-base mt-6 text-stone-600 dark:text-stone-400 max-w-2xl mx-auto">
+          Commercial ecosystem is underperforming targets by 8.2% on average, with a declining trend over the past 3 months.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      if (window.healthChart) updateChartTheme();
+    });
+
+    function filterMetrics(type) {
+      alert(`Filtering: ${type}`);
+    }
+
+    // Donut chart - best for part-to-whole relationships
+    const ctx = document.getElementById('healthChart');
+    let healthChart;
+
+    if (ctx) {
+      const isDark = document.documentElement.classList.contains('dark');
+
+      healthChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Good Health (23)', 'Review Needed (23)', 'Stable (13)'],
+          datasets: [{
+            data: [23, 23, 13],
+            backgroundColor: [
+              isDark ? '#22C55E' : '#16A34A',
+              isDark ? '#F97316' : '#EA580C',
+              isDark ? '#3B82F6' : '#2563EB'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '60%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: isDark ? '#E8E8E5' : '#1A1A1A',
+                font: {
+                  family: 'JetBrains Mono',
+                  size: 12,
+                  weight: '500'
+                },
+                padding: 20,
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              backgroundColor: isDark ? '#1A1A18' : '#FAFAF8',
+              titleColor: isDark ? '#FAFAF8' : '#1A1A1A',
+              bodyColor: isDark ? '#E8E8E5' : '#434340',
+              borderColor: isDark ? '#434340' : '#D1D1CC',
+              borderWidth: 1,
+              padding: 12,
+              titleFont: { family: 'JetBrains Mono', size: 11 },
+              bodyFont: { family: 'JetBrains Mono', size: 11 }
+            }
+          }
+        }
+      });
+
+      window.healthChart = healthChart;
+    }
+
+    function updateChartTheme() {
+      if (!healthChart) return;
+      const isDark = document.documentElement.classList.contains('dark');
+
+      healthChart.data.datasets[0].backgroundColor = [
+        isDark ? '#22C55E' : '#16A34A',
+        isDark ? '#F97316' : '#EA580C',
+        isDark ? '#3B82F6' : '#2563EB'
+      ];
+
+      healthChart.options.plugins.legend.labels.color = isDark ? '#E8E8E5' : '#1A1A1A';
+      healthChart.options.plugins.tooltip.backgroundColor = isDark ? '#1A1A18' : '#FAFAF8';
+      healthChart.options.plugins.tooltip.titleColor = isDark ? '#FAFAF8' : '#1A1A1A';
+      healthChart.options.plugins.tooltip.bodyColor = isDark ? '#E8E8E5' : '#434340';
+      healthChart.options.plugins.tooltip.borderColor = isDark ? '#434340' : '#D1D1CC';
+
+      healthChart.update();
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,158 @@
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Serif:wght@400;600;700&display=swap');
+
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply bg-paper dark:bg-stone-900 text-ink dark:text-stone-100 font-sans;
+  }
+
+  /* Newsprint texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(0deg, transparent 98%, rgba(0,0,0,0.015) 100%),
+      linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.015) 100%);
+    background-size: 4px 4px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body.dark::before {
+    background-image:
+      linear-gradient(0deg, transparent 98%, rgba(255,255,255,0.02) 100%),
+      linear-gradient(90deg, transparent 98%, rgba(255,255,255,0.02) 100%);
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline tracking-tight;
+  }
+
+  /* Smooth transitions */
+  * {
+    @apply transition-colors duration-150 ease-out;
+  }
+
+  /* Remove transitions from animations */
+  button,
+  a,
+  [role="button"] {
+    @apply transition-all duration-150;
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Data tables */
+  .data-table {
+    border-collapse: collapse;
+  }
+
+  .data-table td,
+  .data-table th {
+    @apply border border-ink dark:border-stone-700;
+  }
+
+  /* Modal transitions */
+  .modal-enter {
+    @apply opacity-0;
+  }
+
+  .modal-enter-active {
+    @apply opacity-100 transition-opacity duration-200;
+  }
+
+  .modal-exit {
+    @apply opacity-100;
+  }
+
+  .modal-exit-active {
+    @apply opacity-0 transition-opacity duration-200;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  /* Font utilities */
+  .font-headline {
+    font-family: 'DM Serif Display', serif;
+  }
+
+  .font-body {
+    font-family: 'IBM Plex Serif', serif;
+  }
+
+  .font-sans {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Glassmorphism effects */
+  .glass {
+    @apply backdrop-blur-lg bg-white/10 border border-white/20;
+  }
+
+  .glass-card {
+    @apply backdrop-blur-xl bg-white/80 dark:bg-stone-900/80 border border-stone-200/50 dark:border-stone-700/50 shadow-glass;
+  }
+
+  .glass-modal {
+    @apply backdrop-blur-2xl bg-white/95 dark:bg-stone-900/95 border border-stone-200/60 dark:border-stone-700/60 shadow-glass-lg;
+  }
+
+  /* Gradient text */
+  .text-gradient-sport {
+    @apply bg-gradient-sport bg-clip-text text-transparent;
+  }
+
+  .text-gradient-gold {
+    @apply bg-gradient-gold bg-clip-text text-transparent;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-sport-lg;
+  }
+
+  /* Smooth hover */
+  .hover-glow {
+    @apply transition-all duration-200 hover:shadow-sport;
+  }
+
+  /* Paper texture utility */
+  .paper-texture {
+    position: relative;
+  }
+
+  .paper-texture::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(0deg, transparent 98%, rgba(0,0,0,0.015) 100%),
+      linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.015) 100%);
+    background-size: 4px 4px;
+    pointer-events: none;
+  }
+
+  .dark .paper-texture::before {
+    background-image:
+      linear-gradient(0deg, transparent 98%, rgba(255,255,255,0.02) 100%),
+      linear-gradient(90deg, transparent 98%, rgba(255,255,255,0.02) 100%);
+  }
+}

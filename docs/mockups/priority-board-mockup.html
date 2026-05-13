@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClubOS - Priority Board</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Glassmorphism utilities */
+    .glass {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .glass-strong {
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    /* Subtle gradients - earth tones */
+    .gradient-sage {
+      background: linear-gradient(135deg, #5f7360 0%, #7a8d7a 100%);
+    }
+
+    .gradient-earth {
+      background: linear-gradient(135deg, #9a7550 0%, #b08d5f 100%);
+    }
+
+    .gradient-card {
+      background: linear-gradient(135deg, rgba(95, 115, 96, 0.08) 0%, rgba(122, 141, 122, 0.08) 100%);
+    }
+
+    /* Subtle accent gradient */
+    .gradient-accent {
+      background: linear-gradient(135deg, rgba(95, 115, 96, 0.1) 0%, rgba(176, 141, 95, 0.1) 100%);
+    }
+
+    /* Score bar animation */
+    .score-bar {
+      transition: width 1s ease-out;
+    }
+
+    /* Modal backdrop */
+    .modal-backdrop {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* Smooth transitions */
+    * {
+      transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+      transition-timing-function: ease-in-out;
+      transition-duration: 200ms;
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            // Earth tones - subtle, Apple-inspired
+            'sage': {
+              50: '#f6f7f6',
+              100: '#e3e7e3',
+              200: '#c7cfc7',
+              300: '#a3b0a3',
+              400: '#7a8d7a',
+              500: '#5f7360',
+              600: '#4a5a4b',
+              700: '#3d4a3e',
+              800: '#333d34',
+              900: '#2b342c',
+            },
+            'warm-gray': {
+              50: '#fafaf9',
+              100: '#f5f5f4',
+              200: '#e7e5e4',
+              300: '#d6d3d1',
+              400: '#a8a29e',
+              500: '#78716c',
+              600: '#57534e',
+              700: '#44403c',
+              800: '#292524',
+              900: '#1c1917',
+            },
+            'earth': {
+              50: '#faf8f5',
+              100: '#f3ede3',
+              200: '#e8dcc7',
+              300: '#d9c6a3',
+              400: '#c9ab7e',
+              500: '#b08d5f',
+              600: '#9a7550',
+              700: '#7f5e43',
+              800: '#6a4f3a',
+              900: '#594231',
+            },
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-stone-50 dark:bg-warm-gray-900 text-warm-gray-900 dark:text-warm-gray-50">
+
+  <!-- Header -->
+  <header class="glass bg-white/90 dark:bg-warm-gray-900/90 border-b border-warm-gray-200 dark:border-warm-gray-800 sticky top-0 z-40">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <!-- Logo -->
+        <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onclick="alert('Navigate to Dashboard')">
+          <div class="w-10 h-10 rounded-xl gradient-sage flex items-center justify-center shadow-sm">
+            <span class="text-white font-bold text-xl">⚽</span>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-warm-gray-900 dark:text-warm-gray-50">ClubOS</h1>
+            <p class="text-xs text-warm-gray-500 dark:text-warm-gray-400">Real Madrid</p>
+          </div>
+        </div>
+
+        <!-- Right side -->
+        <div class="flex items-center gap-4">
+          <!-- Month Badge - clickable -->
+          <button onclick="alert('Open month selector')"
+                  class="px-4 py-2 rounded-full glass bg-sage-50/50 dark:bg-warm-gray-800/50 border border-sage-200 dark:border-warm-gray-700 hover:bg-sage-100/50 dark:hover:bg-warm-gray-700/50 transition-all">
+            <span class="text-sm font-medium text-warm-gray-700 dark:text-warm-gray-200">January 2026</span>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button id="theme-toggle"
+                  class="p-3 rounded-full glass bg-sage-50/50 dark:bg-warm-gray-800/50 border border-sage-200 dark:border-warm-gray-700 hover:scale-105 active:scale-95 transition-transform"
+                  aria-label="Toggle theme">
+            <span class="dark:hidden text-xl">🌙</span>
+            <span class="hidden dark:inline text-xl">☀️</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-6 py-8">
+
+    <!-- Hero Section -->
+    <div class="mb-8">
+      <h2 class="text-5xl font-bold mb-3 text-warm-gray-900 dark:text-warm-gray-50">
+        Priority Board
+      </h2>
+      <p class="text-lg text-warm-gray-600 dark:text-warm-gray-400">
+        Top commercial concerns requiring attention this month
+      </p>
+    </div>
+
+    <!-- Summary Strip - clickable cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <!-- Critical -->
+      <button onclick="filterPriorities('critical')"
+              class="glass bg-white dark:bg-warm-gray-800 border border-warm-gray-200 dark:border-warm-gray-700 rounded-2xl p-6 hover:scale-102 hover:shadow-lg transition-all text-left">
+        <div class="text-4xl font-bold text-warm-gray-800 dark:text-warm-gray-200">3</div>
+        <div class="text-sm font-medium text-warm-gray-600 dark:text-warm-gray-400 mt-1">Critical</div>
+        <div class="mt-2 w-full h-1 bg-sage-500/30 rounded-full"></div>
+      </button>
+
+      <!-- Opportunity -->
+      <button onclick="filterPriorities('opportunity')"
+              class="glass bg-white dark:bg-warm-gray-800 border border-warm-gray-200 dark:border-warm-gray-700 rounded-2xl p-6 hover:scale-102 hover:shadow-lg transition-all text-left">
+        <div class="text-4xl font-bold text-warm-gray-800 dark:text-warm-gray-200">1</div>
+        <div class="text-sm font-medium text-warm-gray-600 dark:text-warm-gray-400 mt-1">Opportunity</div>
+        <div class="mt-2 w-full h-1 bg-earth-500/30 rounded-full"></div>
+      </button>
+
+      <!-- Benchmark -->
+      <button onclick="filterPriorities('benchmark')"
+              class="glass bg-white dark:bg-warm-gray-800 border border-warm-gray-200 dark:border-warm-gray-700 rounded-2xl p-6 hover:scale-102 hover:shadow-lg transition-all text-left">
+        <div class="text-4xl font-bold text-warm-gray-800 dark:text-warm-gray-200">5</div>
+        <div class="text-sm font-medium text-warm-gray-600 dark:text-warm-gray-400 mt-1">Benchmark</div>
+        <div class="mt-2 w-full h-1 bg-sage-400/30 rounded-full"></div>
+      </button>
+
+      <!-- Total -->
+      <button onclick="filterPriorities('all')"
+              class="glass gradient-card border border-sage-200 dark:border-warm-gray-700 rounded-2xl p-6 hover:scale-102 hover:shadow-lg transition-all text-left">
+        <div class="text-4xl font-bold text-sage-700 dark:text-sage-400">20</div>
+        <div class="text-sm font-medium text-sage-600 dark:text-sage-300 mt-1">Total Priorities</div>
+        <div class="mt-2 w-full h-1 bg-sage-500/50 rounded-full"></div>
+      </button>
+    </div>
+
+    <!-- Priority Cards Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Priority #1 -->
+      <div class="glass bg-white dark:bg-warm-gray-800 border border-warm-gray-200 dark:border-warm-gray-700 rounded-2xl p-6 hover:scale-102 hover:shadow-lg transition-all cursor-pointer"
+           onclick="openModal('modal-1')">
+        <!-- Rank Badge -->
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 rounded-full gradient-sage flex items-center justify-center shadow-sm cursor-pointer hover:scale-105 transition-transform"
+               onclick="event.stopPropagation(); alert('Rank #1 - Highest priority')">
+            <span class="text-white font-bold text-lg">#1</span>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-warm-gray-100 dark:bg-warm-gray-700 text-warm-gray-700 dark:text-warm-gray-300 border border-warm-gray-300 dark:border-warm-gray-600 cursor-pointer hover:bg-warm-gray-200 dark:hover:bg-warm-gray-600 transition-colors"
+                onclick="event.stopPropagation(); alert('Filter by Critical')">
+            CRITICAL
+          </span>
+        </div>
+
+        <!-- Title & Category -->
+        <h3 class="text-xl font-bold mb-2 text-warm-gray-900 dark:text-warm-gray-50 hover:text-sage-700 dark:hover:text-sage-400 transition-colors">
+          eCommerce Conversion Weakness
+        </h3>
+        <div class="flex gap-2 mb-4">
+          <button onclick="event.stopPropagation(); alert('View all eCommerce metrics')"
+                  class="px-3 py-1 rounded-lg text-xs font-medium bg-sage-100 dark:bg-sage-900/30 text-sage-700 dark:text-sage-400 border border-sage-200 dark:border-sage-700 hover:bg-sage-200 dark:hover:bg-sage-800/30 transition-colors">
+            eCommerce
+          </button>
+        </div>
+
+        <!-- Score Bar -->
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-medium text-warm-gray-600 dark:text-warm-gray-400">Priority Score</span>
+            <span class="text-sm font-bold text-sage-700 dark:text-sage-400">0.96</span>
+          </div>
+          <div class="w-full h-2 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all"
+               onclick="event.stopPropagation(); alert('Score breakdown: Severity 0.80, Persistence 0.60, Peer Gap 0.75')">
+            <div class="score-bar h-full bg-gradient-to-r from-sage-500 to-sage-600 rounded-full" style="width: 96%"></div>
+          </div>
+        </div>
+
+        <!-- Details - clickable -->
+        <div class="space-y-2 text-sm mb-4">
+          <button onclick="event.stopPropagation(); alert('Navigate to Website dashboard')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Asset:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">Website</span>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View metric history')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Metric:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">Conversion Rate</span>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View peer comparison')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Current:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">0.0058 (Rank #4/5)</span>
+          </button>
+        </div>
+
+        <!-- Why It Matters -->
+        <div class="p-4 rounded-xl bg-sage-50/50 dark:bg-warm-gray-700/30 border border-sage-200 dark:border-warm-gray-600 mb-4">
+          <p class="text-sm text-warm-gray-700 dark:text-warm-gray-300">
+            <strong class="text-warm-gray-900 dark:text-warm-gray-100">Why It Matters:</strong> Conversion rate weakness persisting for 5+ months. Behind peer median by 79%, costing ~€2.1M annually.
+          </p>
+        </div>
+
+        <!-- Action Button -->
+        <button class="w-full py-3 px-4 rounded-xl gradient-sage hover:opacity-90 text-white font-medium shadow-sm hover:shadow-md active:scale-98 transition-all">
+          View Evidence →
+        </button>
+      </div>
+
+      <!-- Priority #2 -->
+      <div class="glass bg-white dark:bg-warm-gray-800 border border-warm-gray-200 dark:border-warm-gray-700 rounded-2xl p-6 hover:scale-102 hover:shadow-lg transition-all cursor-pointer"
+           onclick="openModal('modal-2')">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 rounded-full gradient-sage flex items-center justify-center shadow-sm cursor-pointer hover:scale-105 transition-transform"
+               onclick="event.stopPropagation(); alert('Rank #2')">
+            <span class="text-white font-bold text-lg">#2</span>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-warm-gray-100 dark:bg-warm-gray-700 text-warm-gray-700 dark:text-warm-gray-300 border border-warm-gray-300 dark:border-warm-gray-600 cursor-pointer hover:bg-warm-gray-200 dark:hover:bg-warm-gray-600 transition-colors"
+                onclick="event.stopPropagation(); alert('Filter by Critical')">
+            CRITICAL
+          </span>
+        </div>
+
+        <h3 class="text-xl font-bold mb-2 text-warm-gray-900 dark:text-warm-gray-50 hover:text-sage-700 dark:hover:text-sage-400 transition-colors">
+          Stadium Revenue Decline
+        </h3>
+        <div class="flex gap-2 mb-4">
+          <button onclick="event.stopPropagation(); alert('View all Ticketing metrics')"
+                  class="px-3 py-1 rounded-lg text-xs font-medium bg-earth-100 dark:bg-earth-900/30 text-earth-700 dark:text-earth-400 border border-earth-200 dark:border-earth-700 hover:bg-earth-200 dark:hover:bg-earth-800/30 transition-colors">
+            Ticketing
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-medium text-warm-gray-600 dark:text-warm-gray-400">Priority Score</span>
+            <span class="text-sm font-bold text-sage-700 dark:text-sage-400">0.80</span>
+          </div>
+          <div class="w-full h-2 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all"
+               onclick="event.stopPropagation(); alert('Score breakdown')">
+            <div class="score-bar h-full bg-gradient-to-r from-sage-500 to-sage-600 rounded-full" style="width: 80%"></div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm mb-4">
+          <button onclick="event.stopPropagation(); alert('Navigate to Ticketing dashboard')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Asset:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">Ticketing System</span>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View metric history')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Metric:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">Avg Revenue Per Match</span>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View trend details')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Current:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">€4.2M (-12% YoY)</span>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-xl bg-sage-50/50 dark:bg-warm-gray-700/30 border border-sage-200 dark:border-warm-gray-600 mb-4">
+          <p class="text-sm text-warm-gray-700 dark:text-warm-gray-300">
+            <strong class="text-warm-gray-900 dark:text-warm-gray-100">Why It Matters:</strong> Sustained decline over 4 months. Premium seat sales down 18%, general admission down 9%.
+          </p>
+        </div>
+
+        <button class="w-full py-3 px-4 rounded-xl gradient-sage hover:opacity-90 text-white font-medium shadow-sm hover:shadow-md active:scale-98 transition-all">
+          View Evidence →
+        </button>
+      </div>
+
+      <!-- Priority #3 -->
+      <div class="glass bg-white dark:bg-warm-gray-800 border border-warm-gray-200 dark:border-warm-gray-700 rounded-2xl p-6 hover:scale-102 hover:shadow-lg transition-all cursor-pointer">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 rounded-full gradient-sage flex items-center justify-center shadow-sm cursor-pointer hover:scale-105 transition-transform"
+               onclick="event.stopPropagation(); alert('Rank #3')">
+            <span class="text-white font-bold text-lg">#3</span>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-warm-gray-100 dark:bg-warm-gray-700 text-warm-gray-700 dark:text-warm-gray-300 border border-warm-gray-300 dark:border-warm-gray-600 cursor-pointer hover:bg-warm-gray-200 dark:hover:bg-warm-gray-600 transition-colors"
+                onclick="event.stopPropagation(); alert('Filter by Critical')">
+            CRITICAL
+          </span>
+        </div>
+
+        <h3 class="text-xl font-bold mb-2 text-warm-gray-900 dark:text-warm-gray-50 hover:text-sage-700 dark:hover:text-sage-400 transition-colors">
+          Social Engagement Drop
+        </h3>
+        <div class="flex gap-2 mb-4">
+          <button onclick="event.stopPropagation(); alert('View all Social Media metrics')"
+                  class="px-3 py-1 rounded-lg text-xs font-medium bg-sage-100 dark:bg-sage-900/30 text-sage-700 dark:text-sage-400 border border-sage-200 dark:border-sage-700 hover:bg-sage-200 dark:hover:bg-sage-800/30 transition-colors">
+            Social Media
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-medium text-warm-gray-600 dark:text-warm-gray-400">Priority Score</span>
+            <span class="text-sm font-bold text-sage-700 dark:text-sage-400">0.77</span>
+          </div>
+          <div class="w-full h-2 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all"
+               onclick="event.stopPropagation(); alert('Score breakdown')">
+            <div class="score-bar h-full bg-gradient-to-r from-sage-500 to-sage-600 rounded-full" style="width: 77%"></div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm mb-4">
+          <button onclick="event.stopPropagation(); alert('Navigate to Instagram analytics')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Asset:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">Instagram</span>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View metric history')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Metric:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">Engagement Rate</span>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View trend analysis')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Current:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">2.8% (-0.4pp)</span>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-xl bg-sage-50/50 dark:bg-warm-gray-700/30 border border-sage-200 dark:border-warm-gray-600 mb-4">
+          <p class="text-sm text-warm-gray-700 dark:text-warm-gray-300">
+            <strong class="text-warm-gray-900 dark:text-warm-gray-100">Why It Matters:</strong> 3-month decline trend. Fan interaction quality dropping, affecting brand reach and sponsor value.
+          </p>
+        </div>
+
+        <button class="w-full py-3 px-4 rounded-xl gradient-sage hover:opacity-90 text-white font-medium shadow-sm hover:shadow-md active:scale-98 transition-all">
+          View Evidence →
+        </button>
+      </div>
+
+      <!-- Priority #4 - Opportunity -->
+      <div class="glass bg-white dark:bg-warm-gray-800 border border-warm-gray-200 dark:border-warm-gray-700 rounded-2xl p-6 hover:scale-102 hover:shadow-lg transition-all cursor-pointer">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 rounded-full gradient-earth flex items-center justify-center shadow-sm cursor-pointer hover:scale-105 transition-transform"
+               onclick="event.stopPropagation(); alert('Rank #4')">
+            <span class="text-white font-bold text-lg">#4</span>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-earth-100 dark:bg-earth-900/40 text-earth-700 dark:text-earth-300 border border-earth-300 dark:border-earth-700 cursor-pointer hover:bg-earth-200 dark:hover:bg-earth-800/40 transition-colors"
+                onclick="event.stopPropagation(); alert('Filter by Opportunity')">
+            OPPORTUNITY
+          </span>
+        </div>
+
+        <h3 class="text-xl font-bold mb-2 text-warm-gray-900 dark:text-warm-gray-50 hover:text-earth-700 dark:hover:text-earth-400 transition-colors">
+          Merchandise Growth Momentum
+        </h3>
+        <div class="flex gap-2 mb-4">
+          <button onclick="event.stopPropagation(); alert('View all Merchandise metrics')"
+                  class="px-3 py-1 rounded-lg text-xs font-medium bg-earth-100 dark:bg-earth-900/30 text-earth-700 dark:text-earth-400 border border-earth-200 dark:border-earth-700 hover:bg-earth-200 dark:hover:bg-earth-800/30 transition-colors">
+            Merchandise
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-medium text-warm-gray-600 dark:text-warm-gray-400">Priority Score</span>
+            <span class="text-sm font-bold text-earth-700 dark:text-earth-400">0.72</span>
+          </div>
+          <div class="w-full h-2 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all"
+               onclick="event.stopPropagation(); alert('Score breakdown')">
+            <div class="score-bar h-full bg-gradient-to-r from-earth-500 to-earth-600 rounded-full" style="width: 72%"></div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm mb-4">
+          <button onclick="event.stopPropagation(); alert('Navigate to Online Store dashboard')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Asset:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">Online Store</span>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View metric history')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Metric:</span>
+            <span class="font-medium text-warm-gray-700 dark:text-warm-gray-300">Sales Growth Rate</span>
+          </button>
+          <button onclick="event.stopPropagation(); alert('View growth analysis')"
+                  class="flex items-center gap-2 w-full text-left hover:bg-warm-gray-50 dark:hover:bg-warm-gray-700/50 p-1 rounded transition-colors">
+            <span class="text-warm-gray-500 dark:text-warm-gray-400">Current:</span>
+            <span class="font-medium text-sage-700 dark:text-sage-400">+24% MoM</span>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-xl bg-earth-50/50 dark:bg-warm-gray-700/30 border border-earth-200 dark:border-warm-gray-600 mb-4">
+          <p class="text-sm text-warm-gray-700 dark:text-warm-gray-300">
+            <strong class="text-warm-gray-900 dark:text-warm-gray-100">Why It Matters:</strong> Outpacing peer median by +18pp. Strong signal to scale marketing investment in Q1.
+          </p>
+        </div>
+
+        <button class="w-full py-3 px-4 rounded-xl gradient-earth hover:opacity-90 text-white font-medium shadow-sm hover:shadow-md active:scale-98 transition-all">
+          View Evidence →
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Evidence Modal #1 -->
+  <div id="modal-1" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 modal-backdrop bg-warm-gray-900/60" onclick="closeModal('modal-1')"></div>
+
+    <!-- Modal Content -->
+    <div class="relative glass-strong bg-white/95 dark:bg-warm-gray-900/95 border border-warm-gray-200 dark:border-warm-gray-700 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+
+      <!-- Header -->
+      <div class="sticky top-0 glass bg-white/90 dark:bg-warm-gray-900/90 border-b border-warm-gray-200 dark:border-warm-gray-700 p-6 rounded-t-3xl">
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 class="text-2xl font-bold mb-1 text-warm-gray-900 dark:text-warm-gray-50">eCommerce Conversion Weakness</h3>
+            <p class="text-sm text-warm-gray-500 dark:text-warm-gray-400">Priority #1 - Critical</p>
+          </div>
+          <button onclick="closeModal('modal-1')"
+                  class="p-2 rounded-full hover:bg-warm-gray-200 dark:hover:bg-warm-gray-700 active:scale-95 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 space-y-6">
+
+        <!-- Overview Grid - clickable stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button onclick="alert('View all eCommerce priorities')"
+                  class="p-4 rounded-xl bg-sage-50 dark:bg-warm-gray-800 border border-sage-200 dark:border-warm-gray-700 hover:bg-sage-100 dark:hover:bg-warm-gray-700 transition-colors text-left">
+            <div class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mb-1">Category</div>
+            <div class="text-sm font-semibold text-warm-gray-900 dark:text-warm-gray-100">eCommerce</div>
+          </button>
+          <button onclick="alert('View score calculation')"
+                  class="p-4 rounded-xl bg-sage-50 dark:bg-warm-gray-800 border border-sage-200 dark:border-warm-gray-700 hover:bg-sage-100 dark:hover:bg-warm-gray-700 transition-colors text-left">
+            <div class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mb-1">Score</div>
+            <div class="text-sm font-bold text-sage-700 dark:text-sage-400">0.96</div>
+          </button>
+          <button onclick="alert('View all priorities ranked')"
+                  class="p-4 rounded-xl bg-sage-50 dark:bg-warm-gray-800 border border-sage-200 dark:border-warm-gray-700 hover:bg-sage-100 dark:hover:bg-warm-gray-700 transition-colors text-left">
+            <div class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mb-1">Rank</div>
+            <div class="text-sm font-semibold text-warm-gray-900 dark:text-warm-gray-100">#1 of 20</div>
+          </button>
+          <button onclick="alert('Filter by Critical status')"
+                  class="p-4 rounded-xl bg-sage-50 dark:bg-warm-gray-800 border border-sage-200 dark:border-warm-gray-700 hover:bg-sage-100 dark:hover:bg-warm-gray-700 transition-colors text-left">
+            <div class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mb-1">Status</div>
+            <div class="text-sm font-semibold text-warm-gray-700 dark:text-warm-gray-300">Critical</div>
+          </button>
+        </div>
+
+        <!-- Score Breakdown - clickable bars -->
+        <div>
+          <h4 class="text-lg font-bold mb-4 text-warm-gray-900 dark:text-warm-gray-50">Score Breakdown</h4>
+          <div class="space-y-4">
+
+            <button onclick="alert('View Severity calculation details')" class="w-full text-left hover:bg-sage-50/50 dark:hover:bg-warm-gray-800/50 p-2 rounded-lg transition-colors">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-warm-gray-700 dark:text-warm-gray-300">Severity</span>
+                <span class="text-sm font-bold text-sage-700 dark:text-sage-400">0.80</span>
+              </div>
+              <div class="w-full h-3 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-4 transition-all">
+                <div class="h-full bg-gradient-to-r from-sage-500 to-sage-600 rounded-full" style="width: 80%"></div>
+              </div>
+              <p class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mt-1">High deviation from target performance</p>
+            </button>
+
+            <button onclick="alert('View Persistence timeline')" class="w-full text-left hover:bg-sage-50/50 dark:hover:bg-warm-gray-800/50 p-2 rounded-lg transition-colors">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-warm-gray-700 dark:text-warm-gray-300">Persistence</span>
+                <span class="text-sm font-bold text-earth-700 dark:text-earth-400">0.60</span>
+              </div>
+              <div class="w-full h-3 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-4 transition-all">
+                <div class="h-full bg-gradient-to-r from-earth-500 to-earth-600 rounded-full" style="width: 60%"></div>
+              </div>
+              <p class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mt-1">5+ months of sustained weakness</p>
+            </button>
+
+            <button onclick="alert('View Peer Gap comparison')" class="w-full text-left hover:bg-sage-50/50 dark:hover:bg-warm-gray-800/50 p-2 rounded-lg transition-colors">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-warm-gray-700 dark:text-warm-gray-300">Peer Gap</span>
+                <span class="text-sm font-bold text-sage-700 dark:text-sage-400">0.75</span>
+              </div>
+              <div class="w-full h-3 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-4 transition-all">
+                <div class="h-full bg-gradient-to-r from-sage-500 to-sage-600 rounded-full" style="width: 75%"></div>
+              </div>
+              <p class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mt-1">79% behind peer median</p>
+            </button>
+
+            <button onclick="alert('View Commercial Impact analysis')" class="w-full text-left hover:bg-sage-50/50 dark:hover:bg-warm-gray-800/50 p-2 rounded-lg transition-colors">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-warm-gray-700 dark:text-warm-gray-300">Commercial Impact</span>
+                <span class="text-sm font-bold text-earth-700 dark:text-earth-400">0.70</span>
+              </div>
+              <div class="w-full h-3 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-4 transition-all">
+                <div class="h-full bg-gradient-to-r from-earth-500 to-earth-600 rounded-full" style="width: 70%"></div>
+              </div>
+              <p class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mt-1">Estimated €2.1M annual revenue loss</p>
+            </button>
+
+            <button onclick="alert('View supporting evidence')" class="w-full text-left hover:bg-sage-50/50 dark:hover:bg-warm-gray-800/50 p-2 rounded-lg transition-colors">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-warm-gray-700 dark:text-warm-gray-300">Evidence Strength</span>
+                <span class="text-sm font-bold text-warm-gray-600 dark:text-warm-gray-400">0.50</span>
+              </div>
+              <div class="w-full h-3 bg-warm-gray-200 dark:bg-warm-gray-700 rounded-full overflow-hidden cursor-pointer hover:h-4 transition-all">
+                <div class="h-full bg-gradient-to-r from-warm-gray-400 to-warm-gray-500 rounded-full" style="width: 50%"></div>
+              </div>
+              <p class="text-xs text-warm-gray-500 dark:text-warm-gray-400 mt-1">Moderate supporting signal count</p>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Supporting Metrics Chart - better viz -->
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h4 class="text-lg font-bold text-warm-gray-900 dark:text-warm-gray-50">Supporting Metrics</h4>
+            <button onclick="alert('Export chart data')"
+                    class="px-3 py-1 text-xs font-medium text-sage-700 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-900/30 rounded-lg transition-colors">
+              Export
+            </button>
+          </div>
+          <div class="p-4 rounded-xl bg-white dark:bg-warm-gray-800 border border-warm-gray-200 dark:border-warm-gray-700 cursor-pointer hover:shadow-md transition-shadow"
+               onclick="alert('View detailed metrics breakdown')">
+            <canvas id="supportingMetricsChart" class="w-full" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Peer Context - clickable elements -->
+        <div>
+          <h4 class="text-lg font-bold mb-4 text-warm-gray-900 dark:text-warm-gray-50">Peer Context</h4>
+          <div class="p-6 rounded-xl bg-gradient-to-br from-sage-50 to-earth-50 dark:from-warm-gray-800 dark:to-warm-gray-700 border border-sage-200 dark:border-warm-gray-600">
+            <!-- Rank Visualization - clickable positions -->
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="alert('View leader club details')"
+                      class="text-center flex-1 hover:scale-105 transition-transform">
+                <div class="w-12 h-12 mx-auto rounded-full gradient-earth flex items-center justify-center mb-2 shadow-sm">
+                  <span class="text-white font-bold">👑</span>
+                </div>
+                <div class="text-xs font-semibold text-warm-gray-700 dark:text-warm-gray-300">Leader</div>
+                <div class="text-sm font-bold text-earth-700 dark:text-earth-400">0.0112</div>
+              </button>
+
+              <div class="flex-1 h-1 bg-gradient-to-r from-earth-400 to-sage-400 mx-2"></div>
+
+              <button onclick="alert('View peer median details')"
+                      class="text-center flex-1 hover:scale-105 transition-transform">
+                <div class="w-12 h-12 mx-auto rounded-full bg-warm-gray-300 dark:bg-warm-gray-600 flex items-center justify-center mb-2 shadow-sm">
+                  <span class="text-warm-gray-600 dark:text-warm-gray-300 font-bold">M</span>
+                </div>
+                <div class="text-xs font-semibold text-warm-gray-700 dark:text-warm-gray-300">Median</div>
+                <div class="text-sm font-bold text-warm-gray-600 dark:text-warm-gray-400">0.0104</div>
+              </button>
+
+              <div class="flex-1 h-1 bg-gradient-to-r from-sage-400 to-warm-gray-500 mx-2"></div>
+
+              <button onclick="alert('View Real Madrid details')"
+                      class="text-center flex-1 hover:scale-105 transition-transform">
+                <div class="w-12 h-12 mx-auto rounded-full gradient-sage flex items-center justify-center mb-2 shadow-sm">
+                  <span class="text-white font-bold">RM</span>
+                </div>
+                <div class="text-xs font-semibold text-warm-gray-700 dark:text-warm-gray-300">Real Madrid</div>
+                <div class="text-sm font-bold text-sage-700 dark:text-sage-400">0.0058</div>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mt-4">
+              <button onclick="alert('View gap analysis to median')"
+                      class="p-3 rounded-lg bg-white/80 dark:bg-warm-gray-900/40 hover:bg-white dark:hover:bg-warm-gray-900/60 transition-colors text-left">
+                <div class="text-xs text-warm-gray-500 dark:text-warm-gray-400">Gap to Median</div>
+                <div class="text-lg font-bold text-warm-gray-800 dark:text-warm-gray-300">-0.0046 (-79%)</div>
+              </button>
+              <button onclick="alert('View gap analysis to leader')"
+                      class="p-3 rounded-lg bg-white/80 dark:bg-warm-gray-900/40 hover:bg-white dark:hover:bg-warm-gray-900/60 transition-colors text-left">
+                <div class="text-xs text-warm-gray-500 dark:text-warm-gray-400">Gap to Leader</div>
+                <div class="text-lg font-bold text-warm-gray-800 dark:text-warm-gray-300">-0.0054 (-93%)</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next Investigation -->
+        <div class="p-6 rounded-xl glass bg-sage-50/70 dark:bg-warm-gray-800/50 border border-sage-300 dark:border-warm-gray-600">
+          <h4 class="text-lg font-bold mb-3 text-sage-800 dark:text-sage-300">Next Investigation</h4>
+          <p class="text-sm text-warm-gray-700 dark:text-warm-gray-300 mb-4">
+            Review checkout flow analytics to identify friction points. Check for correlation with recent site updates or UX changes.
+            Compare mobile vs desktop conversion rates. Investigate bounce rates at key funnel stages.
+          </p>
+          <div class="flex gap-3">
+            <button onclick="alert('Opening Analytics Dashboard...')"
+                    class="px-6 py-2 rounded-lg gradient-sage hover:opacity-90 text-white font-medium shadow-sm active:scale-98 transition-all">
+              Open Analytics Dashboard
+            </button>
+            <button onclick="alert('Creating investigation task...')"
+                    class="px-6 py-2 rounded-lg bg-white dark:bg-warm-gray-700 border border-sage-300 dark:border-warm-gray-600 text-sage-700 dark:text-sage-300 font-medium hover:bg-sage-50 dark:hover:bg-warm-gray-600 active:scale-98 transition-all">
+              Create Task
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Evidence Modal #2 -->
+  <div id="modal-2" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 modal-backdrop bg-warm-gray-900/60" onclick="closeModal('modal-2')"></div>
+    <div class="relative glass-strong bg-white/95 dark:bg-warm-gray-900/95 border border-warm-gray-200 dark:border-warm-gray-700 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 glass bg-white/90 dark:bg-warm-gray-900/90 border-b border-warm-gray-200 dark:border-warm-gray-700 p-6 rounded-t-3xl">
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 class="text-2xl font-bold mb-1 text-warm-gray-900 dark:text-warm-gray-50">Stadium Revenue Decline</h3>
+            <p class="text-sm text-warm-gray-500 dark:text-warm-gray-400">Priority #2 - Critical</p>
+          </div>
+          <button onclick="closeModal('modal-2')"
+                  class="p-2 rounded-full hover:bg-warm-gray-200 dark:hover:bg-warm-gray-700 active:scale-95 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <p class="text-warm-gray-700 dark:text-warm-gray-300">Detailed evidence and analysis for Priority #2...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      // Redraw chart with new theme colors
+      if (window.supportingMetricsChart) {
+        updateChartTheme();
+      }
+    });
+
+    // Modal Functions
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = 'auto';
+    }
+
+    // Filter priorities (placeholder)
+    function filterPriorities(type) {
+      alert(`Filtering priorities by: ${type}`);
+    }
+
+    // Supporting Metrics Chart - better data viz (horizontal bar chart for comparison)
+    const ctx = document.getElementById('supportingMetricsChart');
+    let supportingMetricsChart;
+
+    if (ctx) {
+      const isDark = document.documentElement.classList.contains('dark');
+      const sageColor = '#5f7360';
+      const earthColor = '#9a7550';
+      const warmGray = '#78716c';
+
+      supportingMetricsChart = new Chart(ctx, {
+        type: 'bar',  // Horizontal bar best for metric comparison
+        data: {
+          labels: ['Cart Abandonment', 'Checkout Time', 'Mobile UX', 'Load Speed', 'Error Rate'],
+          datasets: [{
+            label: 'Real Madrid',
+            data: [68, 45, 62, 52, 78],
+            backgroundColor: sageColor + 'CC',
+            borderColor: sageColor,
+            borderWidth: 1,
+            borderRadius: 6
+          }, {
+            label: 'Peer Median',
+            data: [45, 30, 75, 40, 50],
+            backgroundColor: warmGray + '80',
+            borderColor: warmGray,
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',  // Horizontal bars - better for comparison
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: isDark ? '#e7e5e4' : '#292524',
+                font: {
+                  size: 12,
+                  weight: '500',
+                  family: 'Inter'
+                },
+                padding: 12,
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              backgroundColor: isDark ? '#292524' : '#fafaf9',
+              titleColor: isDark ? '#fafaf9' : '#1c1917',
+              bodyColor: isDark ? '#e7e5e4' : '#44403c',
+              borderColor: isDark ? '#44403c' : '#d6d3d1',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: true,
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.parsed.x + '%';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                color: isDark ? '#a8a29e' : '#78716c',
+                font: {
+                  size: 11,
+                  family: 'Inter'
+                },
+                callback: function(value) {
+                  return value + '%';
+                }
+              },
+              grid: {
+                color: isDark ? '#44403c20' : '#d6d3d130',
+                lineWidth: 1
+              },
+              border: {
+                display: false
+              }
+            },
+            y: {
+              ticks: {
+                color: isDark ? '#e7e5e4' : '#292524',
+                font: {
+                  size: 11,
+                  family: 'Inter'
+                }
+              },
+              grid: {
+                display: false
+              },
+              border: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+
+      window.supportingMetricsChart = supportingMetricsChart;
+    }
+
+    // Update chart theme on toggle
+    function updateChartTheme() {
+      if (!supportingMetricsChart) return;
+      const isDark = document.documentElement.classList.contains('dark');
+
+      supportingMetricsChart.options.plugins.legend.labels.color = isDark ? '#e7e5e4' : '#292524';
+      supportingMetricsChart.options.plugins.tooltip.backgroundColor = isDark ? '#292524' : '#fafaf9';
+      supportingMetricsChart.options.plugins.tooltip.titleColor = isDark ? '#fafaf9' : '#1c1917';
+      supportingMetricsChart.options.plugins.tooltip.bodyColor = isDark ? '#e7e5e4' : '#44403c';
+      supportingMetricsChart.options.plugins.tooltip.borderColor = isDark ? '#44403c' : '#d6d3d1';
+      supportingMetricsChart.options.scales.x.ticks.color = isDark ? '#a8a29e' : '#78716c';
+      supportingMetricsChart.options.scales.x.grid.color = isDark ? '#44403c20' : '#d6d3d130';
+      supportingMetricsChart.options.scales.y.ticks.color = isDark ? '#e7e5e4' : '#292524';
+
+      supportingMetricsChart.update();
+    }
+  </script>
+
+</body>
+</html>

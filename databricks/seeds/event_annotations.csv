@@ -1,0 +1,4 @@
+event_id,event_name,event_type,event_month,event_scope,description
+covid_2020,COVID disruption,shared_shock,2020-03-01,multi_club,Shared global shock affecting all clubs
+ucl_2022,UCL title 2022,trophy,2022-05-01,real_madrid,Curated club event for month-level post-event analysis
+bellingham_2023,Bellingham signing,major_signing,2023-06-01,real_madrid,Curated signing event for monthly response analysis

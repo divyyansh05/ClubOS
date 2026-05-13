@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClubOS - Monthly Briefing</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Serif:wght@400;600;700&display=swap');
+
+    .font-headline { font-family: 'DM Serif Display', serif; }
+    .font-body { font-family: 'IBM Plex Serif', serif; }
+    .font-sans { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    .paper-texture {
+      background-image:
+        linear-gradient(0deg, transparent 98%, rgba(0,0,0,0.015) 100%),
+        linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.015) 100%);
+      background-size: 4px 4px;
+    }
+
+    .dark .paper-texture {
+      background-image:
+        linear-gradient(0deg, transparent 98%, rgba(255,255,255,0.02) 100%),
+        linear-gradient(90deg, transparent 98%, rgba(255,255,255,0.02) 100%);
+    }
+
+    .data-table {
+      border-collapse: collapse;
+    }
+
+    .data-table td,
+    .data-table th {
+      border: 1px solid;
+    }
+
+    * {
+      transition-property: background-color, border-color, color, transform;
+      transition-duration: 150ms;
+      transition-timing-function: ease-out;
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            paper: '#FAFAF8',
+            ink: '#1A1A1A',
+            stone: {
+              50: '#FAFAF8',
+              100: '#F5F5F3',
+              200: '#E8E8E5',
+              300: '#D1D1CC',
+              400: '#A3A39E',
+              500: '#75756F',
+              600: '#5C5C56',
+              700: '#434340',
+              800: '#2B2B28',
+              900: '#1A1A18',
+            },
+          },
+          fontFamily: {
+            headline: ['DM Serif Display', 'serif'],
+            body: ['IBM Plex Serif', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-paper dark:bg-stone-900 text-ink dark:text-stone-100 font-sans paper-texture">
+
+  <!-- Header -->
+  <header class="border-b-2 border-ink dark:border-stone-700 bg-paper/95 dark:bg-stone-900/95 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-screen-xl mx-auto px-6">
+      <div class="py-2 border-b border-stone-300 dark:border-stone-700 flex items-center justify-between">
+        <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">
+          Vol. 1.0 · Edition: January 2026
+        </div>
+        <button id="theme-toggle"
+                class="font-mono text-[10px] uppercase tracking-widest hover:text-[#2563EB] dark:hover:text-[#3B82F6]"
+                aria-label="Toggle theme">
+          <span class="dark:hidden">Dark</span>
+          <span class="hidden dark:inline">Light</span>
+        </button>
+      </div>
+
+      <div class="py-6 flex items-center justify-between">
+        <div class="cursor-pointer" onclick="alert('Navigate to Dashboard')">
+          <h1 class="font-headline text-4xl md:text-5xl tracking-tight">ClubOS</h1>
+          <p class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mt-1">
+            Real Madrid Commercial Intelligence
+          </p>
+        </div>
+
+        <nav class="hidden md:flex gap-8 font-sans text-sm">
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Board</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Center</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Benchmark</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Signals</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-screen-xl mx-auto px-6 py-12">
+
+    <!-- Hero -->
+    <div class="border-b-4 border-ink dark:border-stone-600 pb-8 mb-12 border-t-8 border-t-ink dark:border-t-stone-600 pt-8">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+        Executive Summary · January 2026
+      </div>
+      <h1 class="font-headline text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
+        Monthly<br/>Briefing
+      </h1>
+      <p class="font-body text-lg md:text-xl text-stone-600 dark:text-stone-400 leading-relaxed max-w-2xl">
+        Consolidated view of top priorities, anomalies, and signals for executive decision-making this month.
+      </p>
+    </div>
+
+    <!-- Executive Summary -->
+    <section class="mb-12 border-2 border-ink dark:border-stone-700 p-8 bg-stone-50 dark:bg-stone-800">
+      <h2 class="font-headline text-3xl mb-6">Key Takeaways</h2>
+      <ul class="space-y-4 font-body text-base leading-relaxed">
+        <li class="flex gap-4">
+          <span class="flex-shrink-0 w-8 h-8 border-2 border-[#DC2626] dark:border-[#EF4444] flex items-center justify-center font-mono text-xs font-bold text-[#DC2626] dark:text-[#EF4444]">1</span>
+          <span class="text-stone-700 dark:text-stone-300">
+            <strong class="text-ink dark:text-stone-100">3 critical priorities</strong> require immediate attention, led by eCommerce conversion weakness costing ~€2.1M annually
+          </span>
+        </li>
+        <li class="flex gap-4">
+          <span class="flex-shrink-0 w-8 h-8 border-2 border-[#EA580C] dark:border-[#F97316] flex items-center justify-center font-mono text-xs font-bold text-[#EA580C] dark:text-[#F97316]">2</span>
+          <span class="text-stone-700 dark:text-stone-300">
+            <strong class="text-ink dark:text-stone-100">5 metrics underperforming</strong> vs peer benchmark by an average of 72%, requiring strategic review
+          </span>
+        </li>
+        <li class="flex gap-4">
+          <span class="flex-shrink-0 w-8 h-8 border-2 border-[#16A34A] dark:border-[#22C55E] flex items-center justify-center font-mono text-xs font-bold text-[#16A34A] dark:text-[#22C55E]">3</span>
+          <span class="text-stone-700 dark:text-stone-300">
+            <strong class="text-ink dark:text-stone-100">1 strong opportunity</strong> in merchandise growth (+24% MoM) signals potential for scaling investment
+          </span>
+        </li>
+        <li class="flex gap-4">
+          <span class="flex-shrink-0 w-8 h-8 border-2 border-[#2563EB] dark:border-[#3B82F6] flex items-center justify-center font-mono text-xs font-bold text-[#2563EB] dark:text-[#3B82F6]">4</span>
+          <span class="text-stone-700 dark:text-stone-300">
+            <strong class="text-ink dark:text-stone-100">2 validated signals</strong> provide early warning system for eCommerce and merchandise channels
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Top 3 Priorities -->
+    <section class="mb-12">
+      <h2 class="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+        Top 3 Priorities
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <article class="border-2 border-[#DC2626] dark:border-[#EF4444] p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-all"
+                 onclick="alert('View Priority #1')">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 bg-[#DC2626] dark:bg-[#EF4444] flex items-center justify-center font-headline text-2xl text-white">
+              1
+            </div>
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-[#DC2626] dark:text-[#EF4444]">Critical</div>
+              <div class="font-mono text-lg font-bold text-[#DC2626] dark:text-[#EF4444]">0.96</div>
+            </div>
+          </div>
+          <h3 class="font-headline text-xl mb-3">eCommerce Conversion Weakness</h3>
+          <p class="font-body text-sm text-stone-600 dark:text-stone-400 mb-4">
+            79% behind peer median, 5+ months sustained decline
+          </p>
+          <div class="flex gap-2">
+            <span class="px-2 py-1 border border-[#DC2626] dark:border-[#EF4444] font-mono text-[10px] uppercase tracking-widest text-[#DC2626] dark:text-[#EF4444]">
+              eCommerce
+            </span>
+          </div>
+        </article>
+
+        <article class="border-2 border-[#EA580C] dark:border-[#F97316] p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-all"
+                 onclick="alert('View Priority #2')">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 bg-[#EA580C] dark:bg-[#F97316] flex items-center justify-center font-headline text-2xl text-white">
+              2
+            </div>
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-[#EA580C] dark:text-[#F97316]">Critical</div>
+              <div class="font-mono text-lg font-bold text-[#EA580C] dark:text-[#F97316]">0.80</div>
+            </div>
+          </div>
+          <h3 class="font-headline text-xl mb-3">Stadium Revenue Decline</h3>
+          <p class="font-body text-sm text-stone-600 dark:text-stone-400 mb-4">
+            -12% YoY, premium seats down 18%, 4-month trend
+          </p>
+          <div class="flex gap-2">
+            <span class="px-2 py-1 border border-[#EA580C] dark:border-[#F97316] font-mono text-[10px] uppercase tracking-widest text-[#EA580C] dark:text-[#F97316]">
+              Ticketing
+            </span>
+          </div>
+        </article>
+
+        <article class="border-2 border-[#16A34A] dark:border-[#22C55E] p-6 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-all"
+                 onclick="alert('View Priority #3')">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 bg-[#16A34A] dark:bg-[#22C55E] flex items-center justify-center font-headline text-2xl text-white">
+              3
+            </div>
+            <div>
+              <div class="font-mono text-xs uppercase tracking-widest text-[#16A34A] dark:text-[#22C55E]">Opportunity</div>
+              <div class="font-mono text-lg font-bold text-[#16A34A] dark:text-[#22C55E]">0.72</div>
+            </div>
+          </div>
+          <h3 class="font-headline text-xl mb-3">Merchandise Growth</h3>
+          <p class="font-body text-sm text-stone-600 dark:text-stone-400 mb-4">
+            +24% MoM, +18pp vs peers, scale opportunity
+          </p>
+          <div class="flex gap-2">
+            <span class="px-2 py-1 border border-[#16A34A] dark:border-[#22C55E] font-mono text-[10px] uppercase tracking-widest text-[#16A34A] dark:text-[#22C55E]">
+              Merchandise
+            </span>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Notable Anomalies -->
+    <section class="mb-12">
+      <h2 class="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+        Notable Anomalies
+      </h2>
+
+      <div class="border border-ink dark:border-stone-700">
+        <table class="w-full data-table border-ink dark:border-stone-700 font-mono text-sm">
+          <thead>
+            <tr class="bg-stone-100 dark:bg-stone-800">
+              <th class="text-left p-4 font-semibold uppercase text-xs tracking-widest">Metric</th>
+              <th class="text-left p-4 font-semibold uppercase text-xs tracking-widest">Asset</th>
+              <th class="text-right p-4 font-semibold uppercase text-xs tracking-widest">Change</th>
+              <th class="text-left p-4 font-semibold uppercase text-xs tracking-widest">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors" onclick="alert('View anomaly details')">
+              <td class="p-4 text-ink dark:text-stone-100 font-semibold">Conversion Rate</td>
+              <td class="p-4">Website</td>
+              <td class="p-4 text-right text-[#DC2626] dark:text-[#EF4444] font-bold">-15.2%</td>
+              <td class="p-4 text-[#DC2626] dark:text-[#EF4444]">Declining</td>
+            </tr>
+            <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors" onclick="alert('View anomaly details')">
+              <td class="p-4 text-ink dark:text-stone-100 font-semibold">Engagement Rate</td>
+              <td class="p-4">Instagram</td>
+              <td class="p-4 text-right text-[#EA580C] dark:text-[#F97316] font-bold">-12.5%</td>
+              <td class="p-4 text-[#EA580C] dark:text-[#F97316]">Declining</td>
+            </tr>
+            <tr class="hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors" onclick="alert('View anomaly details')">
+              <td class="p-4 text-ink dark:text-stone-100 font-semibold">Sales Growth</td>
+              <td class="p-4">Merchandise</td>
+              <td class="p-4 text-right text-[#16A34A] dark:text-[#22C55E] font-bold">+24.0%</td>
+              <td class="p-4 text-[#16A34A] dark:text-[#22C55E]">Surging</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Signals to Watch -->
+    <section class="mb-12">
+      <h2 class="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+        Top Signals to Watch
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="border-2 border-[#2563EB] dark:border-[#3B82F6] p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 border-2 border-[#2563EB] dark:border-[#3B82F6] flex items-center justify-center font-mono text-sm font-bold text-[#2563EB] dark:text-[#3B82F6]">
+              1
+            </div>
+            <div class="font-headline text-xl">Website Traffic Signal</div>
+          </div>
+          <p class="font-body text-sm text-stone-600 dark:text-stone-400 mb-3">
+            Unique Visitors → Net Sales (1 mo lag, 72% strength)
+          </p>
+          <div class="font-mono text-xs text-[#2563EB] dark:text-[#3B82F6]">
+            Current traffic down 8% - expect sales impact in Feb
+          </div>
+        </div>
+
+        <div class="border-2 border-[#9333EA] dark:border-[#A855F7] p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 border-2 border-[#9333EA] dark:border-[#A855F7] flex items-center justify-center font-mono text-sm font-bold text-[#9333EA] dark:text-[#A855F7]">
+              2
+            </div>
+            <div class="font-headline text-xl">Social Engagement Signal</div>
+          </div>
+          <p class="font-body text-sm text-stone-600 dark:text-stone-400 mb-3">
+            IG Engagement → Merch Revenue (2 mo lag, 68% strength)
+          </p>
+          <div class="font-mono text-xs text-[#9333EA] dark:text-[#A855F7]">
+            Engagement up 12% - positive merchandise outlook
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="mb-12">
+      <h2 class="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+        Health Summary
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="border border-ink dark:border-stone-700 p-6 bg-stone-50 dark:bg-stone-800">
+          <h3 class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+            Overall Health Distribution
+          </h3>
+          <canvas id="healthChart" height="200"></canvas>
+        </div>
+
+        <div class="border border-ink dark:border-stone-700 p-6 bg-stone-50 dark:bg-stone-800">
+          <h3 class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+            Benchmark Performance
+          </h3>
+          <canvas id="benchmarkChart" height="200"></canvas>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Usage Guidance -->
+    <section class="border-t-2 border-ink dark:border-stone-700 pt-12">
+      <h2 class="font-headline text-3xl mb-6">How to Use This Briefing</h2>
+      <div class="font-body text-base leading-relaxed text-stone-600 dark:text-stone-400 space-y-4">
+        <p>
+          <strong class="text-ink dark:text-stone-100">Executive Focus:</strong> Review Top 3 Priorities for immediate action items. Each priority includes evidence, peer context, and recommended next steps.
+        </p>
+        <p>
+          <strong class="text-ink dark:text-stone-100">Anomaly Monitoring:</strong> Check Notable Anomalies for unexpected changes requiring investigation. Red flags indicate declining performance, green flags show opportunities.
+        </p>
+        <p>
+          <strong class="text-ink dark:text-stone-100">Predictive Planning:</strong> Use Top Signals to anticipate performance 1-3 months ahead. Proactively adjust strategies based on leading indicators.
+        </p>
+        <p>
+          <strong class="text-ink dark:text-stone-100">Monthly Cadence:</strong> This briefing updates automatically each month. Schedule executive review within first 5 business days of the month.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      if (window.healthChart && window.benchmarkChart) updateChartsTheme();
+    });
+
+    // Health Donut Chart
+    const ctx1 = document.getElementById('healthChart');
+    let healthChart;
+
+    if (ctx1) {
+      const isDark = document.documentElement.classList.contains('dark');
+
+      healthChart = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: ['Good (23)', 'Review (23)', 'Stable (13)'],
+          datasets: [{
+            data: [23, 23, 13],
+            backgroundColor: [
+              isDark ? '#22C55E' : '#16A34A',
+              isDark ? '#F97316' : '#EA580C',
+              isDark ? '#3B82F6' : '#2563EB'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '60%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: isDark ? '#E8E8E5' : '#1A1A1A',
+                font: { family: 'JetBrains Mono', size: 11, weight: '500' },
+                padding: 16,
+                usePointStyle: true
+              }
+            }
+          }
+        }
+      });
+
+      window.healthChart = healthChart;
+    }
+
+    // Benchmark Bar Chart
+    const ctx2 = document.getElementById('benchmarkChart');
+    let benchmarkChart;
+
+    if (ctx2) {
+      const isDark = document.documentElement.classList.contains('dark');
+
+      benchmarkChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Ahead', 'At Par', 'Behind'],
+          datasets: [{
+            data: [5, 8, 46],
+            backgroundColor: [
+              isDark ? '#22C55E' : '#16A34A',
+              isDark ? '#3B82F6' : '#2563EB',
+              isDark ? '#EF4444' : '#DC2626'
+            ],
+            borderWidth: 0,
+            borderRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              border: { color: isDark ? '#434340' : '#D1D1CC' },
+              ticks: {
+                color: isDark ? '#A3A39E' : '#75756F',
+                font: { family: 'JetBrains Mono', size: 10 }
+              },
+              grid: { color: isDark ? '#43434020' : '#D1D1CC20' }
+            },
+            x: {
+              border: { color: isDark ? '#434340' : '#D1D1CC' },
+              ticks: {
+                color: isDark ? '#E8E8E5' : '#1A1A1A',
+                font: { family: 'JetBrains Mono', size: 10 }
+              },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+
+      window.benchmarkChart = benchmarkChart;
+    }
+
+    function updateChartsTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+
+      // Update health chart
+      healthChart.data.datasets[0].backgroundColor = [
+        isDark ? '#22C55E' : '#16A34A',
+        isDark ? '#F97316' : '#EA580C',
+        isDark ? '#3B82F6' : '#2563EB'
+      ];
+      healthChart.options.plugins.legend.labels.color = isDark ? '#E8E8E5' : '#1A1A1A';
+      healthChart.update();
+
+      // Update benchmark chart
+      benchmarkChart.data.datasets[0].backgroundColor = [
+        isDark ? '#22C55E' : '#16A34A',
+        isDark ? '#3B82F6' : '#2563EB',
+        isDark ? '#EF4444' : '#DC2626'
+      ];
+      benchmarkChart.options.scales.y.border.color = isDark ? '#434340' : '#D1D1CC';
+      benchmarkChart.options.scales.y.ticks.color = isDark ? '#A3A39E' : '#75756F';
+      benchmarkChart.options.scales.y.grid.color = isDark ? '#43434020' : '#D1D1CC20';
+      benchmarkChart.options.scales.x.border.color = isDark ? '#434340' : '#D1D1CC';
+      benchmarkChart.options.scales.x.ticks.color = isDark ? '#E8E8E5' : '#1A1A1A';
+      benchmarkChart.update();
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClubOS | Project Group Briefing</title>
+    <style>
+      :root {
+        --bg: #0b0b0d;
+        --bg-soft: #121216;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel-strong: rgba(255, 255, 255, 0.1);
+        --text: #f6f3ec;
+        --muted: #c3bcaf;
+        --subtle: #918876;
+        --gold: #d6b66f;
+        --gold-strong: #f1ce7d;
+        --danger: #d96d59;
+        --success: #72bc8d;
+        --border: rgba(255, 255, 255, 0.12);
+        --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        --radius: 24px;
+        --max: 1220px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        background:
+          radial-gradient(circle at 15% 20%, rgba(214, 182, 111, 0.16), transparent 22rem),
+          radial-gradient(circle at 85% 10%, rgba(255, 255, 255, 0.06), transparent 16rem),
+          linear-gradient(180deg, #070709 0%, #0c0d10 42%, #121318 100%);
+        color: var(--text);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 290px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .rail {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        padding: 28px 24px 24px;
+        background: rgba(5, 5, 7, 0.7);
+        backdrop-filter: blur(22px);
+        border-right: 1px solid var(--border);
+      }
+
+      .brand {
+        margin-bottom: 28px;
+      }
+
+      .brand-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--gold);
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .brand h1 {
+        margin: 14px 0 8px;
+        font-size: 38px;
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+      }
+
+      .brand p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .nav {
+        display: grid;
+        gap: 8px;
+        margin: 30px 0 26px;
+      }
+
+      .nav a {
+        padding: 12px 14px;
+        border-radius: 14px;
+        color: var(--muted);
+        font-size: 14px;
+        transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+      }
+
+      .nav a:hover,
+      .nav a.active {
+        background: var(--panel);
+        color: var(--text);
+        transform: translateX(4px);
+      }
+
+      .controls {
+        display: grid;
+        gap: 14px;
+      }
+
+      .toggle {
+        display: flex;
+        padding: 6px;
+        gap: 6px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .toggle button {
+        flex: 1;
+        border: 0;
+        border-radius: 999px;
+        padding: 10px 12px;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        cursor: pointer;
+        transition: background 180ms ease, color 180ms ease;
+      }
+
+      .toggle button.active {
+        background: linear-gradient(135deg, rgba(214, 182, 111, 0.22), rgba(255, 255, 255, 0.08));
+        color: var(--text);
+      }
+
+      .tip {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: var(--panel);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .content {
+        padding: 28px clamp(20px, 4vw, 52px) 56px;
+      }
+
+      .hero {
+        min-height: calc(100vh - 56px);
+        display: grid;
+        align-items: end;
+        padding: 24px 0 32px;
+      }
+
+      .hero-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        padding: clamp(26px, 5vw, 48px);
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+          linear-gradient(160deg, rgba(214, 182, 111, 0.18), transparent 45%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -10% -35% auto;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(214, 182, 111, 0.24), transparent 65%);
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        color: var(--gold-strong);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
+        gap: 34px;
+        margin-top: 26px;
+      }
+
+      .hero h2 {
+        margin: 0;
+        max-width: 12ch;
+        font-size: clamp(48px, 8vw, 92px);
+        line-height: 0.95;
+        letter-spacing: -0.08em;
+      }
+
+      .hero p {
+        margin: 18px 0 0;
+        max-width: 60ch;
+        color: var(--muted);
+        font-size: clamp(16px, 2vw, 19px);
+        line-height: 1.8;
+      }
+
+      .hero-stack {
+        display: grid;
+        gap: 14px;
+        align-content: end;
+      }
+
+      .fact {
+        padding: 18px 18px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.055);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .fact-label {
+        color: var(--subtle);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 11px;
+      }
+
+      .fact strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 21px;
+      }
+
+      .fact span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      section.block {
+        max-width: var(--max);
+        margin: 0 auto;
+        padding: 44px 0 14px;
+      }
+
+      .section-head {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 26px;
+      }
+
+      .section-head .kicker {
+        color: var(--gold);
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .section-head h3 {
+        margin: 0;
+        font-size: clamp(30px, 4vw, 52px);
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .section-head p {
+        margin: 0;
+        max-width: 68ch;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.8;
+      }
+
+      .two-col,
+      .three-col {
+        display: grid;
+        gap: 18px;
+      }
+
+      .two-col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .three-col {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .panel {
+        padding: 24px;
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.03));
+        border: 1px solid var(--border);
+      }
+
+      .panel h4 {
+        margin: 0 0 12px;
+        font-size: 20px;
+      }
+
+      .panel p,
+      .panel li {
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .panel ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .compare {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .compare .bad {
+        border-color: rgba(217, 109, 89, 0.28);
+        background: rgba(217, 109, 89, 0.08);
+      }
+
+      .compare .good {
+        border-color: rgba(114, 188, 141, 0.28);
+        background: rgba(114, 188, 141, 0.08);
+      }
+
+      .mini-title {
+        margin: 0 0 14px;
+        font-size: 13px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--subtle);
+      }
+
+      .workflow {
+        display: grid;
+        gap: 14px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+        padding: 20px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .step:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .step-number {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(214, 182, 111, 0.14);
+        color: var(--gold);
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .step h4 {
+        margin: 0 0 8px;
+        font-size: 21px;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .tag {
+        border: 1px solid rgba(214, 182, 111, 0.25);
+        background: rgba(214, 182, 111, 0.08);
+        color: var(--gold-strong);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+
+      .module-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .module {
+        padding: 18px 20px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .module header {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: baseline;
+        margin-bottom: 8px;
+      }
+
+      .module h4 {
+        margin: 0;
+      }
+
+      .phase {
+        color: var(--gold);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .glossary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .term {
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        cursor: pointer;
+        transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+      }
+
+      .term:hover {
+        transform: translateY(-2px);
+        border-color: rgba(214, 182, 111, 0.36);
+        background: rgba(214, 182, 111, 0.08);
+      }
+
+      .term strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 16px;
+      }
+
+      .term span {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .presenter-note {
+        display: none;
+        margin-top: 14px;
+        padding: 14px 16px;
+        border-left: 3px solid var(--gold);
+        background: rgba(214, 182, 111, 0.08);
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      body.presenter-mode .presenter-note {
+        display: block;
+      }
+
+      .talk-track {
+        display: grid;
+        gap: 12px;
+      }
+
+      .talk-line {
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .talk-line strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .fade-up {
+        opacity: 0;
+        transform: translateY(22px);
+        transition: opacity 500ms ease, transform 500ms ease;
+      }
+
+      .fade-up.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .footer {
+        max-width: var(--max);
+        margin: 0 auto;
+        padding: 38px 0 24px;
+        color: var(--subtle);
+        font-size: 13px;
+      }
+
+      @media (max-width: 1080px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .rail {
+          position: static;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .hero-grid,
+        .two-col,
+        .three-col,
+        .compare,
+        .glossary-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .hero {
+          min-height: auto;
+        }
+
+        .hero-card,
+        .panel,
+        .term,
+        .module {
+          border-radius: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="rail">
+        <div class="brand">
+          <div class="brand-kicker">Project Group Briefing</div>
+          <h1>ClubOS</h1>
+          <p>
+            A monthly digital business operating system for elite football clubs, built from the Real Madrid project data.
+          </p>
+        </div>
+
+        <nav class="nav">
+          <a href="#idea">The Idea</a>
+          <a href="#problem">Why It Exists</a>
+          <a href="#data">The Data</a>
+          <a href="#product">What We Build</a>
+          <a href="#workflow">How It Works</a>
+          <a href="#modules">Core Modules</a>
+          <a href="#value">Why It Matters</a>
+          <a href="#glossary">Buzzword Translator</a>
+          <a href="#talk-track">How To Present It</a>
+        </nav>
+
+        <div class="controls">
+          <div class="toggle" aria-label="View mode">
+            <button class="active" data-mode="reader">Reader View</button>
+            <button data-mode="presenter">Presenter View</button>
+          </div>
+          <div class="tip">
+            Presenter View reveals speaker notes under each section so you can explain the idea smoothly in the call.
+          </div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <div class="hero-card fade-up visible" id="idea">
+            <div class="eyebrow">What we are actually building</div>
+            <div class="hero-grid">
+              <div>
+                <h2>Not a dashboard. A monthly decision system.</h2>
+                <p>
+                  ClubOS turns recurring digital business files into one operating workflow: what changed, what matters, where Real Madrid is ahead or behind, and what deserves attention next.
+                </p>
+                <div class="tag-row">
+                  <div class="tag">Recurring monthly product</div>
+                  <div class="tag">Internal SaaS mindset</div>
+                  <div class="tag">Priority Board first</div>
+                  <div class="tag">Evidence before AI</div>
+                </div>
+                <div class="presenter-note">
+                  Start here: “The biggest shift is that we are not building a prettier dashboard. We are building a system the business team could keep using every month when new files arrive.”
+                </div>
+              </div>
+
+              <div class="hero-stack">
+                <div class="fact">
+                  <div class="fact-label">Business shape</div>
+                  <strong>4 internal digital businesses</strong>
+                  <span>Main website, eCommerce, streaming, and fan app.</span>
+                </div>
+                <div class="fact">
+                  <div class="fact-label">Time span</div>
+                  <strong>103 months of history</strong>
+                  <span>Long enough to see patterns, gaps, seasonality, and changes across time.</span>
+                </div>
+                <div class="fact">
+                  <div class="fact-label">Why this can become SaaS</div>
+                  <strong>Same workflow, new monthly data in</strong>
+                  <span>The same product keeps working as the next month’s files arrive.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="block fade-up" id="problem">
+          <div class="section-head">
+            <div class="kicker">The Problem</div>
+            <h3>Real Madrid asked for a visualization tool. The actual problem is bigger.</h3>
+            <p>
+              They have years of data across different digital products, but the real issue is not “we need charts.” The real issue is that nobody has one recurring system that tells leadership what changed, what matters, and what needs attention first.
+            </p>
+          </div>
+
+          <div class="compare">
+            <div class="panel bad">
+              <div class="mini-title">What a normal project would do</div>
+              <ul>
+                <li>Build a dashboard with filters and line charts</li>
+                <li>Show monthly trends for each digital asset</li>
+                <li>Add a few AI summaries</li>
+                <li>Stop at “here are some insights”</li>
+              </ul>
+            </div>
+            <div class="panel good">
+              <div class="mini-title">What we want to do instead</div>
+              <ul>
+                <li>Build a product that updates every month</li>
+                <li>Rank the most important issues and opportunities</li>
+                <li>Show RM against peers where benchmark data is real</li>
+                <li>Turn scattered metrics into a repeatable business workflow</li>
+              </ul>
+            </div>
+          </div>
+          <div class="presenter-note">
+            Useful sentence here: “The value is not that we found one cool insight once. The value is that the same product keeps delivering useful answers every month.”
+          </div>
+        </section>
+
+        <section class="block fade-up" id="data">
+          <div class="section-head">
+            <div class="kicker">The Data</div>
+            <h3>What we actually have, in plain English</h3>
+            <p>
+              This is monthly data, not event-stream data. That matters. It means we should build a strong monthly operating product, not fake day-level precision.
+            </p>
+          </div>
+
+          <div class="three-col">
+            <div class="panel">
+              <h4>Internal Real Madrid data</h4>
+              <p>
+                Four digital areas with rich monthly metrics: main website, eCommerce, streaming, and fan app.
+              </p>
+              <ul>
+                <li>Website traffic and engagement</li>
+                <li>eCommerce funnel and sales metrics</li>
+                <li>Streaming usage and subscriptions</li>
+                <li>App usage, downloads, and loyalty signals</li>
+              </ul>
+            </div>
+            <div class="panel">
+              <h4>Benchmark data</h4>
+              <p>
+                Five peer clubs on selected comparable metrics. Not everything is benchmarked, so we must stay honest and narrow.
+              </p>
+              <ul>
+                <li>Traffic and engagement comparisons</li>
+                <li>eCommerce conversion and cart value</li>
+                <li>Streaming engagement signals</li>
+                <li>App usage and recurrence</li>
+              </ul>
+            </div>
+            <div class="panel">
+              <h4>What this means</h4>
+              <p>
+                We can compare Real Madrid against competitors on selected KPIs and we can analyze how RM’s own four digital businesses move together over time.
+              </p>
+            </div>
+          </div>
+          <div class="presenter-note">
+            Explain the limitation clearly: “We do not have every metric for every club, so the product must benchmark only the KPIs that the benchmark file actually supports.”
+          </div>
+        </section>
+
+        <section class="block fade-up" id="product">
+          <div class="section-head">
+            <div class="kicker">The Product</div>
+            <h3>ClubOS is a digital business operating system for football clubs</h3>
+            <p>
+              The product is designed to behave like internal SaaS: same app, same workflow, same questions answered every month when the next files arrive.
+            </p>
+          </div>
+
+          <div class="two-col">
+            <div class="panel">
+              <h4>The core promise</h4>
+              <p>
+                New data comes in. ClubOS recalculates the latest health, peer context, signal relationships, and ranked priorities. The business team gets a clear view of what deserves attention now.
+              </p>
+              <div class="presenter-note">
+                Say it this way: “The hero is not the chart. The hero is the ranked list of what the business team should care about this month.”
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>The product sentence</h4>
+              <p>
+                <strong>
+                  ClubOS unifies website, eCommerce, streaming, and app data, compares selected KPIs to peer clubs, detects business-relevant signals, and ranks the issues and opportunities leadership should investigate next.
+                </strong>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="block fade-up" id="workflow">
+          <div class="section-head">
+            <div class="kicker">How It Works</div>
+            <h3>The monthly operating loop</h3>
+            <p>
+              This is the workflow that makes the product feel like SaaS instead of a one-time academic analysis.
+            </p>
+          </div>
+
+          <div class="panel">
+            <div class="workflow">
+              <div class="step">
+                <div class="step-number">01</div>
+                <div>
+                  <h4>New monthly files arrive</h4>
+                  <p>
+                    The same kind of internal and benchmark files get uploaded again in the next reporting cycle.
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-number">02</div>
+                <div>
+                  <h4>Databricks pipeline cleans and standardizes them</h4>
+                  <p>
+                    Raw files are preserved, names are normalized, metrics are validated, and app-safe tables are generated.
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-number">03</div>
+                <div>
+                  <h4>ClubOS recalculates the logic</h4>
+                  <p>
+                    KPI health, benchmark gaps, leading signals, and monthly priorities update automatically.
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-number">04</div>
+                <div>
+                  <h4>The business team opens the same product</h4>
+                  <p>
+                    They see what changed, what matters, and what needs investigation. Same workflow. New answers.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="block fade-up" id="modules">
+          <div class="section-head">
+            <div class="kicker">Core Modules</div>
+            <h3>What the product actually contains</h3>
+            <p>
+              These are not random screens. Each module answers one business question and supports the same monthly operating loop.
+            </p>
+          </div>
+
+          <div class="module-list">
+            <div class="module">
+              <header>
+                <h4>1. Priority Board</h4>
+                <div class="phase">Hero module</div>
+              </header>
+              <p>
+                The ranked list of the most important issues and opportunities this month. This is the first screen and the most important part of the product.
+              </p>
+            </div>
+            <div class="module">
+              <header>
+                <h4>2. Command Center</h4>
+                <div class="phase">MVP</div>
+              </header>
+              <p>
+                A clean view of how the four digital businesses are performing right now against baseline expectations.
+              </p>
+            </div>
+            <div class="module">
+              <header>
+                <h4>3. Peer Benchmark Engine</h4>
+                <div class="phase">MVP</div>
+              </header>
+              <p>
+                Real Madrid versus peer clubs on the metrics that the benchmark dataset genuinely supports.
+              </p>
+            </div>
+            <div class="module">
+              <header>
+                <h4>4. Commercial Signal Engine</h4>
+                <div class="phase">MVP</div>
+              </header>
+              <p>
+                A small, disciplined set of 1–3 month leading relationships that help explain what may matter next, especially around commercial outcomes.
+              </p>
+            </div>
+            <div class="module">
+              <header>
+                <h4>5. Event Intelligence</h4>
+                <div class="phase">Later, not hero</div>
+              </header>
+              <p>
+                A curated event layer that helps explain major historical shifts. Useful, but not the center of the product.
+              </p>
+            </div>
+          </div>
+          <div class="presenter-note">
+            If the team asks what makes this feel different, answer: “The product is organized around a recurring business workflow, not around a list of charts.”
+          </div>
+        </section>
+
+        <section class="block fade-up" id="value">
+          <div class="section-head">
+            <div class="kicker">Value</div>
+            <h3>Why this is stronger than “showing insights from data”</h3>
+            <p>
+              Clubs do not buy charts. They buy systems that save time, improve decisions, and create a repeatable operating rhythm.
+            </p>
+          </div>
+
+          <div class="three-col">
+            <div class="panel">
+              <h4>For analysts</h4>
+              <p>
+                Less manual reporting. More time spent on interpretation and decision support.
+              </p>
+            </div>
+            <div class="panel">
+              <h4>For digital leads</h4>
+              <p>
+                One place to see which digital areas are improving, weakening, or underperforming versus peers.
+              </p>
+            </div>
+            <div class="panel">
+              <h4>For commercial leadership</h4>
+              <p>
+                A ranked answer to: “What deserves attention first this month?”
+              </p>
+            </div>
+          </div>
+
+          <div class="presenter-note">
+            Good line here: “If we can make them feel this could become part of their monthly operating routine, then we are no longer presenting a project, we are presenting a product.”
+          </div>
+        </section>
+
+        <section class="block fade-up" id="glossary">
+          <div class="section-head">
+            <div class="kicker">Buzzword Translator</div>
+            <h3>Plain-English meanings for the terms we will use</h3>
+            <p>
+              This is here so nobody in the team gets lost in product, data, or architecture language.
+            </p>
+          </div>
+
+          <div class="glossary-grid">
+            <div class="term">
+              <strong>SaaS product</strong>
+              <span>
+                Software people keep using repeatedly, not just a one-time analysis. In our case: new monthly data comes in, same product keeps producing updated outputs.
+              </span>
+            </div>
+            <div class="term">
+              <strong>Databricks pipeline</strong>
+              <span>
+                The backend data process that takes messy files, cleans them, validates them, and turns them into reliable tables for the app.
+              </span>
+            </div>
+            <div class="term">
+              <strong>Bronze / Silver / Gold</strong>
+              <span>
+                Three data stages: raw files, cleaned data, and app-ready business tables.
+              </span>
+            </div>
+            <div class="term">
+              <strong>Priority Board</strong>
+              <span>
+                The ranked list of the most important things the business team should look at right now.
+              </span>
+            </div>
+            <div class="term">
+              <strong>Benchmark</strong>
+              <span>
+                Comparing Real Madrid to peer clubs, but only on the metrics the benchmark data truly supports.
+              </span>
+            </div>
+            <div class="term">
+              <strong>Leading signal</strong>
+              <span>
+                A metric that tends to move before another metric, for example one that tends to come before stronger eCommerce results.
+              </span>
+            </div>
+            <div class="term">
+              <strong>Gold table</strong>
+              <span>
+                A final trusted dataset the product can safely read from without doing heavy logic in the UI.
+              </span>
+            </div>
+            <div class="term">
+              <strong>Recurring monthly refresh</strong>
+              <span>
+                The same workflow repeated when next month’s files are uploaded. This is what makes the product reusable.
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section class="block fade-up" id="talk-track">
+          <div class="section-head">
+            <div class="kicker">How To Present It</div>
+            <h3>A short talk track you can use in the call</h3>
+            <p>
+              If you want to explain the whole idea in a calm, clear way, this sequence works well.
+            </p>
+          </div>
+
+          <div class="talk-track">
+            <div class="talk-line">
+              <strong>1. Start with the problem</strong>
+              “The task looked like a visualization project at first, but the real opportunity is bigger. The data can support a recurring internal product, not just a one-time dashboard.”
+            </div>
+            <div class="talk-line">
+              <strong>2. Explain the data honestly</strong>
+              “We have monthly internal data across four digital products and selected benchmark data for peer clubs. So the best product is a monthly operating system, not a fake real-time engine.”
+            </div>
+            <div class="talk-line">
+              <strong>3. Say what ClubOS is</strong>
+              “ClubOS is a digital business operating system that updates every month and tells the team what changed, what matters, and where to focus next.”
+            </div>
+            <div class="talk-line">
+              <strong>4. Emphasize the hero feature</strong>
+              “The most important screen is the Priority Board. That is what makes it feel like a product instead of a chart collection.”
+            </div>
+            <div class="talk-line">
+              <strong>5. Explain why it can live beyond the assignment</strong>
+              “Because the same type of files will keep coming in the future, the same product can keep running and delivering value after this first snapshot.”
+            </div>
+          </div>
+        </section>
+
+        <div class="footer">
+          ClubOS group briefing page. Built as a local presentation asset so the team can read, discuss, and align on the product before implementation expands.
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const modeButtons = document.querySelectorAll("[data-mode]");
+      const navLinks = [...document.querySelectorAll(".nav a")];
+      const sections = [...document.querySelectorAll("main section[id]")];
+
+      modeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          modeButtons.forEach((btn) => btn.classList.remove("active"));
+          button.classList.add("active");
+          document.body.classList.toggle("presenter-mode", button.dataset.mode === "presenter");
+        });
+      });
+
+      const revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("visible");
+            }
+          });
+        },
+        { threshold: 0.16 }
+      );
+
+      document.querySelectorAll(".fade-up").forEach((el) => revealObserver.observe(el));
+
+      const sectionObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            navLinks.forEach((link) => {
+              link.classList.toggle(
+                "active",
+                link.getAttribute("href") === `#${entry.target.id}`
+              );
+            });
+          });
+        },
+        { rootMargin: "-25% 0px -55% 0px", threshold: 0 }
+      );
+
+      sections.forEach((section) => sectionObserver.observe(section));
+    </script>
+  </body>
+</html>

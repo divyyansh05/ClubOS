@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClubOS · Codebase Flow Map</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181b22;
+    --border: #1e2330;
+    --border2: #252c3d;
+
+    /* Layer colors */
+    --pipeline: #0d7a5f;
+    --pipeline-dim: rgba(13,122,95,0.12);
+    --pipeline-glow: rgba(13,122,95,0.35);
+
+    --analytics: #6842d6;
+    --analytics-dim: rgba(104,66,214,0.12);
+    --analytics-glow: rgba(104,66,214,0.35);
+
+    --backend: #c47b1a;
+    --backend-dim: rgba(196,123,26,0.12);
+    --backend-glow: rgba(196,123,26,0.35);
+
+    --frontend: #1a7fc4;
+    --frontend-dim: rgba(26,127,196,0.12);
+    --frontend-glow: rgba(26,127,196,0.35);
+
+    --infra: #8a3d3d;
+    --infra-dim: rgba(138,61,61,0.12);
+    --infra-glow: rgba(138,61,61,0.35);
+
+    --text: #e8eaf0;
+    --text2: #8892a8;
+    --text3: #535e78;
+    --accent: #3dd9a4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    background: linear-gradient(135deg, #0d1117 0%, #111822 100%);
+  }
+
+  .header-left h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .header-left p {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .legend-item:hover { border-color: var(--border2); }
+  .legend-item.active { border-color: currentColor; }
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-item[data-type="pipeline"] { color: #3dcba0; }
+  .legend-item[data-type="pipeline"] .legend-dot { background: var(--pipeline); }
+  .legend-item[data-type="analytics"] { color: #a07ff5; }
+  .legend-item[data-type="analytics"] .legend-dot { background: var(--analytics); }
+  .legend-item[data-type="backend"] { color: #e8a848; }
+  .legend-item[data-type="backend"] .legend-dot { background: var(--backend); }
+  .legend-item[data-type="frontend"] { color: #4fb8f0; }
+  .legend-item[data-type="frontend"] .legend-dot { background: var(--frontend); }
+  .legend-item[data-type="infra"] { color: #d47070; }
+  .legend-item[data-type="infra"] .legend-dot { background: var(--infra); }
+
+  /* ── LAYOUT ── */
+  .page {
+    display: flex;
+    gap: 0;
+    min-height: calc(100vh - 85px);
+  }
+
+  /* Sidebar TOC */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 85px);
+    overflow-y: auto;
+    background: var(--surface);
+  }
+  .sidebar-section {
+    padding: 6px 16px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text3);
+    margin-top: 12px;
+  }
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    text-decoration: none;
+  }
+  .sidebar-link:hover { color: var(--text); background: var(--surface2); }
+  .sidebar-link.active { color: var(--text); border-left-color: var(--accent); background: var(--surface2); }
+  .sidebar-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Main content */
+  .main {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+    max-width: 1100px;
+  }
+
+  /* Phase labels */
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    margin-top: 36px;
+    scroll-margin-top: 20px;
+  }
+  .phase-header:first-child { margin-top: 0; }
+  .phase-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .phase-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .phase-subtitle {
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 400;
+  }
+  .phase-line {
+    flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  /* File cards */
+  .cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: 3px 1fr auto;
+    gap: 0 14px;
+    align-items: start;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .file-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .file-card:hover { border-color: var(--border2); transform: translateX(2px); }
+  .file-card:hover::before { opacity: 1; }
+  .file-card.expanded { border-color: var(--border2); }
+
+  /* Color stripe */
+  .stripe {
+    grid-row: 1 / 3;
+    width: 3px;
+    border-radius: 2px;
+    height: 100%;
+    min-height: 40px;
+    align-self: stretch;
+  }
+
+  /* card types */
+  .file-card[data-type="pipeline"] { border-left: 3px solid var(--pipeline); background: linear-gradient(90deg, var(--pipeline-dim) 0%, var(--surface) 60%); }
+  .file-card[data-type="pipeline"]:hover { box-shadow: 0 0 20px var(--pipeline-glow); }
+  .file-card[data-type="analytics"] { border-left: 3px solid var(--analytics); background: linear-gradient(90deg, var(--analytics-dim) 0%, var(--surface) 60%); }
+  .file-card[data-type="analytics"]:hover { box-shadow: 0 0 20px var(--analytics-glow); }
+  .file-card[data-type="backend"] { border-left: 3px solid var(--backend); background: linear-gradient(90deg, var(--backend-dim) 0%, var(--surface) 60%); }
+  .file-card[data-type="backend"]:hover { box-shadow: 0 0 20px var(--backend-glow); }
+  .file-card[data-type="frontend"] { border-left: 3px solid var(--frontend); background: linear-gradient(90deg, var(--frontend-dim) 0%, var(--surface) 60%); }
+  .file-card[data-type="frontend"]:hover { box-shadow: 0 0 20px var(--frontend-glow); }
+  .file-card[data-type="infra"] { border-left: 3px solid var(--infra); background: linear-gradient(90deg, var(--infra-dim) 0%, var(--surface) 60%); }
+  .file-card[data-type="infra"]:hover { box-shadow: 0 0 20px var(--infra-glow); }
+
+  .card-main {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .file-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-card[data-type="pipeline"] .file-path { color: #3dcba0; }
+  .file-card[data-type="analytics"] .file-path { color: #a07ff5; }
+  .file-card[data-type="backend"] .file-path { color: #e8a848; }
+  .file-card[data-type="frontend"] .file-path { color: #4fb8f0; }
+  .file-card[data-type="infra"] .file-path { color: #d47070; }
+
+  .file-role {
+    font-size: 12.5px;
+    color: var(--text);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .file-desc {
+    font-size: 11.5px;
+    color: var(--text2);
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  /* Expand button */
+  .expand-btn {
+    grid-column: 3;
+    grid-row: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text3);
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .expand-btn:hover { color: var(--text); border-color: var(--border2); }
+  .file-card.expanded .expand-btn { color: var(--accent); border-color: var(--accent); transform: rotate(45deg); }
+
+  /* Expanded detail */
+  .card-detail {
+    display: none;
+    grid-column: 2 / 4;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .file-card.expanded .card-detail { display: block; }
+
+  .detail-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: flex-start;
+    font-size: 11.5px;
+  }
+  .detail-label {
+    flex-shrink: 0;
+    width: 90px;
+    color: var(--text3);
+    font-weight: 600;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-top: 1px;
+  }
+  .detail-value {
+    color: var(--text2);
+    line-height: 1.5;
+    flex: 1;
+  }
+  .detail-value code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  .flow-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .flow-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+  .flow-tag.from { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text2); }
+  .flow-tag.to { background: rgba(61,217,164,0.08); border: 1px solid rgba(61,217,164,0.25); color: var(--accent); }
+
+  /* Arrow connector between phases */
+  .phase-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+    gap: 8px;
+  }
+  .connector-line {
+    width: 1px;
+    height: 28px;
+    background: linear-gradient(to bottom, var(--border), var(--border2));
+    position: relative;
+  }
+  .connector-arrow {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .connector-arrow svg { color: var(--text3); }
+  .connector-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+
+  /* Output badge */
+  .output-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(61,217,164,0.08);
+    border: 1px solid rgba(61,217,164,0.2);
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 10.5px;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+  .output-badge::before { content: '→'; opacity: 0.6; }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    transition: all 0.2s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .filter-btn:hover { border-color: var(--border2); color: var(--text); }
+  .filter-btn.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+  .filter-btn[data-filter="all"].active { border-color: var(--accent); color: var(--accent); }
+  .filter-btn[data-filter="pipeline"].active { border-color: var(--pipeline); color: #3dcba0; background: var(--pipeline-dim); }
+  .filter-btn[data-filter="analytics"].active { border-color: var(--analytics); color: #a07ff5; background: var(--analytics-dim); }
+  .filter-btn[data-filter="backend"].active { border-color: var(--backend); color: #e8a848; background: var(--backend-dim); }
+  .filter-btn[data-filter="frontend"].active { border-color: var(--frontend); color: #4fb8f0; background: var(--frontend-dim); }
+  .filter-btn[data-filter="infra"].active { border-color: var(--infra); color: #d47070; background: var(--infra-dim); }
+
+  /* Stat bar */
+  .stat-bar {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .stat-num { font-size: 22px; font-weight: 700; font-family: 'Sora', sans-serif; color: var(--text); }
+  .stat-lbl { font-size: 10.5px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; }
+  .stat-sep { width: 1px; background: var(--border); align-self: stretch; }
+
+  /* Phase visibility */
+  .phase-block { transition: opacity 0.2s; }
+  .phase-block.hidden { display: none; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .card-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .file-card[data-type="pipeline"] .card-badge { background: var(--pipeline-dim); color: #3dcba0; border: 1px solid rgba(13,122,95,0.3); }
+  .file-card[data-type="analytics"] .card-badge { background: var(--analytics-dim); color: #a07ff5; border: 1px solid rgba(104,66,214,0.3); }
+  .file-card[data-type="backend"] .card-badge { background: var(--backend-dim); color: #e8a848; border: 1px solid rgba(196,123,26,0.3); }
+  .file-card[data-type="frontend"] .card-badge { background: var(--frontend-dim); color: #4fb8f0; border: 1px solid rgba(26,127,196,0.3); }
+  .file-card[data-type="infra"] .card-badge { background: var(--infra-dim); color: #d47070; border: 1px solid rgba(138,61,61,0.3); }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>ClubOS · Codebase Flow Map</h1>
+    <p>61 files · Full execution path from raw CSV to browser · Click any file to expand details</p>
+  </div>
+  <div class="legend">
+    <div class="legend-item" data-type="pipeline"><div class="legend-dot"></div>Data Pipeline</div>
+    <div class="legend-item" data-type="analytics"><div class="legend-dot"></div>Analytics / Scoring</div>
+    <div class="legend-item" data-type="backend"><div class="legend-dot"></div>Backend API</div>
+    <div class="legend-item" data-type="frontend"><div class="legend-dot"></div>Frontend</div>
+    <div class="legend-item" data-type="infra"><div class="legend-dot"></div>Infra / Config / Tests</div>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">Pipeline</div>
+    <a class="sidebar-link" href="#phase-trigger"><div class="sidebar-dot" style="background:var(--pipeline)"></div>0 · Trigger</a>
+    <a class="sidebar-link" href="#phase-bronze"><div class="sidebar-dot" style="background:var(--pipeline)"></div>1 · Bronze</a>
+    <a class="sidebar-link" href="#phase-silver"><div class="sidebar-dot" style="background:var(--pipeline)"></div>2 · Silver</a>
+    <a class="sidebar-link" href="#phase-gold"><div class="sidebar-dot" style="background:var(--pipeline)"></div>3 · Gold Tables</a>
+    <div class="sidebar-section">Analytics</div>
+    <a class="sidebar-link" href="#phase-analytics"><div class="sidebar-dot" style="background:var(--analytics)"></div>4 · Analytics</a>
+    <a class="sidebar-link" href="#phase-priority"><div class="sidebar-dot" style="background:var(--analytics)"></div>5 · Priority Board</a>
+    <a class="sidebar-link" href="#phase-briefing"><div class="sidebar-dot" style="background:var(--analytics)"></div>6 · Monthly Briefing</a>
+    <div class="sidebar-section">Backend</div>
+    <a class="sidebar-link" href="#phase-backend-startup"><div class="sidebar-dot" style="background:var(--backend)"></div>7 · Startup</a>
+    <a class="sidebar-link" href="#phase-backend-routers"><div class="sidebar-dot" style="background:var(--backend)"></div>8 · Routers</a>
+    <a class="sidebar-link" href="#phase-backend-services"><div class="sidebar-dot" style="background:var(--backend)"></div>9 · Services</a>
+    <a class="sidebar-link" href="#phase-backend-schemas"><div class="sidebar-dot" style="background:var(--backend)"></div>10 · Schemas</a>
+    <a class="sidebar-link" href="#phase-backend-client"><div class="sidebar-dot" style="background:var(--backend)"></div>11 · DB Client</a>
+    <div class="sidebar-section">Frontend</div>
+    <a class="sidebar-link" href="#phase-fe-entry"><div class="sidebar-dot" style="background:var(--frontend)"></div>12 · Entry / Routing</a>
+    <a class="sidebar-link" href="#phase-fe-pages"><div class="sidebar-dot" style="background:var(--frontend)"></div>13 · Pages</a>
+    <a class="sidebar-link" href="#phase-fe-components"><div class="sidebar-dot" style="background:var(--frontend)"></div>14 · Components</a>
+    <a class="sidebar-link" href="#phase-fe-lib"><div class="sidebar-dot" style="background:var(--frontend)"></div>15 · API Client</a>
+    <a class="sidebar-link" href="#phase-fe-types"><div class="sidebar-dot" style="background:var(--frontend)"></div>16 · Types</a>
+    <a class="sidebar-link" href="#phase-fe-config"><div class="sidebar-dot" style="background:var(--frontend)"></div>17 · Config</a>
+    <div class="sidebar-section">Infra</div>
+    <a class="sidebar-link" href="#phase-seeds"><div class="sidebar-dot" style="background:var(--infra)"></div>18 · Seeds & Contracts</div>
+    <a class="sidebar-link" href="#phase-quality"><div class="sidebar-dot" style="background:var(--infra)"></div>19 · Quality & Tests</a>
+    <a class="sidebar-link" href="#phase-scripts"><div class="sidebar-dot" style="background:var(--infra)"></div>20 · Scripts</a>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Stats -->
+    <div class="stat-bar">
+      <div class="stat"><div class="stat-num">61</div><div class="stat-lbl">Total Files</div></div>
+      <div class="stat-sep"></div>
+      <div class="stat"><div class="stat-num" style="color:#3dcba0">11</div><div class="stat-lbl">Pipeline</div></div>
+      <div class="stat"><div class="stat-num" style="color:#a07ff5">3</div><div class="stat-lbl">Analytics</div></div>
+      <div class="stat"><div class="stat-num" style="color:#e8a848">31</div><div class="stat-lbl">Backend</div></div>
+      <div class="stat"><div class="stat-num" style="color:#4fb8f0">14</div><div class="stat-lbl">Frontend</div></div>
+      <div class="stat"><div class="stat-num" style="color:#d47070">5+</div><div class="stat-lbl">Infra/Scripts</div></div>
+      <div class="stat-sep"></div>
+      <div class="stat"><div class="stat-num">52</div><div class="stat-lbl">Metrics</div></div>
+      <div class="stat"><div class="stat-num">5</div><div class="stat-lbl">Gold Tables</div></div>
+      <div class="stat"><div class="stat-num">7</div><div class="stat-lbl">API Endpoints</div></div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All Files</button>
+      <button class="filter-btn" data-filter="pipeline">Pipeline</button>
+      <button class="filter-btn" data-filter="analytics">Analytics / Scoring</button>
+      <button class="filter-btn" data-filter="backend">Backend</button>
+      <button class="filter-btn" data-filter="frontend">Frontend</button>
+      <button class="filter-btn" data-filter="infra">Infra / Tests</button>
+    </div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 0: TRIGGER
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="pipeline" id="phase-trigger">
+      <div class="phase-header">
+        <div class="phase-num">0</div>
+        <div>
+          <div class="phase-title">Data Upload · Trigger</div>
+          <div class="phase-subtitle">Admin uploads CSV/Excel files to Databricks DBFS · Nothing runs automatically</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+        <div class="file-card" data-type="pipeline" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">data/source/*.csv <span class="card-badge">Raw Input</span></div>
+            <div class="file-role">Monthly data files for 4 digital assets + 1 peer benchmark file</div>
+            <div class="file-desc">5 CSV/Excel files uploaded to DBFS at /FileStore/real_madrid/monthly_data/YYYY-MM/. Not code — these are the raw inputs.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Admin (manual upload via Databricks UI or <code>dbutils.fs.cp()</code>)</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">01_ingest_internal_metrics.py</span><span class="flow-tag to">02_ingest_benchmark_metrics.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Output</div><div class="detail-value">Raw CSV/Excel on DBFS — ingested by Bronze notebooks</div></div>
+            <div class="detail-row"><div class="detail-label">Key Detail</div><div class="detail-value">One file per asset: main_website, ecommerce, streaming, fan_app + benchmark CSV. Columns vary by asset. Bronze reads them as-is.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">Bronze Ingestion</span></div></div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 1: BRONZE
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="pipeline" id="phase-bronze">
+      <div class="phase-header">
+        <div class="phase-num">1</div>
+        <div>
+          <div class="phase-title">Bronze Layer · Raw Ingestion</div>
+          <div class="phase-subtitle">PySpark reads raw files · Adds metadata · No transformations · Writes to Delta Lake</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="pipeline" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/bronze/01_ingest_internal_metrics.py <span class="card-badge">Pipeline</span></div>
+            <div class="file-role">Reads internal CSV files, adds ingestion timestamp + source_file metadata, writes to bronze.internal_metrics</div>
+            <div class="file-desc">Zero transformations — preserves all source columns exactly as given. First stop in medallion pipeline.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Manual trigger (Databricks job or notebook run). Reads from <code>data/source/*.csv</code> on DBFS.</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">silver/01_normalize_internal_metrics.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Key Function</div><div class="detail-value"><code>ingest_internal_metrics(source_path)</code> → <code>spark.read.format("csv").load()</code> + <code>current_timestamp()</code> + <code>input_file_name()</code></div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">bronze.internal_metrics</span> — month, asset_name, metric_name, metric_value, ingestion_timestamp, source_file</div></div>
+            <div class="detail-row"><div class="detail-label">Error Path</div><div class="detail-value">If required columns missing → Spark throws <code>AnalysisException</code>. Must fix source CSV and re-run. No auto-retry.</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="pipeline" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/bronze/02_ingest_benchmark_metrics.py <span class="card-badge">Pipeline</span></div>
+            <div class="file-role">Same logic as 01 but for peer benchmark CSV — reads club_id, metric_name, metric_value for 5 peer clubs</div>
+            <div class="file-desc">Writes bronze.benchmark_metrics. Parallel to internal ingestion, runs independently.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Manual trigger — runs in parallel with 01_ingest_internal_metrics.py</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">silver/02_normalize_benchmark_metrics.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">bronze.benchmark_metrics</span> — month, club_id, asset_name, metric_name, metric_value, ingestion_timestamp, source_file</div></div>
+            <div class="detail-row"><div class="detail-label">Key Detail</div><div class="detail-value">5 peer clubs: masia_fc, merseyside_red, gunners_fc, fc_baviera, citizens. 8 metrics per club. 103 months.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">Silver Normalization</span></div></div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 2: SILVER
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="pipeline" id="phase-silver">
+      <div class="phase-header">
+        <div class="phase-num">2</div>
+        <div>
+          <div class="phase-title">Silver Layer · Cleaning & Normalization</div>
+          <div class="phase-subtitle">Standardize column names · Handle nulls · Detect outliers · Deduplicate</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="pipeline" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/silver/01_normalize_internal_metrics.py <span class="card-badge">Pipeline</span></div>
+            <div class="file-role">Reads bronze.internal_metrics → lowercase/trim column names → null handling → outlier flagging → dedup → writes silver.internal_metrics</div>
+            <div class="file-desc">Adds is_outlier boolean column. Skips rows with null month/asset_name/metric_name. Deduplicates by (month, asset_name, metric_name).</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>bronze.internal_metrics</code> table must exist first. Reads via <code>spark.read.table()</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">gold/01_build_kpi_health.py</span><span class="flow-tag to">analytics/01_validate_signals.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Key Functions</div><div class="detail-value"><code>trim(lower(metric_name))</code> · outlier: <code>abs(value - mean) > 3*stddev</code> · dedup: <code>ROW_NUMBER() OVER PARTITION BY (month, asset, metric)</code></div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">silver.internal_metrics</span> — month, asset_name, metric_name (lowercase), metric_value, is_outlier, normalization_timestamp</div></div>
+            <div class="detail-row"><div class="detail-label">Error Path</div><div class="detail-value">Logs skipped row count to <code>silver.data_quality_checks</code>. Fails only if zero valid rows remain.</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="pipeline" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/silver/02_normalize_benchmark_metrics.py <span class="card-badge">Pipeline</span></div>
+            <div class="file-role">Same normalization flow for peer benchmark data → dedup by (month, club_id, asset_name, metric_name) → writes silver.benchmark_metrics</div>
+            <div class="file-desc">Lowercase club_id and metric_name. Feeds gold/02_build_peer_benchmark.py later.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>bronze.benchmark_metrics</code> table</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">gold/02_build_peer_benchmark.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">silver.benchmark_metrics</span></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="pipeline" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/silver/03_build_data_quality_checks.py <span class="card-badge">Pipeline</span></div>
+            <div class="file-role">Validates schema compliance, row counts, duplicate detection, date coverage, metric value ranges across Bronze/Silver/Gold</div>
+            <div class="file-desc">Writes PASS/FAIL results to silver.data_quality_checks. Backend /refresh/status endpoint reads this table to report pipeline health.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Runs after Silver normalization is complete (or independently as quality audit)</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">backend/api/app/routers/refresh.py (reads output)</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">silver.data_quality_checks</span> — run_id, check_timestamp, table_name, check_name, severity (REQUIRED/WARNING), status (PASS/FAIL), message</div></div>
+            <div class="detail-row"><div class="detail-label">Checks Run</div><div class="detail-value">Schema columns present · Row count 90-110 months · Composite key uniqueness · Date gaps · Value ranges (no negative visitors, conversion 0-100%)</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">Gold Layer — Business Analytics</span></div></div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 3: GOLD TABLES
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="pipeline" id="phase-gold">
+      <div class="phase-header">
+        <div class="phase-num">3</div>
+        <div>
+          <div class="phase-title">Gold Layer · KPI Health + Peer Benchmark</div>
+          <div class="phase-subtitle">Trend analysis · Volatility · Health status · Peer gap calculation with polarity handling</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="pipeline" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/gold/01_build_kpi_health.py <span class="card-badge">Pipeline</span></div>
+            <div class="file-role">Computes 6-month trend slope, 12-month volatility, persistence (consecutive declining months), deviation from seasonal baseline → assigns health_status label</div>
+            <div class="file-desc">Reads silver.internal_metrics. Every (asset, metric) combo gets: 'good', 'review', or 'stable'. Feeds priority scoring.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>silver.internal_metrics</code> (all 103 months)</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">analytics/02_compute_priority_inputs.py</span><span class="flow-tag to">gold/04_build_priority_board.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Key Formulas</div><div class="detail-value">Trend: <code>REGR_SLOPE()</code> on last 6 months · Volatility: <code>STDDEV/AVG</code> over 12m window · Persistence: custom consecutive-decline counter · Deviation: <code>(value - 12m_avg) / 12m_avg</code></div></div>
+            <div class="detail-row"><div class="detail-label">Health Rule</div><div class="detail-value"><code>slope > 0.05 AND vol < 0.2 → 'good'</code> · <code>slope < -0.05 OR persistence ≥ 3 OR dev > 20% → 'review'</code> · else <code>'stable'</code></div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">gold.kpi_health</span> — 2,184 rows (103 months × 4 assets × ~53 metrics)</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="pipeline" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/gold/02_build_peer_benchmark.py <span class="card-badge">Pipeline</span></div>
+            <div class="file-role">Joins Real Madrid vs 5 peer clubs on 8 shared metrics → computes peer median, leader value, RM rank (1-6), gap to median (polarity-adjusted)</div>
+            <div class="file-desc">Critical: polarity handling via metric_dictionary.json. bounce_rate is the only -1 polarity metric (lower is better → logic inverts).</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>silver.internal_metrics</code> + <code>silver.benchmark_metrics</code> + <code>databricks/seeds/metric_dictionary.json</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">analytics/02_compute_priority_inputs.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">8 Metrics</div><div class="detail-value">website: unique_visitors, visits, bounce_rate, recurrence · ecommerce: unique_visitors, visits, conversion_rate, net_sales</div></div>
+            <div class="detail-row"><div class="detail-label">Key Formula</div><div class="detail-value"><code>gap = (rm_value - peer_median) × polarity</code>. Polarity -1 for bounce_rate: positive gap still means worse than peers.</div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">gold.peer_benchmark</span> — 824 rows (8 metrics × 103 months)</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">Signal Detection + Priority Scoring</span></div></div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 4: ANALYTICS
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="analytics" id="phase-analytics">
+      <div class="phase-header">
+        <div class="phase-num">4</div>
+        <div>
+          <div class="phase-title">Analytics · Signal Detection</div>
+          <div class="phase-subtitle">Lagged Pearson correlation · Business prior gate · 60% threshold · ~20 validated signals from ~2,700 possible pairs</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="analytics" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/analytics/01_validate_signals.py <span class="card-badge">Analytics</span></div>
+            <div class="file-role">Tests every possible metric pair at 1/2/3 month lags using Pearson correlation → filters by |corr| > 0.6 → applies business prior gate → writes validated signals</div>
+            <div class="file-desc">~2,700 pairs tested, ~10-20 survive. Example: website_unique_visitors → ecommerce_net_sales (lag 2m, corr 0.72). Business prior: "sales→traffic" is reverse causality → rejected.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>silver.internal_metrics</code> — joins metric at time T with target at T+lag for each lag 1,2,3</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">analytics/02_compute_priority_inputs.py</span><span class="flow-tag to">gold/04_build_priority_board.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Key Logic</div><div class="detail-value"><code>CORR(source_T, target_T+lag)</code> per pair-lag. Keep if <code>abs(corr) > 0.6</code>. Then hardcoded business prior checks filter nonsensical relationships.</div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">gold.signal_relationships</span> — signal_id, source_asset, source_metric, target_asset, target_metric, lag_months, direction, strength_score (0.6-1.0), business_interpretation, validation_status</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="analytics" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/analytics/02_compute_priority_inputs.py <span class="card-badge">Analytics</span></div>
+            <div class="file-role">Reads gold.kpi_health + gold.peer_benchmark + gold.signal_relationships → normalizes each scoring component to 0-1 scale → feeds priority board builder</div>
+            <div class="file-desc">Intermediate step that prepares the 5 normalized components before the weighted formula is applied in gold/04_build_priority_board.py.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>gold.kpi_health</code>, <code>gold.peer_benchmark</code>, <code>gold.signal_relationships</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">gold/04_build_priority_board.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Normalizations</div><div class="detail-value">Severity: <code>abs(slope)/0.5</code> · Persistence: <code>months/12</code> · Peer gap: <code>abs(gap)/10</code> · Commercial: lookup table · Evidence: <code>signal_count/5</code> — all capped 0-1</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="analytics" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/analytics/03_build_event_windows.py <span class="card-badge">Analytics</span></div>
+            <div class="file-role">Links event annotations (Champions League matches, holiday campaigns) to metric anomaly windows — NOT yet integrated into UI</div>
+            <div class="file-desc">Reads event_annotations.csv seed file. Planned for Event Intelligence module in roadmap. Runs but output not surfaced in MVP frontend.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>databricks/seeds/event_annotations.csv</code> + <code>gold.kpi_health</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="detail-value" style="color:var(--text3)">Not connected to frontend in MVP. Output not yet consumed.</div></div></div>
+            <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value">MVP limitation — runs but output unused. Roadmap Q2: event-aware Priority Board annotations.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">Weighted Scoring Formula</span></div></div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 5: PRIORITY BOARD
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="analytics" id="phase-priority">
+      <div class="phase-header">
+        <div class="phase-num">5</div>
+        <div>
+          <div class="phase-title">Gold · Priority Board Builder</div>
+          <div class="phase-subtitle">(0.30×severity) + (0.25×persistence) + (0.20×peer_gap) + (0.15×commercial) + (0.10×evidence) → ranked top 50</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="analytics" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/gold/04_build_priority_board.py <span class="card-badge">Analytics</span></div>
+            <div class="file-role">Applies 5-component weighted formula → assigns priority_rank by ROW_NUMBER() → assigns category (critical/opportunity/benchmark/warning) → generates title and why_it_matters text</div>
+            <div class="file-desc">Output: gold.priority_board with 50 rows (top 50 priorities). Frontend shows top 10. Each priority has full breakdown, title, suggested investigation.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Normalized component data from <code>analytics/02_compute_priority_inputs.py</code> — joins kpi_health + peer_benchmark + signal_relationships</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">gold/03_build_monthly_brief_inputs.py</span><span class="flow-tag to">backend reads via API</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Formula</div><div class="detail-value"><code>score = 0.30×sev + 0.25×persist + 0.20×peer + 0.15×commercial + 0.10×evidence</code>. Score > 0.8 → 'critical'. Positive trend + low peer gap → 'opportunity'.</div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">gold.priority_board</span> — priority_id, month, rank, score, category, title, asset, metric, trend_slope_6m, persistence_months, peer_gap, commercial_weight, summary_text, why_it_matters, suggested_next_investigation, supporting_metrics_json</div></div>
+            <div class="detail-row"><div class="detail-label">Key Detail</div><div class="detail-value">priority_id is composite key: <code>{month}_{asset_name}_{metric_name}</code>. Title and why_it_matters are template-generated, not AI.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">Monthly Briefing Aggregation</span></div></div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 6: MONTHLY BRIEFING
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="analytics" id="phase-briefing">
+      <div class="phase-header">
+        <div class="phase-num">6</div>
+        <div>
+          <div class="phase-title">Gold · Monthly Briefing Inputs</div>
+          <div class="phase-subtitle">Reads all 5 Gold tables → aggregates top-3 priorities, top-5 anomalies, strongest-4 signals, benchmark + health summaries → 1 row per month</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="analytics" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/gold/03_build_monthly_brief_inputs.py <span class="card-badge">Analytics</span></div>
+            <div class="file-role">Aggregates all analytical outputs into one compact row per month — the executive summary source of truth</div>
+            <div class="file-desc">Reads all 5 Gold tables. Serializes top items as JSON arrays into a single row. 103 rows total (1 per month). Backend /briefing/latest reads this.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>gold.priority_board</code>, <code>gold.kpi_health</code>, <code>gold.peer_benchmark</code>, <code>gold.signal_relationships</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">backend/api/app/routers/briefing.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">gold.monthly_brief_inputs</span> — month, top_priority_ids_json, top_anomalies_json, strongest_signal_ids_json, benchmark_summary_json, health_summary_json, briefing_generated_at</div></div>
+            <div class="detail-row"><div class="detail-label">Key Detail</div><div class="detail-value">All nested data stored as JSON strings in a single Delta row. Backend parses JSON fields to build the Monthly Briefing API response.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">CSV Export → Backend Startup</span></div></div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 7: BACKEND STARTUP
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="backend" id="phase-backend-startup">
+      <div class="phase-header">
+        <div class="phase-num">7</div>
+        <div>
+          <div class="phase-title">Backend · App Startup (main.py)</div>
+          <div class="phase-subtitle">Dual-mode: snapshot mode (loads 5 CSVs into memory) OR Databricks mode (connects to SQL Warehouse)</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/main.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">FastAPI entry point — lifespan() checks for gold_snapshots/ CSVs on startup → loads pandas DataFrames into app.state.data OR connects to Databricks SQL Warehouse</div>
+            <div class="file-desc">This is what uvicorn runs. Registers all 6 routers. CORS configured for localhost:5176/5177. Decides snapshot vs live mode at startup.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>uvicorn app.main:app --reload</code> — server process start. Triggered by developer or deployment script.</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">app/routers/*.py (all 6 registered)</span><span class="flow-tag to">app/clients/databricks.py (Databricks mode only)</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Mode Logic</div><div class="detail-value"><code>Path("data/gold_snapshots").exists()</code> → snapshot mode: <code>pd.read_csv()</code> × 5 → <code>app.state.data</code> dict. Else → <code>databricks.sql.connect()</code> → <code>app.state.db_conn</code>.</div></div>
+            <div class="detail-row"><div class="detail-label">Startup Logs</div><div class="detail-value">"Running in snapshot mode, loaded 5 tables from CSV" OR "Running in Databricks mode, connected to SQL Warehouse"</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">scripts/build_local_snapshots.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">Reads 5 Gold Delta tables from Databricks → converts to pandas → writes to data/gold_snapshots/gold_*.csv</div>
+            <div class="file-desc">Run once after Databricks pipeline completes to enable snapshot/demo mode. Backend cannot start in snapshot mode without these 5 CSVs.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Manually run by developer: <code>python scripts/build_local_snapshots.py</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">backend/api/app/main.py (reads the CSVs on next startup)</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Outputs</div><div class="detail-value">gold_priority_board.csv · gold_kpi_health.csv · gold_peer_benchmark.csv · gold_signal_relationships.csv · gold_monthly_brief_inputs.csv</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">Request Handling — Routers</span></div></div>
+
+    <!-- ─────────────────────────────────────────────
+         PHASE 8: ROUTERS
+    ───────────────────────────────────────────── -->
+    <div class="phase-block" data-types="backend" id="phase-backend-routers">
+      <div class="phase-header">
+        <div class="phase-num">8</div>
+        <div>
+          <div class="phase-title">Backend · Routers (6 files)</div>
+          <div class="phase-subtitle">Each router handles one endpoint group → calls its service → wraps in Pydantic schema → returns JSON</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/routers/priorities.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">GET /priorities/latest · GET /priorities/{id} — calls priority_service, returns top-10 priorities JSON. Hero endpoint for frontend Priority Board page.</div>
+            <div class="file-desc">Most important endpoint. Service queries latest month only. priority_id used for detail lookup.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">HTTP GET from <code>apps/clubos-web/src/lib/api.ts → getPriorities()</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">app/services/priority_service.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">SQL (Databricks)</div><div class="detail-value"><code>SELECT * FROM gold.priority_board WHERE month = (SELECT MAX(month) ...) ORDER BY priority_rank</code></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/routers/health.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">GET /health · GET /health/summary — overall system health check + KPI health breakdown (good/review/stable counts)</div>
+            <div class="file-desc">Frontend Command Center page calls /health/summary. Shows 59 total metrics, deviation index, breakdown bars.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>lib/api.ts → getHealthSummary()</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">app/services/health_service.py</span></div></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/routers/benchmark.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">GET /benchmark/{asset}/{metric} — returns 12-month trend for selected asset-metric pair: RM value, peer median, peer leader, RM rank (1-6)</div>
+            <div class="file-desc">Frontend Peer Benchmark page calls this with selected dropdown values. 8 possible metrics × 4 assets.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>lib/api.ts → getBenchmark(asset, metric)</code> — on user dropdown selection</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">app/services/benchmark_service.py</span></div></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/routers/signals.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">GET /signals — returns all validated signal relationships with strength scores, lags, business interpretations</div>
+            <div class="file-desc">Frontend Signal Engine page. Shows ~10-20 validated signals with strength bars and flow diagrams.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>lib/api.ts → getSignals()</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">app/services/signal_service.py</span></div></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/routers/briefing.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">GET /briefing/latest — parses JSON fields from gold.monthly_brief_inputs → returns executive summary for frontend Monthly Briefing page</div>
+            <div class="file-desc">Deserializes JSON arrays stored in Gold table into typed response. Most complex response schema.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>lib/api.ts → getBriefing()</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">app/services/briefing_service.py</span></div></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/routers/refresh.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">GET /refresh/status — reads silver.data_quality_checks table → reports pipeline health (which checks passed/failed, when last run)</div>
+            <div class="file-desc">Shows if the last pipeline run had any data quality failures. Not a trigger — only status reporting.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Can be polled by admin or frontend to show pipeline health badge</div></div>
+            <div class="detail-row"><div class="detail-label">Reads From</div><div class="detail-value"><code>silver.data_quality_checks</code> table written by <code>silver/03_build_data_quality_checks.py</code></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">Service Layer — Data Access Logic</span></div></div>
+
+    <!-- PHASE 9: SERVICES -->
+    <div class="phase-block" data-types="backend" id="phase-backend-services">
+      <div class="phase-header">
+        <div class="phase-num">9</div>
+        <div>
+          <div class="phase-title">Backend · Services (6 files)</div>
+          <div class="phase-subtitle">Business logic layer — queries DataFrame (snapshot) or SQL (Databricks) → transforms → returns typed dicts to routers</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/services/priority_service.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">get_latest_priorities() → filters app.state.data["priority_board"] to latest month → returns sorted list of dicts</div>
+            <div class="file-desc">In snapshot mode: pandas DataFrame filter. In Databricks mode: SQL query via db_conn. Same output shape either way.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>routers/priorities.py</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">schemas/priorities.py (validation)</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Mode Split</div><div class="detail-value">Snapshot: <code>df[df.month == df.month.max()]</code> · Databricks: <code>SELECT ... WHERE month = (SELECT MAX(month)...)</code></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/services/health_service.py · benchmark_service.py · signal_service.py · briefing_service.py · refresh_service.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">Same pattern as priority_service — each reads its Gold table, applies filtering/aggregation, returns typed dicts</div>
+            <div class="file-desc">5 parallel service files, one per feature. All follow identical dual-mode pattern (snapshot df vs Databricks SQL).</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Corresponding router in <code>app/routers/</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">app/schemas/*.py</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Data Source</div><div class="detail-value">Snapshot: <code>app.state.data["table_name"]</code> pandas DataFrame · Databricks: SQL via <code>app.state.db_conn</code></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 10: SCHEMAS -->
+    <div class="phase-block" data-types="backend" id="phase-backend-schemas">
+      <div class="phase-header">
+        <div class="phase-num">10</div>
+        <div>
+          <div class="phase-title">Backend · Pydantic Schemas (7 files)</div>
+          <div class="phase-subtitle">Runtime validation of all API responses — catches schema drift before JSON hits the frontend</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/schemas/ [priorities · health · benchmark · signals · briefing · refresh · common].py <span class="card-badge">Backend</span></div>
+            <div class="file-role">7 Pydantic v2 schema files — define TypedDict contracts for every API response. Auto-generates OpenAPI docs at /docs endpoint.</div>
+            <div class="file-desc">PriorityResponse · HealthSummaryResponse · BenchmarkResponse · SignalResponse · BriefingResponse · RefreshStatusResponse · common.py (shared types)</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Each router wraps service output in its schema before returning. <code>response_model=PriorityResponse</code> on FastAPI route decorator.</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">JSON response to frontend fetch()</span><span class="flow-tag to">types/clubos.ts (TypeScript mirror)</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Why It Matters</div><div class="detail-value">If Gold table schema changes (renamed column), Pydantic raises <code>ValidationError</code> at runtime before invalid JSON reaches frontend. Catchable at API layer, not in browser.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 11: DB CLIENT -->
+    <div class="phase-block" data-types="backend" id="phase-backend-client">
+      <div class="phase-header">
+        <div class="phase-num">11</div>
+        <div>
+          <div class="phase-title">Backend · Databricks Client</div>
+          <div class="phase-subtitle">Only used in Databricks live mode — wraps databricks-sql-connector with pooling + retry + logging</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="backend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/app/clients/databricks.py <span class="card-badge">Backend</span></div>
+            <div class="file-role">DatabricksClient class — wraps databricks-sql-connector with max 5 concurrent connections, timeout retries, query logging</div>
+            <div class="file-desc">NOT used in snapshot mode. Only instantiated when env vars DATABRICKS_SERVER_HOSTNAME / HTTP_PATH / ACCESS_TOKEN are present.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>app/main.py</code> on startup (Databricks mode). Stored in <code>app.state.db_conn</code>. Used by all services.</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">Databricks SQL Warehouse (external)</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Connection</div><div class="detail-value">Reads from env: <code>DATABRICKS_SERVER_HOSTNAME</code>, <code>DATABRICKS_HTTP_PATH</code>, <code>DATABRICKS_ACCESS_TOKEN</code>. Pool size: 5.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="phase-connector"><div class="connector-arrow"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><path d="M6 1v12M1 10l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="connector-label">HTTP Response → Frontend React</span></div></div>
+
+    <!-- PHASE 12: FRONTEND ENTRY -->
+    <div class="phase-block" data-types="frontend" id="phase-fe-entry">
+      <div class="phase-header">
+        <div class="phase-num">12</div>
+        <div>
+          <div class="phase-title">Frontend · Entry Point & Routing</div>
+          <div class="phase-subtitle">src/main.tsx mounts React → App.tsx defines 5 routes → PageShell wraps every screen</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/main.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">React app entry — mounts root component to DOM, wraps in BrowserRouter, applies global styles</div>
+            <div class="file-desc">First file React loads. createRoot() + render(). BrowserRouter enables HTML5 history-based routing (no # hash URLs).</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Browser on <code>http://localhost:5176</code> — Vite serves this as the entry bundle</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">src/app/App.tsx</span></div></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/app/App.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">Defines 5 Routes: / → PriorityBoardPage, /command-center, /peer-benchmark, /signal-engine, /monthly-briefing. All wrapped in PageShell.</div>
+            <div class="file-desc">The routing brain. Adding a new screen = adding a Route here. All routes share PageShell layout (nav + theme toggle).</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>src/main.tsx</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">components/ui/PageShell.tsx</span><span class="flow-tag to">features/priority-board/PriorityBoardPage.tsx</span><span class="flow-tag to">features/command-center/CommandCenterPage.tsx</span><span class="flow-tag to">features/peer-benchmark/PeerBenchmarkPage.tsx</span><span class="flow-tag to">features/signal-engine/SignalEnginePage.tsx</span><span class="flow-tag to">features/monthly-briefing/MonthlyBriefingPage.tsx</span></div></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 13: PAGES -->
+    <div class="phase-block" data-types="frontend" id="phase-fe-pages">
+      <div class="phase-header">
+        <div class="phase-num">13</div>
+        <div>
+          <div class="phase-title">Frontend · Feature Pages (5 files)</div>
+          <div class="phase-subtitle">Each page: useState → useEffect → API call → render. Same pattern, different endpoint and visualization.</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/features/priority-board/PriorityBoardPage.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">Hero screen — calls GET /priorities/latest → renders rank badges, score bars, category pills, "View Evidence" buttons → opens MetricDetailModal on click</div>
+            <div class="file-desc">Landing page (/ route). Most important screen. Shows top-10 priorities. Category filtering. Evidence modal on click.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>App.tsx</code> on route <code>/</code></div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">lib/api.ts → getPriorities()</span><span class="flow-tag to">components/ui/MetricDetailModal.tsx</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">State</div><div class="detail-value"><code>priorities: PriorityResponse[]</code> · <code>loading: boolean</code> · <code>error: string|null</code> · <code>selectedDetail: PriorityResponse|null</code></div></div>
+            <div class="detail-row"><div class="detail-label">Lifecycle</div><div class="detail-value"><code>useEffect([], () => getPriorities())</code> → <code>setPriorities(data)</code> → <code>setLoading(false)</code> → render priority cards grid</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/features/command-center/CommandCenterPage.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">Calls GET /health/summary → renders overview cards (total metrics, good/review/stable counts), horizontal health breakdown bars, deviation index</div>
+            <div class="file-desc">Operational overview screen. 59 total metrics, breakdown by status, deviation index with trend arrow.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Calls</div><div class="detail-value"><code>lib/api.ts → getHealthSummary()</code> → <code>GET /health/summary</code></div></div>
+            <div class="detail-row"><div class="detail-label">Chart</div><div class="detail-value">Stacked horizontal bars per asset showing good/review/stable metric counts</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/features/peer-benchmark/PeerBenchmarkPage.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">Dropdown: select asset + metric → calls GET /benchmark/{asset}/{metric} → renders 12-month multi-line chart (RM vs peer median vs leader) + rank diagram</div>
+            <div class="file-desc">8 benchmarkable metrics across website/ecommerce assets. Re-fetches on dropdown change.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Calls</div><div class="detail-value"><code>lib/api.ts → getBenchmark(asset, metric)</code> on dropdown selection. re-runs <code>useEffect</code> with asset/metric as dependencies.</div></div>
+            <div class="detail-row"><div class="detail-label">Chart</div><div class="detail-value">recharts LineChart — 3 lines: Real Madrid, peer median, peer leader. 12 months on X-axis.</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/features/signal-engine/SignalEnginePage.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">Calls GET /signals → renders signal cards with source→target flow arrows, strength bars, lag badges, expandable business interpretation panels</div>
+            <div class="file-desc">Shows validated predictive relationships. Each card: "website_traffic → ecommerce_sales (lag 2m, strength 72%, positive)".</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Calls</div><div class="detail-value"><code>lib/api.ts → getSignals()</code> → <code>GET /signals</code></div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/features/monthly-briefing/MonthlyBriefingPage.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">Calls GET /briefing/latest → renders executive summary (key takeaways, top 3 priorities grid, anomalies table, signals grid, benchmark stats, health donut chart)</div>
+            <div class="file-desc">One-page board-ready summary. Most complex render — pulls from all analytical outputs via single briefing endpoint.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Calls</div><div class="detail-value"><code>lib/api.ts → getBriefing()</code> → <code>GET /briefing/latest</code></div></div>
+            <div class="detail-row"><div class="detail-label">Chart</div><div class="detail-value">recharts PieChart — donut showing good/review/stable proportion of 59 metrics</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 14: COMPONENTS -->
+    <div class="phase-block" data-types="frontend" id="phase-fe-components">
+      <div class="phase-header">
+        <div class="phase-num">14</div>
+        <div>
+          <div class="phase-title">Frontend · Shared Components (2 files)</div>
+          <div class="phase-subtitle">PageShell (layout wrapper) + MetricDetailModal (clickable metric explanations used across all screens)</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/components/ui/PageShell.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">Layout wrapper — header nav with 5 NavLinks (active route highlighted), theme toggle button (dark/light persisted to localStorage), footer</div>
+            <div class="file-desc">Every page is wrapped in this. Adding a nav item = editing PageShell. Theme toggle applies .dark class to document root.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>App.tsx</code> — wraps all 5 routes</div></div>
+            <div class="detail-row"><div class="detail-label">Theme</div><div class="detail-value"><code>localStorage.getItem('theme')</code> on mount · <code>document.documentElement.classList.toggle('dark')</code> on toggle</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/components/ui/MetricDetailModal.tsx <span class="card-badge">Frontend</span></div>
+            <div class="file-role">Full-screen modal with metric explanation (what it means), business context (why it matters), optional trend chart (recharts line), optional key-value grid</div>
+            <div class="file-desc">Triggered by clicking any metric number in the app. Props: metricName, metricValue, metricCategory, explanation, businessContext, trendData?</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>PriorityBoardPage.tsx</code> (View Evidence click) + any other page where metric numbers are clickable</div></div>
+            <div class="detail-row"><div class="detail-label">Design</div><div class="detail-value">Glassmorphism backdrop overlay. Close button top-right. Optional recharts LineChart if trendData prop provided.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 15: API CLIENT -->
+    <div class="phase-block" data-types="frontend" id="phase-fe-lib">
+      <div class="phase-header">
+        <div class="phase-num">15</div>
+        <div>
+          <div class="phase-title">Frontend · API Client Library</div>
+          <div class="phase-subtitle">src/lib/api.ts — typed fetch wrappers — the only file that knows the backend URL</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/lib/api.ts <span class="card-badge">Frontend</span></div>
+            <div class="file-role">5 typed async functions: getPriorities() · getHealthSummary() · getBenchmark(asset, metric) · getSignals() · getBriefing(). Each wraps fetch() with error handling.</div>
+            <div class="file-desc">API_BASE_URL from VITE_API_BASE_URL env var (default: http://localhost:8000). All error re-thrown for component error boundaries.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Every feature page in <code>useEffect()</code> hooks</div></div>
+            <div class="detail-row"><div class="detail-label">Calls Next</div><div class="detail-value"><div class="flow-tags"><span class="flow-tag to">Backend FastAPI endpoints (HTTP GET)</span></div></div></div>
+            <div class="detail-row"><div class="detail-label">Pattern</div><div class="detail-value"><code>const res = await fetch(url); if (!res.ok) throw Error; return res.json() as TypedResponse</code></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 16: TYPES -->
+    <div class="phase-block" data-types="frontend" id="phase-fe-types">
+      <div class="phase-header">
+        <div class="phase-num">16</div>
+        <div>
+          <div class="phase-title">Frontend · TypeScript Types</div>
+          <div class="phase-subtitle">TypeScript mirror of backend Pydantic schemas — compile-time safety for API responses</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/src/types/clubos.ts <span class="card-badge">Frontend</span></div>
+            <div class="file-role">TypeScript interfaces: PriorityResponse · HealthSummaryResponse · BenchmarkResponse · SignalResponse · BriefingResponse — mirror of backend Pydantic schemas</div>
+            <div class="file-desc">If backend changes a field name, TypeScript compiler errors appear here before runtime. Schema drift caught at build time, not in production.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value">Every page component — typed state: <code>useState&lt;PriorityResponse[]&gt;([])</code></div></div>
+            <div class="detail-row"><div class="detail-label">Must Sync With</div><div class="detail-value"><code>backend/api/app/schemas/</code> — these two must match. Schema drift = TypeScript build error.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 17: FE CONFIG -->
+    <div class="phase-block" data-types="frontend" id="phase-fe-config">
+      <div class="phase-header">
+        <div class="phase-num">17</div>
+        <div>
+          <div class="phase-title">Frontend · Build Configuration</div>
+          <div class="phase-subtitle">tailwind.config.js defines newsprint design system · vite.config.ts sets port 5176 · postcss.config.js processes Tailwind</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="frontend" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">apps/clubos-web/tailwind.config.js · vite.config.ts · postcss.config.js <span class="card-badge">Frontend</span></div>
+            <div class="file-role">tailwind.config.js: custom fonts (DM Serif Display, IBM Plex Serif, JetBrains Mono) + editorial color palette. vite.config.ts: dev server port 5176, React plugin.</div>
+            <div class="file-desc">The newsprint design system lives entirely in tailwind.config.js. All color/font/spacing tokens defined here — no CSS modules.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Design Tokens</div><div class="detail-value">font-headline (DM Serif Display) · font-body (IBM Plex Serif) · font-mono (JetBrains Mono) · critical/warning/good/info semantic colors · 4px/8px spacing system</div></div>
+            <div class="detail-row"><div class="detail-label">Port</div><div class="detail-value">Default 5176, fallback 5177. Backend CORS allows both.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 18: SEEDS -->
+    <div class="phase-block" data-types="infra" id="phase-seeds">
+      <div class="phase-header">
+        <div class="phase-num">18</div>
+        <div>
+          <div class="phase-title">Reference Data · Seeds & Contracts</div>
+          <div class="phase-subtitle">metric_dictionary.json (polarity) · event_annotations.csv · 4 data contract markdown files</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="infra" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/seeds/metric_dictionary.json <span class="card-badge">Infra</span></div>
+            <div class="file-role">Defines polarity for all 52 metrics: +1 (higher is better), -1 (lower is better — bounce_rate only), 0 (neutral). Critical for peer benchmark gap logic.</div>
+            <div class="file-desc">The single most important reference file. Without correct polarity, bounce_rate benchmark is inverted — RM appears ahead when actually behind.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Read By</div><div class="detail-value"><code>gold/02_build_peer_benchmark.py</code> — spark.read.json() on startup of that notebook</div></div>
+            <div class="detail-row"><div class="detail-label">Format</div><div class="detail-value"><code>{"metric_name": {"polarity": 1}}</code> for each of 52 metrics. Only bounce_rate has polarity -1.</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="infra" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/seeds/event_annotations.csv · data_contracts/*.md <span class="card-badge">Infra</span></div>
+            <div class="file-role">event_annotations.csv: business events with date, type, affected_assets. data_contracts/: schema docs for each input file type.</div>
+            <div class="file-desc">event_annotations used by analytics/03_build_event_windows.py (not yet in UI). data_contracts validate monthly upload schema before ingestion.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">event_annotations</div><div class="detail-value">Columns: event_date, event_name, event_type (match/transfer/campaign/holiday), affected_assets, description</div></div>
+            <div class="detail-row"><div class="detail-label">data_contracts</div><div class="detail-value">4 files: internal_metrics_contract.md · benchmark_contract.md · event_annotations_contract.md · metric_inventory.md</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 19: QUALITY -->
+    <div class="phase-block" data-types="infra" id="phase-quality">
+      <div class="phase-header">
+        <div class="phase-num">19</div>
+        <div>
+          <div class="phase-title">Quality Layer · Tests & Validation</div>
+          <div class="phase-subtitle">23 regression tests across 3 categories — Gold snapshot validation · API contract tests · UI smoke tests</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="infra" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">tests/data/validate_gold_snapshots.py <span class="card-badge">Infra</span></div>
+            <div class="file-role">Checks 5 CSV files: exist · schema (column names + types) · no duplicate composite keys · required fields non-null · row count 360-440</div>
+            <div class="file-desc">Run before API tests. Catches pipeline schema drift before backend loads broken CSVs.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>scripts/run_all_tests.sh</code> step 1</div></div>
+            <div class="detail-row"><div class="detail-label">Exit Code</div><div class="detail-value">0 = all pass. Non-zero = failure details printed. CI checks exit code.</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="infra" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">backend/api/tests/test_api_contracts.py · test_health.py · test_snapshot_mode.py <span class="card-badge">Infra</span></div>
+            <div class="file-role">pytest + httpx TestClient — validates HTTP status codes, JSON structure matches Pydantic schema, CORS headers present for all 7 endpoints</div>
+            <div class="file-desc">3 test files, ~20 test functions. No running dev server needed — httpx TestClient simulates requests in-process.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>scripts/run_all_tests.sh</code> step 2: <code>pytest backend/api/tests/ -v</code></div></div>
+            <div class="detail-row"><div class="detail-label">Validates</div><div class="detail-value">HTTP 200 for success · HTTP 404 for /priorities/{nonexistent_id} · Response JSON matches Pydantic schema · <code>Access-Control-Allow-Origin</code> header present</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="infra" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">tests/ui/smoke_test.sh <span class="card-badge">Infra</span></div>
+            <div class="file-role">Bash: curls each of the 5 frontend pages → checks HTTP 200 → validates &lt;title&gt;ClubOS&lt;/title&gt; present in HTML</div>
+            <div class="file-desc">Smoke test only — confirms pages load, not that they render correctly. Requires dev server running on :5176.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Called From</div><div class="detail-value"><code>scripts/run_all_tests.sh</code> step 3</div></div>
+            <div class="detail-row"><div class="detail-label">Requires</div><div class="detail-value">Both <code>uvicorn</code> backend and <code>vite</code> frontend dev servers must be running first</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="infra" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">databricks/notebooks/quality/01_run_data_quality_checks.py <span class="card-badge">Infra</span></div>
+            <div class="file-role">PySpark notebook — validates Bronze/Silver/Gold tables: schema compliance, row counts, duplicate detection, date gaps, metric value ranges</div>
+            <div class="file-desc">Writes PASS/FAIL results to silver.data_quality_checks. Backend /refresh/status reads this table to show pipeline health.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Run After</div><div class="detail-value">After full pipeline completes (Bronze → Silver → Gold). Can also run independently as audit.</div></div>
+            <div class="detail-row"><div class="detail-label">Output Table</div><div class="detail-value"><span class="output-badge">silver.data_quality_checks</span> — run_id, check_timestamp, table_name, check_name, severity (REQUIRED/WARNING), status (PASS/FAIL), message</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 20: SCRIPTS -->
+    <div class="phase-block" data-types="infra" id="phase-scripts">
+      <div class="phase-header">
+        <div class="phase-num">20</div>
+        <div>
+          <div class="phase-title">Utility Scripts · Orchestration</div>
+          <div class="phase-subtitle">run_all_tests.sh chains all 3 test suites · build_local_snapshots.py exports Gold tables to CSV</div>
+        </div>
+        <div class="phase-line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="file-card" data-type="infra" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">scripts/run_all_tests.sh <span class="card-badge">Infra</span></div>
+            <div class="file-role">Master test runner: validate_gold_snapshots.py && pytest && smoke_test.sh — exit code 0 = all pass, used by CI/CD</div>
+            <div class="file-desc">Zero-tolerance: if any test fails, script exits non-zero. All 3 suites must pass before demo readiness.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Chains</div><div class="detail-value"><code>python tests/data/validate_gold_snapshots.py && pytest backend/api/tests/ -v && ./tests/ui/smoke_test.sh</code></div></div>
+            <div class="detail-row"><div class="detail-label">Exit Codes</div><div class="detail-value">0 = all pass · Non-zero = failure. CI/CD system reads exit code for pass/fail determination.</div></div>
+          </div>
+        </div>
+
+        <div class="file-card" data-type="infra" onclick="toggleCard(this)">
+          <div class="card-main">
+            <div class="file-path">scripts/build_local_snapshots.py <span class="card-badge">Infra</span></div>
+            <div class="file-role">Run after Databricks pipeline — reads 5 Gold tables via Spark → converts to pandas → writes gold_*.csv to data/gold_snapshots/</div>
+            <div class="file-desc">Enables demo/local mode. Must be re-run after any Gold schema change. Idempotent — running twice just overwrites.</div>
+          </div>
+          <div class="expand-btn">+</div>
+          <div class="card-detail">
+            <div class="detail-row"><div class="detail-label">Run When</div><div class="detail-value">After full pipeline completes. Before stakeholder demos. After Gold table schema changes.</div></div>
+            <div class="detail-row"><div class="detail-label">Output</div><div class="detail-value">5 CSVs in <code>data/gold_snapshots/</code>: gold_priority_board.csv, gold_kpi_health.csv, gold_peer_benchmark.csv, gold_signal_relationships.csv, gold_monthly_brief_inputs.csv</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function toggleCard(card) {
+    card.classList.toggle('expanded');
+  }
+
+  // Filter functionality
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const phaseBlocks = document.querySelectorAll('.phase-block');
+  const fileCards = document.querySelectorAll('.file-card');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter;
+
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (filter === 'all') {
+        phaseBlocks.forEach(b => b.classList.remove('hidden'));
+        fileCards.forEach(c => c.style.display = '');
+      } else {
+        phaseBlocks.forEach(block => {
+          const types = block.dataset.types || '';
+          if (types.includes(filter)) {
+            block.classList.remove('hidden');
+          } else {
+            block.classList.add('hidden');
+          }
+        });
+      }
+    });
+  });
+
+  // Sidebar active link on scroll
+  const sidebarLinks = document.querySelectorAll('.sidebar-link');
+  const sections = document.querySelectorAll('.phase-block[id]');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        sidebarLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

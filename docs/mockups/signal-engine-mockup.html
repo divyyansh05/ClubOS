@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClubOS - Signal Engine</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Serif:wght@400;600;700&display=swap');
+
+    .font-headline { font-family: 'DM Serif Display', serif; }
+    .font-body { font-family: 'IBM Plex Serif', serif; }
+    .font-sans { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    .paper-texture {
+      background-image:
+        linear-gradient(0deg, transparent 98%, rgba(0,0,0,0.015) 100%),
+        linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.015) 100%);
+      background-size: 4px 4px;
+    }
+
+    .dark .paper-texture {
+      background-image:
+        linear-gradient(0deg, transparent 98%, rgba(255,255,255,0.02) 100%),
+        linear-gradient(90deg, transparent 98%, rgba(255,255,255,0.02) 100%);
+    }
+
+    .data-table {
+      border-collapse: collapse;
+    }
+
+    .data-table td,
+    .data-table th {
+      border: 1px solid;
+    }
+
+    * {
+      transition-property: background-color, border-color, color, transform;
+      transition-duration: 150ms;
+      transition-timing-function: ease-out;
+    }
+
+    .signal-arrow {
+      transition: transform 0.3s ease;
+    }
+
+    .signal-card:hover .signal-arrow {
+      transform: translateX(8px);
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            paper: '#FAFAF8',
+            ink: '#1A1A1A',
+            stone: {
+              50: '#FAFAF8',
+              100: '#F5F5F3',
+              200: '#E8E8E5',
+              300: '#D1D1CC',
+              400: '#A3A39E',
+              500: '#75756F',
+              600: '#5C5C56',
+              700: '#434340',
+              800: '#2B2B28',
+              900: '#1A1A18',
+            },
+          },
+          fontFamily: {
+            headline: ['DM Serif Display', 'serif'],
+            body: ['IBM Plex Serif', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-paper dark:bg-stone-900 text-ink dark:text-stone-100 font-sans paper-texture">
+
+  <!-- Header -->
+  <header class="border-b-2 border-ink dark:border-stone-700 bg-paper/95 dark:bg-stone-900/95 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-screen-xl mx-auto px-6">
+      <div class="py-2 border-b border-stone-300 dark:border-stone-700 flex items-center justify-between">
+        <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">
+          Vol. 1.0 · Edition: January 2026
+        </div>
+        <button id="theme-toggle"
+                class="font-mono text-[10px] uppercase tracking-widest hover:text-[#2563EB] dark:hover:text-[#3B82F6]"
+                aria-label="Toggle theme">
+          <span class="dark:hidden">Dark</span>
+          <span class="hidden dark:inline">Light</span>
+        </button>
+      </div>
+
+      <div class="py-6 flex items-center justify-between">
+        <div class="cursor-pointer" onclick="alert('Navigate to Dashboard')">
+          <h1 class="font-headline text-4xl md:text-5xl tracking-tight">ClubOS</h1>
+          <p class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mt-1">
+            Real Madrid Commercial Intelligence
+          </p>
+        </div>
+
+        <nav class="hidden md:flex gap-8 font-sans text-sm">
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Board</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Center</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6]">Benchmark</a>
+          <a href="#" class="uppercase tracking-wider hover:text-[#2563EB] dark:hover:text-[#3B82F6] border-b-2 border-ink dark:border-stone-300 pb-1">Signals</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-screen-xl mx-auto px-6 py-12">
+
+    <!-- Hero -->
+    <div class="border-b-4 border-ink dark:border-stone-600 pb-8 mb-12">
+      <div class="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+        Leading Indicator Analysis
+      </div>
+      <h1 class="font-headline text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight mb-6">
+        Commercial<br/>Signal Engine
+      </h1>
+      <p class="font-body text-lg md:text-xl text-stone-600 dark:text-stone-400 leading-relaxed max-w-2xl">
+        Validated leading indicators that predict future performance across commercial channels, helping anticipate trends 1-3 months ahead.
+      </p>
+    </div>
+
+    <!-- Summary -->
+    <div class="mb-12 border border-ink dark:border-stone-700">
+      <div class="grid grid-cols-2 md:grid-cols-4 data-table border-ink dark:border-stone-700">
+
+        <div class="p-6 border-l-4 border-[#16A34A] dark:border-[#22C55E]">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+            Validated Signals
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            2
+          </div>
+          <div class="h-1 bg-[#16A34A] dark:bg-[#22C55E]"></div>
+        </div>
+
+        <div class="p-6 border-l-4 border-[#2563EB] dark:border-[#3B82F6]">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+            Active Status
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            2
+          </div>
+          <div class="h-1 bg-[#2563EB] dark:bg-[#3B82F6]"></div>
+        </div>
+
+        <div class="p-6 border-l-4 border-[#EA580C] dark:border-[#F97316]">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+            Avg Lead Time
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            2
+          </div>
+          <div class="h-1 bg-[#EA580C] dark:bg-[#F97316]"></div>
+          <div class="font-mono text-xs text-stone-500 dark:text-stone-400 mt-1">months</div>
+        </div>
+
+        <div class="p-6 border-l-4 border-[#9333EA] dark:border-[#A855F7]">
+          <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+            Avg Strength
+          </div>
+          <div class="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
+            70%
+          </div>
+          <div class="h-1 bg-[#9333EA] dark:bg-[#A855F7]"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Signal Cards -->
+    <div class="grid grid-cols-1 gap-6 mb-12">
+
+      <!-- Signal #1 -->
+      <article class="signal-card border-2 border-[#16A34A] dark:border-[#22C55E] p-8 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-all"
+               onclick="toggleDetail('detail-1')">
+
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <div class="font-mono text-xs uppercase tracking-widest text-[#16A34A] dark:text-[#22C55E] mb-2">
+              Signal #1 · Active
+            </div>
+            <h3 class="font-headline text-3xl mb-2">Website Traffic → eCommerce Sales</h3>
+            <div class="font-mono text-sm text-stone-600 dark:text-stone-400">
+              Unique Visitors leads Net Sales by 1 month
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
+              Strength
+            </div>
+            <div class="font-mono text-4xl font-bold text-[#16A34A] dark:text-[#22C55E]">
+              72%
+            </div>
+          </div>
+        </div>
+
+        <!-- Flow Diagram -->
+        <div class="flex items-center gap-6 mb-6 p-6 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+          <div class="flex-1 text-center">
+            <div class="w-16 h-16 mx-auto border-2 border-[#2563EB] dark:border-[#3B82F6] flex items-center justify-center mb-2">
+              <svg class="w-8 h-8 text-[#2563EB] dark:text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+              </svg>
+            </div>
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Source</div>
+            <div class="font-semibold">Unique Visitors</div>
+          </div>
+
+          <div class="flex-shrink-0">
+            <div class="signal-arrow flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              <span>1 mo lag</span>
+              <span class="text-2xl">→</span>
+            </div>
+          </div>
+
+          <div class="flex-1 text-center">
+            <div class="w-16 h-16 mx-auto border-2 border-[#16A34A] dark:border-[#22C55E] flex items-center justify-center mb-2">
+              <svg class="w-8 h-8 text-[#16A34A] dark:text-[#22C55E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+            </div>
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Target</div>
+            <div class="font-semibold">Net Sales</div>
+          </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="p-3 border border-stone-300 dark:border-stone-700 text-center">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Correlation</div>
+            <div class="font-mono text-lg font-bold text-[#16A34A] dark:text-[#22C55E]">0.72</div>
+          </div>
+          <div class="p-3 border border-stone-300 dark:border-stone-700 text-center">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Lag Time</div>
+            <div class="font-mono text-lg font-bold">1 mo</div>
+          </div>
+          <div class="p-3 border border-stone-300 dark:border-stone-700 text-center">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Direction</div>
+            <div class="font-mono text-lg font-bold text-[#16A34A] dark:text-[#22C55E]">↑ Positive</div>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="event.stopPropagation(); alert('View full analysis')"
+                  class="px-6 py-2 bg-[#16A34A] dark:bg-[#22C55E] text-white font-mono text-xs uppercase tracking-widest hover:opacity-90">
+            View Analysis
+          </button>
+          <button onclick="event.stopPropagation(); alert('Export data')"
+                  class="px-6 py-2 border-2 border-[#16A34A] dark:border-[#22C55E] text-[#16A34A] dark:text-[#22C55E] font-mono text-xs uppercase tracking-widest hover:bg-stone-100 dark:hover:bg-stone-800">
+            Export
+          </button>
+        </div>
+      </article>
+
+      <!-- Signal #2 -->
+      <article class="signal-card border-2 border-[#2563EB] dark:border-[#3B82F6] p-8 hover:bg-stone-100 dark:hover:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700 cursor-pointer transition-all"
+               onclick="toggleDetail('detail-2')">
+
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <div class="font-mono text-xs uppercase tracking-widest text-[#2563EB] dark:text-[#3B82F6] mb-2">
+              Signal #2 · Active
+            </div>
+            <h3 class="font-headline text-3xl mb-2">Social Engagement → Merchandise Sales</h3>
+            <div class="font-mono text-sm text-stone-600 dark:text-stone-400">
+              Instagram Engagement leads Merchandise Revenue by 2 months
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
+              Strength
+            </div>
+            <div class="font-mono text-4xl font-bold text-[#2563EB] dark:text-[#3B82F6]">
+              68%
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-6 mb-6 p-6 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+          <div class="flex-1 text-center">
+            <div class="w-16 h-16 mx-auto border-2 border-[#9333EA] dark:border-[#A855F7] flex items-center justify-center mb-2">
+              <svg class="w-8 h-8 text-[#9333EA] dark:text-[#A855F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+              </svg>
+            </div>
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Source</div>
+            <div class="font-semibold">IG Engagement</div>
+          </div>
+
+          <div class="flex-shrink-0">
+            <div class="signal-arrow flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              <span>2 mo lag</span>
+              <span class="text-2xl">→</span>
+            </div>
+          </div>
+
+          <div class="flex-1 text-center">
+            <div class="w-16 h-16 mx-auto border-2 border-[#2563EB] dark:border-[#3B82F6] flex items-center justify-center mb-2">
+              <svg class="w-8 h-8 text-[#2563EB] dark:text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+              </svg>
+            </div>
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Target</div>
+            <div class="font-semibold">Merch Revenue</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="p-3 border border-stone-300 dark:border-stone-700 text-center">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Correlation</div>
+            <div class="font-mono text-lg font-bold text-[#2563EB] dark:text-[#3B82F6]">0.68</div>
+          </div>
+          <div class="p-3 border border-stone-300 dark:border-stone-700 text-center">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Lag Time</div>
+            <div class="font-mono text-lg font-bold">2 mo</div>
+          </div>
+          <div class="p-3 border border-stone-300 dark:border-stone-700 text-center">
+            <div class="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Direction</div>
+            <div class="font-mono text-lg font-bold text-[#2563EB] dark:text-[#3B82F6]">↑ Positive</div>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="event.stopPropagation(); alert('View full analysis')"
+                  class="px-6 py-2 bg-[#2563EB] dark:bg-[#3B82F6] text-white font-mono text-xs uppercase tracking-widest hover:opacity-90">
+            View Analysis
+          </button>
+          <button onclick="event.stopPropagation(); alert('Export data')"
+                  class="px-6 py-2 border-2 border-[#2563EB] dark:border-[#3B82F6] text-[#2563EB] dark:text-[#3B82F6] font-mono text-xs uppercase tracking-widest hover:bg-stone-100 dark:hover:bg-stone-800">
+            Export
+          </button>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- How to Use -->
+    <section class="border-t-2 border-ink dark:border-stone-700 pt-12">
+      <h2 class="font-headline text-3xl mb-6">How to Use Signals</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <div class="border border-stone-300 dark:border-stone-700 p-6">
+          <div class="w-12 h-12 border-2 border-[#16A34A] dark:border-[#22C55E] flex items-center justify-center mb-4 font-headline text-2xl text-[#16A34A] dark:text-[#22C55E]">
+            1
+          </div>
+          <h3 class="font-headline text-xl mb-3">Monitor Leading Indicator</h3>
+          <p class="font-body text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+            Track the source metric (e.g., Unique Visitors) for early warning signs of changes in target metric.
+          </p>
+        </div>
+
+        <div class="border border-stone-300 dark:border-stone-700 p-6">
+          <div class="w-12 h-12 border-2 border-[#2563EB] dark:border-[#3B82F6] flex items-center justify-center mb-4 font-headline text-2xl text-[#2563EB] dark:text-[#3B82F6]">
+            2
+          </div>
+          <h3 class="font-headline text-xl mb-3">Anticipate Future Performance</h3>
+          <p class="font-body text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+            Use lag time to predict target metric 1-3 months ahead. Prepare action plans proactively.
+          </p>
+        </div>
+
+        <div class="border border-stone-300 dark:border-stone-700 p-6">
+          <div class="w-12 h-12 border-2 border-[#EA580C] dark:border-[#F97316] flex items-center justify-center mb-4 font-headline text-2xl text-[#EA580C] dark:text-[#F97316]">
+            3
+          </div>
+          <h3 class="font-headline text-xl mb-3">Validate with Updates</h3>
+          <p class="font-body text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+            Check monthly updates to confirm signal remains active. Correlation strength may change over time.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+    });
+
+    function toggleDetail(id) {
+      alert(`Expand ${id} details`);
+    }
+  </script>
+
+</body>
+</html>
