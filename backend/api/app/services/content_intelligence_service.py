@@ -186,26 +186,35 @@ def _generate_interpretation(
 ) -> str:
     """
     Generate business-readable interpretation of a content-to-commercial correlation.
+
+    For positive correlations: "tends to be HIGHER than usual"
+    For negative correlations: "tends to be LOWER than usual" (NOT "tends to be negative")
     """
     content_label = content_type.replace("_", " ").title()
-    direction_verb = "increases" if direction == "positive" else "decreases"
+
+    # Clear directional language — avoids "tends to be negative" mistake
+    if direction == "positive":
+        direction_phrase = "tends to be HIGHER than usual"
+    else:
+        direction_phrase = "tends to be LOWER than usual"
+
     lag_text = "in the same month" if lag == 0 else f"{lag} month{'s' if lag > 1 else ''} later"
 
     # Context-specific interpretations
     if content_type == "goal_celebration":
-        context = f"Goal Celebration content generates Real Madrid's highest per-post engagement ({int(avg_engagement):,} avg). When Goal Celebration engagement is high in a given month, {metric} on {asset} tends to {direction_verb} {lag_text}. Correlation strength: {abs(correlation):.0%}."
+        context = f"When Goal Celebration posts generate high engagement in a given month, {metric} on {asset} {direction_phrase} {lag_text}. (Correlation: {correlation:.2f}, {abs(correlation):.0%} strength)"
     elif content_type == "birthday":
-        context = f"Birthday posts generate {int(avg_engagement):,} avg engagement per post — 2.6x the overall average. High birthday content engagement correlates with {metric} on {asset} movements {lag_text}. Correlation: {abs(correlation):.0%}."
+        context = f"When Birthday posts generate high engagement, {metric} on {asset} {direction_phrase} {lag_text}. (Correlation: {correlation:.2f})"
     elif content_type == "score_graphic":
-        context = f"Score graphic posts generate {int(avg_engagement):,} avg engagement. These posts spike on matchdays and correlate with {metric} on {asset} {lag_text}. Correlation: {abs(correlation):.0%}."
+        context = f"When Score Graphic posts generate high engagement, {metric} on {asset} {direction_phrase} {lag_text}. These posts spike on matchdays. (Correlation: {correlation:.2f})"
     elif content_type == "lineup_graphic":
-        context = f"Lineup graphic posts ({int(avg_engagement):,} avg engagement) are pre-match content. High lineup engagement months correlate with {metric} on {asset} {lag_text}. Correlation: {abs(correlation):.0%}."
+        context = f"When Lineup Graphic posts generate high engagement, {metric} on {asset} {direction_phrase} {lag_text}. (Correlation: {correlation:.2f})"
     elif content_type == "game_preview":
-        context = f"Game preview content ({int(avg_engagement):,} avg engagement) is anticipatory content. High preview engagement correlates with {metric} on {asset} {lag_text}. Correlation: {abs(correlation):.0%}."
+        context = f"When Game Preview content generates high engagement, {metric} on {asset} {direction_phrase} {lag_text}. (Correlation: {correlation:.2f})"
     elif content_type == "training":
-        context = f"Training content ({int(avg_engagement):,} avg engagement) provides steady baseline engagement. High training content months correlate with {metric} on {asset} {lag_text}. Correlation: {abs(correlation):.0%}."
+        context = f"When Training content generates high engagement, {metric} on {asset} {direction_phrase} {lag_text}. (Correlation: {correlation:.2f})"
     else:
-        context = f"{content_label} content ({int(avg_engagement):,} avg engagement) correlates with {metric} on {asset} {lag_text}. Correlation: {abs(correlation):.0%}."
+        context = f"When {content_label} posts generate high engagement, {metric} on {asset} {direction_phrase} {lag_text}. (Correlation: {correlation:.2f})"
 
     return context
 

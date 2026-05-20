@@ -256,7 +256,7 @@ def get_social_monthly_trend() -> SocialMonthlyTrendResponse:
     Get all 12 months trend data for charts.
 
     Returns:
-        SocialMonthlyTrendResponse with time series arrays
+        SocialMonthlyTrendResponse with time series arrays including platform breakdowns
     """
     rows = get_social_metrics()
 
@@ -271,11 +271,23 @@ def get_social_monthly_trend() -> SocialMonthlyTrendResponse:
     avg_engagement_per_post = [r.get("avg_engagement_per_post", 0) for r in rows_sorted]
     total_posts = [r.get("total_posts", 0) for r in rows_sorted]
 
+    # Platform-level data for multi-line charts (V1.6.7 Fix 2)
+    instagram_engagement = [r.get("instagram_engagement", 0) for r in rows_sorted]
+    tiktok_engagement = [r.get("tiktok_engagement", 0) for r in rows_sorted]
+    x_engagement = [r.get("x_engagement", 0) for r in rows_sorted]
+    facebook_engagement = [r.get("facebook_engagement", 0) for r in rows_sorted]
+    youtube_engagement = [r.get("youtube_engagement", 0) for r in rows_sorted]
+
     return SocialMonthlyTrendResponse(
         months=months,
         total_engagement=total_engagement,
         avg_engagement_per_post=avg_engagement_per_post,
-        total_posts=total_posts
+        total_posts=total_posts,
+        instagram_engagement=instagram_engagement,
+        tiktok_engagement=tiktok_engagement,
+        x_engagement=x_engagement,
+        facebook_engagement=facebook_engagement,
+        youtube_engagement=youtube_engagement
     )
 
 
@@ -772,12 +784,17 @@ def compute_international_commercial_correlation() -> dict:
     }
 
 
-def get_market_growth_ranking() -> dict:
+def get_market_growth_ranking(compare_month: Optional[str] = None) -> dict:
     """
     Get market growth ranking (which language markets are growing fastest).
 
+    Args:
+        compare_month: Optional comparison month in YYYY-MM format.
+                      If provided, compares latest vs this specific month.
+                      If not provided, defaults to prior month (MoM).
+
     Returns:
-        Dict with month, rankings list (sorted by mom_change_pct descending)
+        Dict with month, rankings list (sorted by change_pct descending)
     """
     rows = get_social_metrics()
 
@@ -788,7 +805,17 @@ def get_market_growth_ranking() -> dict:
     rows_sorted = sorted(rows, key=lambda r: r.get("month", ""), reverse=True)
 
     latest = rows_sorted[0]
-    prior = rows_sorted[1]
+
+    # Determine comparison month
+    if compare_month:
+        # Find specific comparison month
+        compare_iso = f"{compare_month}-01"
+        prior = next((r for r in rows if r.get("month") == compare_iso), None)
+        if not prior:
+            raise ValueError(f"Comparison month {compare_month} not found in data")
+    else:
+        # Default to prior month (MoM)
+        prior = rows_sorted[1]
 
     month = latest.get("month", "")
 
