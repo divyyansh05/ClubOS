@@ -7,10 +7,10 @@ from app.routers import analytics, benchmark, briefing, events, health, prioriti
 
 app = FastAPI(title="ClubOS API", version="0.1.0")
 
-# CORS middleware to allow frontend (localhost:5174, 5176, 5177) to access API
+# CORS middleware to allow frontend (localhost:5173, 5174, 5176, 5177) to access API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5176", "http://127.0.0.1:5176", "http://localhost:5177", "http://127.0.0.1:5177"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5176", "http://127.0.0.1:5176", "http://localhost:5177", "http://127.0.0.1:5177"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
