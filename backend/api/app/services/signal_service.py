@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 from app.clients.databricks import DatabricksClient
 from app.config.settings import settings
+from app.services.social_signal_service import compute_social_signals
 
 
 def _client() -> DatabricksClient:
@@ -156,6 +157,62 @@ def _get_priority_board_connection(
         return None
 
 
+def _build_signal_labels(
+    source_metric: str,
+    source_asset: str,
+    target_metric: str,
+    target_asset: str,
+    lag_months: int,
+    current_status: str
+) -> dict[str, Any]:
+    """Build driver/outcome labels and causal direction statement for a signal (V1.5.5)"""
+
+    # Determine relationship type based on lag
+    if lag_months > 0:
+        relationship_type = "leading_indicator"
+    elif lag_months == 0:
+        relationship_type = "concurrent"
+    else:
+        relationship_type = "leading_indicator"  # default
+
+    # Build causal direction statement
+    causal_direction_statement = (
+        f"Changes in {source_metric} on {source_asset} precede changes in "
+        f"{target_metric} on {target_asset} by {lag_months} month{'s' if lag_months != 1 else ''}. "
+        f"Source metric is the driver. Target metric is the predicted outcome."
+    )
+
+    # Build action statement based on current_status
+    if current_status == "firing_positive":
+        action_statement = (
+            f"SIGNAL ACTIVE — {source_metric} is rising. "
+            f"Based on historical patterns, {target_metric} is expected to "
+            f"follow upward in {lag_months} month{'s' if lag_months != 1 else ''}. Recommended: anticipate "
+            f"increased {target_metric} and align commercial plans accordingly."
+        )
+    elif current_status == "firing_negative":
+        action_statement = (
+            f"SIGNAL ACTIVE — {source_metric} is declining. "
+            f"Based on historical patterns, {target_metric} is expected to "
+            f"follow downward in {lag_months} month{'s' if lag_months != 1 else ''}. Recommended: flag "
+            f"{target_metric} for early intervention before the lag window closes."
+        )
+    else:  # neutral or unknown
+        action_statement = (
+            f"SIGNAL MONITORING — {source_metric} is stable. "
+            f"No directional signal this month. Continue monitoring for "
+            f"sustained movement in either direction."
+        )
+
+    return {
+        "driver_label": "Independent Variable (Driver)",
+        "outcome_label": "Dependent Variable (Outcome)",
+        "causal_direction_statement": causal_direction_statement,
+        "action_statement": action_statement,
+        "relationship_type": relationship_type
+    }
+
+
 def _build_dynamic_interpretation(
     signal: dict[str, Any],
     current_status: str,
@@ -207,13 +264,26 @@ def _build_dynamic_interpretation(
         )
 
 
-def get_signal_view() -> dict[str, Any]:
+def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
+    """
+    Get all validated signals (internal + social-to-commercial).
+
+    Args:
+        signal_type_filter: Optional filter - "internal", "social_to_commercial", or None for all
+
+    Returns:
+        Dict with latest_validated_month and items list
+    """
+    # Read internal signals from gold_signal_relationships
     rows = _client().read_gold_table("gold_signal_relationships")
+    internal_signals_exist = bool(rows)
+
     if not rows:
-        return {"latest_validated_month": None, "items": []}
+        rows = []
 
-    latest_validated_month = max(_month_str(row, "last_validated_month") for row in rows)
+    latest_validated_month = max((_month_str(row, "last_validated_month") for row in rows), default=None)
 
+    # Build internal signals
     normalized = []
     for row in rows:
         signal_id = "__".join(
@@ -288,6 +358,11 @@ def get_signal_view() -> dict[str, Any]:
             source_metric, target_metric, current_status, latest_validated_month
         )
 
+        # Build driver/outcome labels (V1.5.5)
+        signal_labels = _build_signal_labels(
+            source_metric, source_asset, target_metric, target_asset, lag_months, current_status
+        )
+
         normalized.append(
             {
                 "signal_id": signal_id,
@@ -311,8 +386,88 @@ def get_signal_view() -> dict[str, Any]:
                 "target_current_value": target_current_value,
                 "target_health_status": target_health_status,
                 "priority_connection": priority_connection,
+                # V1.5.5: Driver/Outcome labels
+                **signal_labels,
+                # V1.6.2: Signal type
+                "signal_type": "internal",
             }
         )
 
+    # Compute social-to-commercial signals (V1.6.2)
+    try:
+        # Try 0.60 threshold first
+        social_signals = compute_social_signals(correlation_threshold=0.60)
+
+        # If no signals found, try lowering threshold to 0.50
+        if not social_signals:
+            social_signals = compute_social_signals(correlation_threshold=0.50)
+
+        # Enrich each social signal with driver/outcome labels
+        for signal in social_signals:
+            signal_id = "__".join([
+                str(signal["source_asset"]),
+                str(signal["source_metric"]),
+                str(signal["target_asset"]),
+                str(signal["target_metric"]),
+                str(signal["lag_months"]),
+            ])
+            signal["signal_id"] = signal_id
+
+            # Add driver/outcome labels
+            signal_labels = _build_signal_labels(
+                signal["source_metric"],
+                signal["source_asset"],
+                signal["target_metric"],
+                signal["target_asset"],
+                signal["lag_months"],
+                signal.get("current_status", "neutral")
+            )
+            signal.update(signal_labels)
+
+            # Add status_meaning
+            if signal.get("current_status") == "firing_positive":
+                signal["status_meaning"] = (
+                    f"Source rising — target metric expected to rise in "
+                    f"{signal['lag_months']} month{'s' if signal['lag_months'] > 1 else ''}"
+                )
+            elif signal.get("current_status") == "firing_negative":
+                signal["status_meaning"] = (
+                    f"Source declining — target metric expected to decline in "
+                    f"{signal['lag_months']} month{'s' if signal['lag_months'] > 1 else ''}"
+                )
+            else:
+                signal["status_meaning"] = "Source stable — no strong directional signal currently"
+
+            # Get priority connection for social signals
+            priority_conn = _get_priority_board_connection(
+                signal["source_metric"],
+                signal["target_metric"],
+                signal.get("current_status", "neutral"),
+                signal["last_validated_month"]
+            )
+            signal["priority_connection"] = priority_conn
+
+        # Merge social signals with internal signals
+        normalized.extend(social_signals)
+
+        # Update latest validated month if social signals are newer
+        if social_signals:
+            social_latest = max(s["last_validated_month"] for s in social_signals)
+            if latest_validated_month is None or social_latest > latest_validated_month:
+                latest_validated_month = social_latest
+
+    except Exception as e:
+        # If social signal computation fails, just continue with internal signals
+        pass
+
+    # Apply signal_type filter if specified
+    if signal_type_filter:
+        if signal_type_filter == "internal":
+            normalized = [s for s in normalized if s.get("signal_type") == "internal"]
+        elif signal_type_filter == "social_to_commercial":
+            normalized = [s for s in normalized if s.get("signal_type") == "social_to_commercial"]
+        # "all" or any other value returns everything
+
+    # Sort by strength score
     normalized = sorted(normalized, key=lambda x: abs(x["strength_score"]), reverse=True)
     return {"latest_validated_month": latest_validated_month, "items": normalized}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { getBenchmark } from "../../lib/api";
-import type { BenchmarkResponse } from "../../types/clubos";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { getBenchmark, getSocialBenchmark, getSocialBenchmarkTrend, getSocialBenchmarkSummary } from "../../lib/api";
+import type { BenchmarkResponse, SocialBenchmarkResponse, SocialBenchmarkTrendResponse, SocialBenchmarkSummaryResponse } from "../../types/clubos";
 import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
 import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { ScreenGuide } from "../../components/ui/ScreenGuide";
@@ -18,6 +18,13 @@ const METRICS = [
   { asset: "fan_app", metric: "app_downloads", label: "Fan App - Downloads" },
 ];
 
+const SOCIAL_METRICS = [
+  { metric: "avg_engagement_per_post", label: "Avg Engagement Per Post" },
+  { metric: "total_engagement", label: "Total Engagement" },
+  { metric: "instagram_engagement_rate", label: "Instagram Engagement Rate" },
+  { metric: "posting_frequency", label: "Posting Frequency" },
+];
+
 interface MetricDetail {
   name: string;
   value: string | number;
@@ -29,18 +36,36 @@ interface MetricDetail {
 }
 
 export function PeerBenchmarkPage() {
+  const [activeTab, setActiveTab] = useState<"commercial" | "social">("commercial");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null);
   const [selectedMetric, setSelectedMetric] = useState(METRICS[2]); // ecommerce conversion_rate
   const [selectedMetricDetail, setSelectedMetricDetail] = useState<MetricDetail | null>(null);
 
+  // Social benchmark state
+  const [socialBenchmark, setSocialBenchmark] = useState<SocialBenchmarkResponse | null>(null);
+  const [socialTrend, setSocialTrend] = useState<SocialBenchmarkTrendResponse | null>(null);
+  const [socialSummary, setSocialSummary] = useState<SocialBenchmarkSummaryResponse | null>(null);
+  const [selectedSocialMetric, setSelectedSocialMetric] = useState(SOCIAL_METRICS[0]); // avg_engagement_per_post
+
   useEffect(() => {
     async function loadBenchmark() {
       try {
         setLoading(true);
-        const data = await getBenchmark(selectedMetric.asset, selectedMetric.metric);
-        setBenchmark(data);
+        if (activeTab === "commercial") {
+          const data = await getBenchmark(selectedMetric.asset, selectedMetric.metric);
+          setBenchmark(data);
+        } else {
+          const [benchData, trendData, summaryData] = await Promise.all([
+            getSocialBenchmark(selectedSocialMetric.metric),
+            getSocialBenchmarkTrend(selectedSocialMetric.metric),
+            getSocialBenchmarkSummary(),
+          ]);
+          setSocialBenchmark(benchData);
+          setSocialTrend(trendData);
+          setSocialSummary(summaryData);
+        }
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load benchmark data");
@@ -49,7 +74,7 @@ export function PeerBenchmarkPage() {
       }
     }
     loadBenchmark();
-  }, [selectedMetric]);
+  }, [selectedMetric, selectedSocialMetric, activeTab]);
 
   function handleMetricChange(asset: string, metric: string) {
     const selected = METRICS.find((m) => m.asset === asset && m.metric === metric);
@@ -88,7 +113,12 @@ export function PeerBenchmarkPage() {
     );
   }
 
-  if (!benchmark || benchmark.points.length === 0) {
+  // Check data availability based on active tab
+  const hasData = activeTab === "commercial"
+    ? (benchmark && benchmark.points.length > 0)
+    : (socialBenchmark && socialBenchmark.clubs.length > 0);
+
+  if (!hasData) {
     return (
       <section className="max-w-screen-xl mx-auto px-6 py-12">
         <h2 className="font-headline text-3xl mb-4">Peer Benchmark</h2>
@@ -99,7 +129,7 @@ export function PeerBenchmarkPage() {
     );
   }
 
-  const latestPoint = benchmark.points[benchmark.points.length - 1];
+  const latestPoint = benchmark?.points[benchmark.points.length - 1];
 
   // Determine border color based on rank
   let borderColor = "border-critical-light dark:border-critical-dark";
@@ -139,11 +169,49 @@ export function PeerBenchmarkPage() {
           Peer<br/>Benchmark
         </h1>
         <p className="font-body text-lg md:text-xl text-stone-600 dark:text-stone-400 leading-relaxed max-w-2xl">
-          Compare Real Madrid's performance against {latestPoint.club_count - 1} peer clubs across key commercial metrics.
+          Compare Real Madrid's performance against {activeTab === "commercial" && latestPoint ? latestPoint.club_count - 1 : 9} peer clubs across {activeTab === "commercial" ? "key commercial" : "social media"} metrics.
         </p>
       </div>
 
-      {/* Metric Selector */}
+      {/* Tab Selector (V1.6.3) */}
+      <div className="mb-8 border border-ink dark:border-stone-700">
+        <div className="flex flex-wrap border-b border-ink dark:border-stone-700">
+          <button
+            onClick={() => setActiveTab("commercial")}
+            className={`px-6 py-4 font-mono text-xs uppercase tracking-widest transition-colors border-r border-ink dark:border-stone-700 ${
+              activeTab === "commercial"
+                ? "bg-ink dark:bg-stone-100 text-white dark:text-ink font-semibold"
+                : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            }`}
+          >
+            Commercial Metrics (8)
+          </button>
+          <button
+            onClick={() => setActiveTab("social")}
+            className={`px-6 py-4 font-mono text-xs uppercase tracking-widest transition-colors ${
+              activeTab === "social"
+                ? "bg-ink dark:bg-stone-100 text-white dark:text-ink font-semibold"
+                : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            }`}
+          >
+            Social Benchmarking (4)
+          </button>
+        </div>
+        {activeTab === "social" && (
+          <div className="p-6 bg-purple-50 dark:bg-purple-950/20 border-l-4 border-purple-600 dark:border-purple-400">
+            <h3 className="font-headline text-lg mb-2 text-purple-900 dark:text-purple-100">
+              Social Media as Competitive Intelligence
+            </h3>
+            <p className="font-body text-sm text-purple-800 dark:text-purple-200">
+              Compare Real Madrid's social media performance against 9 elite European clubs. Based on 2025 full-year data across Instagram, TikTok, X, Facebook, and YouTube.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {activeTab === "commercial" && (
+        <>
+          {/* Metric Selector */}
       <div className="mb-8">
         <label className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 block mb-3">
           Select Metric
@@ -417,6 +485,15 @@ export function PeerBenchmarkPage() {
               the market leader (green line). {latestPoint.gap_to_peer_median < 0 ? 'Closing these gaps represents significant commercial upside potential.' : 'Maintaining performance above peers demonstrates competitive strength.'}
             </p>
           </div>
+
+          {/* Conversion Rate Volume Warning (V1.5.4) */}
+          {selectedMetric.metric === "conversion_rate" && (
+            <div className="mt-2 p-4 border border-warning-light dark:border-warning-dark bg-warning-50 dark:bg-warning-dark/10 rounded">
+              <p className="font-mono text-xs text-warning-600 dark:text-warning-dark leading-relaxed">
+                <strong className="font-semibold">⚠ Note:</strong> Conversion rate must be read alongside visitor volume. A higher rate on lower traffic may not indicate superior performance.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -487,6 +564,192 @@ export function PeerBenchmarkPage() {
           </table>
         </div>
       </section>
+
+      {/* End Commercial Tab */}
+        </>
+      )}
+
+      {/* Social Benchmarking Tab (V1.6.3) */}
+      {activeTab === "social" && socialBenchmark && socialTrend && socialSummary && (
+        <>
+          {/* Metric Selector */}
+          <div className="mb-8">
+            <label className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 block mb-3">
+              Select Social Metric
+            </label>
+            <select
+              className="px-4 py-3 border-2 border-ink dark:border-stone-700 bg-paper dark:bg-stone-900 font-mono text-sm cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              value={selectedSocialMetric.metric}
+              onChange={(e) => {
+                const selected = SOCIAL_METRICS.find((m) => m.metric === e.target.value);
+                if (selected) setSelectedSocialMetric(selected);
+              }}
+            >
+              {SOCIAL_METRICS.map((m) => (
+                <option key={m.metric} value={m.metric}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Section 1: Hero Stat */}
+          <section className="mb-12">
+            <div className={`border-4 p-8 ${
+              socialBenchmark.rm_rank === 1
+                ? "border-good-light dark:border-good-dark bg-good-light/10 dark:bg-good-dark/10"
+                : socialBenchmark.rm_rank && socialBenchmark.rm_rank <= 3
+                ? "border-info-light dark:border-info-dark bg-info-light/10 dark:bg-info-dark/10"
+                : "border-warning-light dark:border-warning-dark bg-warning-light/10 dark:bg-warning-dark/10"
+            }`}>
+              <div className="text-center">
+                <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+                  Real Madrid's Position
+                </div>
+                <div className={`font-headline text-8xl mb-4 ${
+                  socialBenchmark.rm_rank === 1 ? "text-good-light dark:text-good-dark" : "text-ink dark:text-stone-100"
+                }`}>
+                  #{socialBenchmark.rm_rank}
+                </div>
+                <div className="font-body text-2xl mb-2">
+                  out of {socialBenchmark.club_count} elite European clubs
+                </div>
+                <div className="font-mono text-sm text-stone-600 dark:text-stone-400">
+                  {selectedSocialMetric.label} • 2025 Full Year
+                </div>
+                {socialBenchmark.rm_rank === 1 && (
+                  <div className="mt-6 p-4 bg-good-light/20 dark:bg-good-dark/20 border border-good-light dark:border-good-dark">
+                    <p className="font-body text-sm text-good-900 dark:text-good-100">
+                      🏆 <strong>Market Leader</strong> — Real Madrid leads all peer clubs in {selectedSocialMetric.label.toLowerCase()}.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Section 2: Club Rankings Chart */}
+          <section className="mb-12">
+            <h2 className="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+              Club Rankings
+            </h2>
+            <div className="border border-ink dark:border-stone-700 p-6">
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart
+                  data={socialBenchmark.clubs}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="club" type="category" width={100} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill={(entry: any) => entry.is_real_madrid ? "#EF4444" : "#3B82F6"} />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-4 flex items-center gap-6 justify-center font-mono text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-[#EF4444]"></div>
+                  <span>Real Madrid</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-[#3B82F6]"></div>
+                  <span>Peer Clubs</span>
+                </div>
+                {socialBenchmark.peer_median && (
+                  <div className="text-stone-600 dark:text-stone-400">
+                    Peer Median: {socialBenchmark.peer_median.toLocaleString()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Section 3: 12-Month Rank Trend */}
+          <section className="mb-12">
+            <h2 className="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+              Real Madrid Rank Trend (2025)
+            </h2>
+            <div className="border border-ink dark:border-stone-700 p-6">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart
+                  data={socialTrend.months}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="month" tickFormatter={(val) => val.substring(5, 7)} />
+                  <YAxis reversed domain={[1, 10]} ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]} />
+                  <Tooltip labelFormatter={(val) => `Month: ${val}`} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="rm_rank"
+                    stroke="#EF4444"
+                    strokeWidth={3}
+                    dot={{ r: 5 }}
+                    name="Real Madrid Rank"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <p className="mt-4 font-mono text-xs text-stone-600 dark:text-stone-400 text-center">
+                Lower rank number = better performance (Rank 1 is best, Rank 10 is worst)
+              </p>
+            </div>
+          </section>
+
+          {/* Section 4: Leads/Lags Table */}
+          <section className="mb-12">
+            <h2 className="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+              Where Real Madrid Leads and Lags
+            </h2>
+            <div className="border border-ink dark:border-stone-700 overflow-x-auto">
+              <table className="w-full data-table font-mono text-sm border-collapse">
+                <thead>
+                  <tr className="bg-stone-100 dark:bg-stone-800">
+                    <th className="text-left p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Metric</th>
+                    <th className="text-right p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Real Madrid</th>
+                    <th className="text-right p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Peer Median</th>
+                    <th className="text-center p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Rank</th>
+                    <th className="text-center p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {socialSummary.metrics.map((m, i) => {
+                    const metricLabel = SOCIAL_METRICS.find(sm => sm.metric === m.metric)?.label || m.metric;
+                    return (
+                      <tr key={m.metric} className={i % 2 === 0 ? "" : "bg-stone-50 dark:bg-stone-800/50"}>
+                        <td className="p-3 border border-ink dark:border-stone-700">{metricLabel}</td>
+                        <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">
+                          {m.rm_value?.toLocaleString() || "—"}
+                        </td>
+                        <td className="p-3 text-right border border-ink dark:border-stone-700">
+                          {m.peer_median?.toLocaleString() || "—"}
+                        </td>
+                        <td className="p-3 text-center border border-ink dark:border-stone-700">
+                          <span className={`px-2 py-1 rounded ${
+                            m.rm_rank === 1
+                              ? "bg-good-light/20 dark:bg-good-dark/20 text-good-light dark:text-good-dark font-bold"
+                              : m.rm_rank && m.rm_rank <= 3
+                              ? "bg-info-light/20 dark:bg-info-dark/20 text-info-light dark:text-info-dark"
+                              : "bg-warning-light/20 dark:bg-warning-dark/20 text-warning-light dark:text-warning-dark"
+                          }`}>
+                            #{m.rm_rank}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center border border-ink dark:border-stone-700">
+                          {m.status === "leader" && <span className="text-good-light dark:text-good-dark font-bold">↑ Leader</span>}
+                          {m.status === "above_median" && <span className="text-info-light dark:text-info-dark">✓ Above Median</span>}
+                          {m.status === "below_median" && <span className="text-critical-light dark:text-critical-dark">↓ Below Median</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
 
       {/* Screen Guide */}
       <div data-screen-guide className="mt-12">

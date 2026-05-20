@@ -50,5 +50,12 @@
     "other_channel_visits": {"polarity": 1},
     "session_time_avg": {"polarity": 1},
     "heavy_users": {"polarity": 1},
-    "user_rating": {"polarity": 1}
+    "user_rating": {"polarity": 1},
+    "total_engagement": {"polarity": 1},
+    "avg_engagement_per_post": {"polarity": 1},
+    "engagement_rate": {"polarity": 1},
+    "instagram_engagement": {"polarity": 1},
+    "total_posts": {"polarity": 0},
+    "international_engagement_ratio": {"polarity": 1},
+    "total_estimated_views": {"polarity": 1}
 }

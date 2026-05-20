@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from app.clients.databricks import DatabricksClient
 from app.config.settings import settings
+from app.services import anomaly_context_service, conversion_context_service, seasonal_service
 
 
 def _client() -> DatabricksClient:
@@ -219,6 +220,54 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
         row, supporting_json, peer_data, consecutive_declining
     )
 
+    # Get anomaly context classification (V1.5.2)
+    anomaly_context = None
+    event_suppressed = None
+    try:
+        # Get deviation value and health status from most recent health data
+        deviation_value = None
+        health_status = "stable"
+        if health_data:
+            most_recent = health_data[0]
+            deviation_value = most_recent.get("deviation_from_seasonal_baseline")
+            health_status = str(most_recent.get("health_status", "stable"))
+
+        anomaly_context = anomaly_context_service.classify_metric_movement(
+            asset_name, metric_name, month, deviation_value, health_status
+        )
+
+        # Check if movement is primarily event-driven and should be visually flagged
+        if anomaly_context.get("context_type") == "event_driven":
+            # Flag as event-suppressed if it's a spike driven by a single event
+            # (not a persistent multi-month trend)
+            if consecutive_declining <= 1:  # Not a persistent trend
+                event_suppressed = True
+    except Exception as e:
+        # Fail gracefully - don't break priority response if event context fails
+        print(f"Warning: Could not classify anomaly context for {row['priority_id']}: {e}")
+        anomaly_context = {"context_type": "unexplained", "suppress_from_priority_board": False}
+
+    # Get seasonal baseline intelligence (V1.5.3)
+    seasonal_context = None
+    try:
+        seasonal_context = seasonal_service.get_seasonal_context_for_month(
+            asset_name, metric_name, month
+        )
+    except Exception as e:
+        # Fail gracefully - don't break priority response if seasonal context fails
+        print(f"Warning: Could not get seasonal context for {row['priority_id']}: {e}")
+
+    # Get conversion rate volume pairing context (V1.5.4)
+    conversion_context = None
+    if metric_name.lower() == "conversion_rate":
+        try:
+            conversion_context = conversion_context_service.get_conversion_context(
+                asset_name, month
+            )
+        except Exception as e:
+            # Fail gracefully - don't break priority response if conversion context fails
+            print(f"Warning: Could not get conversion context for {row['priority_id']}: {e}")
+
     # Base normalized data
     result = {
         "priority_id": str(row["priority_id"]),
@@ -241,6 +290,13 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
         "peer_values": peer_values if peer_values else None,
         "peer_median": peer_median,
         "peer_leader_value": peer_leader_value,
+        # Event-adjusted anomaly detection (V1.5.2)
+        "anomaly_context": anomaly_context,
+        "event_suppressed": event_suppressed,
+        # Seasonal baseline intelligence (V1.5.3)
+        "seasonal_context": seasonal_context,
+        # Conversion rate volume pairing (V1.5.4)
+        "conversion_context": conversion_context,
     }
 
     # Add supporting metrics for detail view

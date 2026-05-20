@@ -33,6 +33,14 @@ class SignalItem(BaseModel):
     target_current_value: Optional[float] = None
     target_health_status: Optional[str] = None
     priority_connection: Optional[PriorityConnection] = None
+    # V1.5.5: Driver/Outcome Variable Labelling
+    driver_label: str = "Independent Variable (Driver)"
+    outcome_label: str = "Dependent Variable (Outcome)"
+    causal_direction_statement: Optional[str] = None
+    action_statement: Optional[str] = None
+    relationship_type: Optional[str] = None
+    # V1.6.2: Signal Type Classification
+    signal_type: Optional[str] = "internal"
 
 
 class SignalResponse(BaseModel):

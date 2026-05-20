@@ -1,3 +1,3 @@
-source_asset,source_metric,target_asset,target_metric,lag_months,relationship_direction,strength_score,validation_status,business_interpretation,last_validated_month
-main_website,unique_visitors,ecommerce,net_sales,1,positive,0.6989529573989295,active,Top-of-funnel traffic volume strongly leads ecommerce net_sales shortly after.,2026-01-01
-main_website,unique_visitors,ecommerce,net_sales,2,positive,0.6931418303200114,active,Top-of-funnel traffic volume strongly leads ecommerce net_sales shortly after.,2026-01-01
+version https://git-lfs.github.com/spec/v1
+oid sha256:961e80fcc150f4b18488269614ce91f270ba09416f2b97f90029a6314dafbe07
+size 518

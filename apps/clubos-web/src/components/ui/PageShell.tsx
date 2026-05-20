@@ -1,12 +1,15 @@
 import { NavLink } from "react-router-dom";
 import type { PropsWithChildren } from "react";
 import { useState, useEffect } from "react";
+import { fetchUnconfirmedAnomalies } from "../../lib/api";
 
 const navItems = [
   { to: "/priorities", label: "Board" },
   { to: "/command-center", label: "Center" },
   { to: "/benchmark", label: "Benchmark" },
   { to: "/signals", label: "Signals" },
+  { to: "/events", label: "Events" },
+  { to: "/social", label: "Social" },
   { to: "/briefing", label: "Briefing" }
 ];
 
@@ -17,6 +20,9 @@ export function PageShell({ children }: PropsWithChildren) {
     }
     return false;
   });
+
+  // V1.6.5 — Track unconfirmed anomaly count for notification badge
+  const [anomalyCount, setAnomalyCount] = useState(0);
 
   useEffect(() => {
     // Initialize dark mode from localStorage or system preference
@@ -31,6 +37,25 @@ export function PageShell({ children }: PropsWithChildren) {
       document.documentElement.classList.remove('dark');
       setIsDark(false);
     }
+  }, []);
+
+  // V1.6.5 — Load unconfirmed anomaly count for badge
+  useEffect(() => {
+    async function loadAnomalyCount() {
+      try {
+        const data = await fetchUnconfirmedAnomalies();
+        setAnomalyCount(data.total_count);
+      } catch (err) {
+        console.error("Failed to load anomaly count:", err);
+        // Non-blocking — just don't show badge
+      }
+    }
+
+    loadAnomalyCount();
+
+    // Refresh every 5 minutes
+    const interval = setInterval(loadAnomalyCount, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const toggleTheme = () => {
@@ -93,7 +118,15 @@ export function PageShell({ children }: PropsWithChildren) {
                     }`
                   }
                 >
-                  {item.label}
+                  <span className="relative">
+                    {item.label}
+                    {/* V1.6.5 — Notification badge for Events */}
+                    {item.to === "/events" && anomalyCount > 0 && (
+                      <span className="absolute -top-2 -right-4 bg-amber-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                        {anomalyCount}
+                      </span>
+                    )}
+                  </span>
                 </NavLink>
               ))}
             </nav>

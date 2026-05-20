@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { getHealthSummary } from "../../lib/api";
-import type { HealthSummary } from "../../types/clubos";
+import { getHealthSummary, getAssetHealthBreakdown } from "../../lib/api";
+import type { HealthSummary, AssetHealthBreakdown } from "../../types/clubos";
 import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
 import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { ScreenGuide } from "../../components/ui/ScreenGuide";
@@ -20,14 +20,19 @@ export function CommandCenterPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [healthSummary, setHealthSummary] = useState<HealthSummary | null>(null);
+  const [assetHealth, setAssetHealth] = useState<AssetHealthBreakdown | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<MetricDetail | null>(null);
 
   useEffect(() => {
     async function loadHealthSummary() {
       try {
         setLoading(true);
-        const data = await getHealthSummary();
-        setHealthSummary(data);
+        const [summaryData, assetData] = await Promise.all([
+          getHealthSummary(),
+          getAssetHealthBreakdown(),
+        ]);
+        setHealthSummary(summaryData);
+        setAssetHealth(assetData);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load health summary");
@@ -108,7 +113,7 @@ export function CommandCenterPage() {
           Command<br/>Center
         </h1>
         <p className="font-body text-lg md:text-xl text-stone-600 dark:text-stone-400 leading-relaxed max-w-2xl">
-          Real-time health overview of {healthSummary.metric_count} commercial metrics across all assets, categorized by performance status and deviation from target.
+          Real-time health overview of {healthSummary.metric_count} commercial metrics across 5 digital platforms (Website, eCommerce, Streaming, Fan App, Social Media), categorized by performance status and deviation from target.
         </p>
         <p className="font-mono text-xs text-stone-500 dark:text-stone-400 mt-4">
           Reporting month: {formatMonthYear(healthSummary.latest_month)}
@@ -402,6 +407,91 @@ export function CommandCenterPage() {
         </div>
       </section>
 
+      {/* Asset Health Grid (V1.6.1) */}
+      {assetHealth && (
+        <section className="mb-12">
+          <h2 className="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+            Asset Health Status
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {Object.entries(assetHealth.assets)
+              .sort(([a], [b]) => {
+                // Sort order: main_website, ecommerce, streaming, fan_app, social_media
+                const order = ['main_website', 'ecommerce', 'streaming', 'fan_app', 'social_media'];
+                return order.indexOf(a) - order.indexOf(b);
+              })
+              .map(([assetName, stats]) => {
+                const assetLabel = assetName
+                  .split('_')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+
+                // Determine overall asset health color
+                const healthPercentage = stats.health_percentage;
+                let borderColor = 'border-info-light dark:border-info-dark';
+                let bgColor = 'bg-info-light/10 dark:bg-info-dark/10';
+
+                if (healthPercentage >= 70) {
+                  borderColor = 'border-good-light dark:border-good-dark';
+                  bgColor = 'bg-good-light/10 dark:bg-good-dark/10';
+                } else if (stats.review_count > stats.good_count) {
+                  borderColor = 'border-warning-light dark:border-warning-dark';
+                  bgColor = 'bg-warning-light/10 dark:bg-warning-dark/10';
+                }
+
+                return (
+                  <div
+                    key={assetName}
+                    className={`border-2 ${borderColor} ${bgColor} p-6 rounded-lg`}
+                  >
+                    <h3 className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-3">
+                      {assetLabel}
+                    </h3>
+
+                    <div className="mb-4">
+                      <div className="font-headline text-4xl text-ink dark:text-stone-100 mb-1">
+                        {stats.metric_count}
+                      </div>
+                      <div className="text-xs text-stone-600 dark:text-stone-400">
+                        Total Metrics
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-good-light dark:text-good-dark font-medium">Good:</span>
+                        <span className="font-mono font-bold">{stats.good_count}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-warning-light dark:text-warning-dark font-medium">Review:</span>
+                        <span className="font-mono font-bold">{stats.review_count}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-info-light dark:text-info-dark font-medium">Stable:</span>
+                        <span className="font-mono font-bold">{stats.stable_count}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-stone-300 dark:border-stone-600">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-stone-600 dark:text-stone-400">Health %</span>
+                        <span className="font-mono font-bold text-lg">
+                          {stats.health_percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+
+          <p className="mt-4 text-sm text-stone-600 dark:text-stone-400 font-body">
+            Health percentage = (Good Health metrics / Total metrics) × 100. Higher percentage indicates more stable asset performance.
+          </p>
+        </section>
+      )}
+
       {/* Deviation Indicator - Now Clickable */}
       {healthSummary.avg_abs_deviation !== null && (
         <section>
@@ -455,7 +545,7 @@ export function CommandCenterPage() {
           sections={[
             {
               title: "What is the Command Center?",
-              content: "The Command Center is ClubOS's real-time health monitor for all 52 commercial metrics across 4 platforms (Website, Social, eCommerce, Ticketing). Each month, the system automatically categorizes every metric as 'Good Health' (performing within expected range), 'Review Needed' (deviating from seasonal patterns), or 'Stable' (consistent with minimal variation). This gives you an instant overview of ecosystem stability."
+              content: "The Command Center is ClubOS's real-time health monitor for all 59 commercial metrics across 5 digital platforms (Website, eCommerce, Streaming, Fan App, Social Media). Each month, the system automatically categorizes every metric as 'Good Health' (performing within expected range), 'Review Needed' (deviating from seasonal patterns), or 'Stable' (consistent with minimal variation). This gives you an instant overview of ecosystem stability and per-asset performance."
             },
             {
               title: "What do the health statuses mean?",

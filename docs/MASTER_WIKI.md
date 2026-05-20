@@ -3677,6 +3677,150 @@ When stuck, check:
 
 ---
 
+### Version 1.5.4 (Conversion Rate Volume Mandatory Pairing - 2026-05-19)
+
+**Status**: Supervisor feedback addressed — conversion_rate now paired with unique_visitors in all displays
+
+**Scope**: Backend quadrant classification, frontend ConversionVolumePanel, Peer Benchmark warning
+
+**Changes**:
+- **Backend**:
+  - Added `backend/api/app/services/conversion_context_service.py` with 4-quadrant classification
+  - Quadrants: Strong Performance (high/high), Scale Risk (high/low), Funnel Risk (low/high), Broad Underperformance (low/low)
+  - Added conversion_context field to PriorityCard and PriorityDetailResponse (only for conversion_rate)
+  - Integrated into priority_service.py for conversion_rate priorities only
+  - 8 new tests in backend/api/tests/test_conversion_context.py (36 total backend tests passing)
+- **Frontend**:
+  - Created ConversionVolumePanel component with 2-column stats, quadrant badge, interpretation, 2×2 grid
+  - Integrated into Evidence Modal for conversion_rate priorities (shown before trend chart)
+  - Added warning note to Peer Benchmark when conversion_rate selected
+- **Documentation**:
+  - Updated BACKEND_SCHEMA.md with conversion_context field
+  - Updated IMPLEMENTATION_PLAN.md with V1.5.4 section
+
+**Key Features**:
+✅ Quadrant classification based on seasonal medians
+✅ Visual 2×2 grid showing current position
+✅ Color-coded borders: green (strong), amber (warning), red (critical)
+✅ Percentage differences from median displayed for both metrics
+✅ Supervisor note displayed in panel: "Conversion rate should be interpreted alongside volume and historical behaviour"
+
+**Files Modified**: 3 backend files, 3 frontend files, 2 doc files
+**Tests**: 8 new backend tests, all passing
+
+---
+
+### Version 1.6.6 (Audience Internationalisation Intelligence - 2026-05-19)
+
+**Status**: V1.6 FULLY COMPLETE — International audience analysis infrastructure complete, all 6 social media features delivered
+
+**Scope**: International audience breakdown by language market, commercial correlation, growth tracking
+
+**Changes**:
+- **Backend**:
+  - Added get_international_breakdown(), get_international_trend(), compute_international_commercial_correlation(), get_market_growth_ranking() to social_service.py
+  - Added 8 new schemas to social.py (LanguageBreakdown, InternationalBreakdownResponse, InternationalTrendPoint, InternationalTrendResponse, MarketGrowthRanking, MarketGrowthRankingResponse, InternationalCommercialCorrelation, InternationalCommercialCorrelationResponse)
+  - Added 4 new endpoints to social router: GET /social/international, GET /social/international/trend, GET /social/international/correlation, GET /social/international/growth
+  - 10 new tests in backend/api/tests/test_international.py (104 total backend tests passing)
+- **Frontend**:
+  - Expanded SocialIntelligencePage.tsx with full "International Audience Intelligence" section replacing basic global reach display
+  - Sub-section A: International Engagement Ratio Hero Stat with MoM trend
+  - Sub-section B: Market Breakdown horizontal BarChart (Spanish vs international markets)
+  - Sub-section C: Market Growth Ranking table with color-coded MoM changes
+  - Sub-section D: Commercial Correlation Card showing international → commercial impact
+  - Added 4 API functions to lib/api.ts
+  - Added 8 types to clubos.ts
+- **Documentation**:
+  - Updated IMPLEMENTATION_PLAN.md with V1.6.6 section and V1.6 COMPLETE summary
+  - Updated BACKEND_SCHEMA.md with 4 new endpoints and 8 new schemas
+  - Updated MASTER_WIKI.md changelog (this entry)
+
+**Key Features**:
+- Language market breakdown: Spanish (48.8M followers), English (17M), Arabic (11.9M), French (5M), Other (Portuguese + Japanese + Chinese)
+- Month-over-month growth tracking per market
+- Commercial correlation testing: international_engagement_ratio vs streaming subscriptions and ecommerce traffic
+- Pearson correlation with 0-3 month lag, 0.45 threshold
+- Visual market growth ranking with ↑/↓ indicators
+
+**Files Created**: backend/api/tests/test_international.py (157 lines)
+**Files Modified**: 3 backend files (+428 lines), 3 frontend files (+214 lines), 3 doc files
+**Tests**: 10 new backend tests, all 104 tests passing
+
+**V1.6 Sprint Summary**:
+- Total features: 6 (V1.6.1 through V1.6.6)
+- Total endpoints: 17
+- Total tests: 55 new (104 total)
+- New Gold tables: 2 (gold_social_metrics, gold_peer_social_benchmark)
+- Total lines added: ~3,152 (production + tests)
+- Metrics added: 44 social metrics
+- New screens: Social Intelligence Page, Social Peer Benchmark tab
+
+---
+
+### Version 1.5.3 (Seasonal Baseline Intelligence - 2026-05-19)
+
+**Status**: Seasonal intelligence layer complete — distinguishes seasonal patterns from genuine anomalies
+
+**Scope**: Backend seasonal service, new analytics endpoint, frontend Seasonal Context card
+
+**Changes**:
+- **Backend**:
+  - Added `backend/api/app/services/seasonal_service.py` with compute_seasonal_baseline() and get_seasonal_context_for_month()
+  - Added `backend/api/app/routers/analytics.py` with GET /analytics/seasonal/{asset}/{metric}
+  - Added seasonal_context field to PriorityCard and PriorityDetailResponse schemas
+  - Integrated seasonal context into priority_service.py enrichment logic
+  - 7 new tests in backend/api/tests/test_seasonal.py (28 total backend tests passing)
+- **Frontend**:
+  - Added Seasonal Context card in Evidence Modal with visual range bar (min/p25/mean/p75/max)
+  - Added fetchSeasonalBaseline() API client function
+  - Z-score color coding: green (<1.5), amber (1.5-2.0), red (>2.0)
+  - Dynamic interpretation strings based on z-score magnitude
+- **Documentation**:
+  - Updated BACKEND_SCHEMA.md with new endpoint and seasonal_context field
+  - Updated IMPLEMENTATION_PLAN.md with V1.5.3 section
+
+**Key Features**:
+- Computes seasonal baselines by calendar month (1-12) from 103 months of historical data
+- Z-score calculation to quantify deviation from seasonal norm
+- is_within_normal_range flag for quick filtering
+- Human-readable interpretation for each seasonal context
+- Visual range bar showing current value position vs historical min/p25/mean/p75/max
+
+**Files Modified**: 7 backend files, 2 frontend files, 3 doc files
+**Tests**: 7 new backend tests, all passing
+
+---
+
+### Version 1.5.2 (Event-Adjusted Anomaly Detection - 2026-05-18)
+
+**Status**: Event awareness complete — priorities no longer flag expected event-driven movements
+
+**Scope**: Event-adjusted anomaly classification service, UI enhancements for event context
+
+**Changes**:
+- Added anomaly_context_service.py with event-driven/partially_explained/unexplained classification
+- Added anomaly_context and event_suppressed fields to priority schemas
+- Event Context section in Evidence Modal showing event details and interpretation
+- Amber banners on priority cards for event-driven movements
+- 6 new tests (21 total backend tests passing)
+
+---
+
+### Version 1.5.1 (Event Calendar & Annotation Engine - 2026-05-17)
+
+**Status**: Event calendar complete — real-world events tracked and annotated on charts
+
+**Scope**: Event management endpoints, Event Calendar screen, chart annotations
+
+**Changes**:
+- Added gold_events.csv with 15 Real Madrid 2025 events
+- Added event CRUD endpoints (GET/POST/DELETE)
+- Added Event Calendar screen with category filtering
+- Event markers on priority trend charts (⚡ annotations)
+- GET /events/near/{asset}/{metric}/{month} for 30-day event context
+
+---
+
 ### Future Changelog Format
 
 When updating this wiki, document changes as follows:

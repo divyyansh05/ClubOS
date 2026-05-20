@@ -22,6 +22,7 @@ export function SignalEnginePage() {
   const [signals, setSignals] = useState<SignalResponse | null>(null);
   const [selectedSignal, setSelectedSignal] = useState<SignalItem | null>(null);
   const [selectedMetricDetail, setSelectedMetricDetail] = useState<MetricDetail | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "internal" | "social">("all");
 
   function showMetricDetail(detail: MetricDetail) {
     setSelectedMetricDetail(detail);
@@ -83,20 +84,31 @@ export function SignalEnginePage() {
     );
   }
 
-  const activeSignals = signals.items.filter((s) => s.validation_status === "active");
-  const avgLag = signals.items.reduce((sum, s) => sum + s.lag_months, 0) / signals.items.length;
-  const avgStrength = signals.items.reduce((sum, s) => sum + s.strength_score, 0) / signals.items.length;
-  const minLag = Math.min(...signals.items.map(s => s.lag_months));
-  const maxLag = Math.max(...signals.items.map(s => s.lag_months));
+  // Filter signals based on active tab
+  const filteredSignals = signals.items.filter((s) => {
+    if (activeTab === "internal") return s.signal_type === "internal";
+    if (activeTab === "social") return s.signal_type === "social_to_commercial";
+    return true; // "all" shows everything
+  });
+
+  const activeSignals = filteredSignals.filter((s) => s.validation_status === "active");
+  const avgLag = filteredSignals.length > 0 ? filteredSignals.reduce((sum, s) => sum + s.lag_months, 0) / filteredSignals.length : 0;
+  const avgStrength = filteredSignals.length > 0 ? filteredSignals.reduce((sum, s) => sum + s.strength_score, 0) / filteredSignals.length : 0;
+  const minLag = filteredSignals.length > 0 ? Math.min(...filteredSignals.map(s => s.lag_months)) : 0;
+  const maxLag = filteredSignals.length > 0 ? Math.max(...filteredSignals.map(s => s.lag_months)) : 0;
   const lagDisplay = minLag === maxLag ? `${minLag} month${minLag > 1 ? 's' : ''}` : `${minLag}–${maxLag} months`;
 
   // Additional summary calculations for FIX 6
-  const positiveSignals = signals.items.filter((s) => s.relationship_direction === "positive").length;
-  const negativeSignals = signals.items.filter((s) => s.relationship_direction === "negative").length;
-  const firingSignals = signals.items.filter((s) => s.current_status === "firing_positive" || s.current_status === "firing_negative").length;
-  const monitoringSignals = signals.items.filter((s) => s.current_status === "neutral" || s.current_status === "unknown").length;
-  const minStrength = Math.min(...signals.items.map(s => s.strength_score));
-  const maxStrength = Math.max(...signals.items.map(s => s.strength_score));
+  const positiveSignals = filteredSignals.filter((s) => s.relationship_direction === "positive").length;
+  const negativeSignals = filteredSignals.filter((s) => s.relationship_direction === "negative").length;
+  const firingSignals = filteredSignals.filter((s) => s.current_status === "firing_positive" || s.current_status === "firing_negative").length;
+  const monitoringSignals = filteredSignals.filter((s) => s.current_status === "neutral" || s.current_status === "unknown").length;
+  const minStrength = filteredSignals.length > 0 ? Math.min(...filteredSignals.map(s => s.strength_score)) : 0;
+  const maxStrength = filteredSignals.length > 0 ? Math.max(...filteredSignals.map(s => s.strength_score)) : 0;
+
+  // Count signal types (for summary display)
+  const internalCount = signals.items.filter((s) => s.signal_type === "internal").length;
+  const socialCount = signals.items.filter((s) => s.signal_type === "social_to_commercial").length;
 
   // Helper to get border color for signal
   const getSignalBorderColor = (signal: SignalItem, index: number) => {
@@ -143,18 +155,67 @@ export function SignalEnginePage() {
         </p>
       </div>
 
+      {/* Filter Tabs (V1.6.2) */}
+      <div className="mb-8 border border-ink dark:border-stone-700">
+        <div className="flex flex-wrap border-b border-ink dark:border-stone-700">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-6 py-4 font-mono text-xs uppercase tracking-widest transition-colors border-r border-ink dark:border-stone-700 ${
+              activeTab === "all"
+                ? "bg-ink dark:bg-stone-100 text-white dark:text-ink font-semibold"
+                : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            }`}
+          >
+            All Signals ({signals.items.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("internal")}
+            className={`px-6 py-4 font-mono text-xs uppercase tracking-widest transition-colors border-r border-ink dark:border-stone-700 ${
+              activeTab === "internal"
+                ? "bg-ink dark:bg-stone-100 text-white dark:text-ink font-semibold"
+                : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            }`}
+          >
+            Internal Signals ({internalCount})
+          </button>
+          <button
+            onClick={() => setActiveTab("social")}
+            className={`px-6 py-4 font-mono text-xs uppercase tracking-widest transition-colors ${
+              activeTab === "social"
+                ? "bg-ink dark:bg-stone-100 text-white dark:text-ink font-semibold"
+                : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            }`}
+          >
+            Social → Commercial ({socialCount})
+          </button>
+        </div>
+        {activeTab === "social" && (
+          <div className="p-6 bg-purple-50 dark:bg-purple-950/20 border-l-4 border-purple-600 dark:border-purple-400">
+            <h3 className="font-headline text-lg mb-2 text-purple-900 dark:text-purple-100">
+              Social Media as a Commercial Leading Indicator
+            </h3>
+            <p className="font-body text-sm text-purple-800 dark:text-purple-200">
+              These signals show how Real Madrid's social media performance predicts commercial
+              outcomes across other platforms 1-3 months in advance.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Summary Cards */}
       <div className="mb-12 border border-ink dark:border-stone-700">
         <div className="grid grid-cols-2 md:grid-cols-4">
           <button
             onClick={() => showMetricDetail({
               name: "Validated Signals",
-              value: signals.items.length,
+              value: filteredSignals.length,
               category: "Leading Indicators",
               explanation: `We have identified and validated ${signals.items.length} leading indicator relationships across your commercial channels. These are metrics that reliably predict future performance 1-3 months in advance.`,
               businessContext: `Having ${signals.items.length} validated signals means you can anticipate changes in key business outcomes before they happen. This early warning system allows proactive decision-making rather than reactive responses. Each signal has been statistically validated to ensure reliability.`,
               additionalInfo: {
                 "Total Validated": signals.items.length,
+                "Internal Signals": internalCount,
+                "Social Signals": socialCount,
                 "Active Signals": activeSignals.length,
                 "Last Validated": signals.latest_validated_month || "N/A",
               }
@@ -165,17 +226,17 @@ export function SignalEnginePage() {
               <span>Validated Signals</span>
               <InfoTooltip
                 title="Validated Signals"
-                definition="Leading indicator relationships that have been statistically validated to reliably predict future performance. Each signal passed rigorous validation: Pearson correlation > 0.60, business prior gate (causal logic check), and 103 months of historical data testing."
+                definition="Leading indicator relationships that have been statistically validated to reliably predict future performance. Each signal passed rigorous validation: Pearson correlation > 0.60, business prior gate (causal logic check), and historical data testing."
                 example="If Website unique_visitors reliably predicts eCommerce net_sales 1 month later with 70% correlation, that's a validated signal."
                 size="sm"
               />
             </div>
             <div className="font-headline text-5xl mb-1 text-ink dark:text-stone-100">
-              {signals.items.length}
+              {filteredSignals.length}
             </div>
             <div className="h-1 bg-good-light dark:bg-good-dark mb-2"></div>
             <div className="font-mono text-xs text-stone-600 dark:text-stone-400">
-              {positiveSignals} positive  ·  {negativeSignals} negative
+              {internalCount} internal  ·  {socialCount} social
             </div>
           </button>
 
@@ -277,7 +338,14 @@ export function SignalEnginePage() {
 
       {/* Signal Cards */}
       <div className="grid grid-cols-1 gap-6 mb-12">
-        {signals.items.map((signal, index) => {
+        {filteredSignals.length === 0 && (
+          <div className="p-8 border border-ink dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-center">
+            <p className="font-body text-stone-600 dark:text-stone-400">
+              No signals found for the selected filter.
+            </p>
+          </div>
+        )}
+        {filteredSignals.map((signal, index) => {
           const borderColor = getSignalBorderColor(signal, index);
           const textColor = getSignalTextColor(signal, index);
           const isActive = signal.validation_status === "active";
@@ -288,6 +356,15 @@ export function SignalEnginePage() {
               className={`border-2 ${borderColor} p-8 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-all ${selectedSignal?.signal_id === signal.signal_id ? 'bg-stone-100 dark:bg-stone-800' : ''}`}
               onClick={() => setSelectedSignal(signal)}
             >
+              {/* Social Signal Badge (V1.6.2) */}
+              {signal.signal_type === "social_to_commercial" && (
+                <div className="mb-4">
+                  <span className="inline-block px-3 py-1 bg-purple-600 dark:bg-purple-500 text-white font-mono text-xs font-semibold uppercase tracking-widest">
+                    SOCIAL → COMMERCIAL
+                  </span>
+                </div>
+              )}
+
               {/* Status Banner */}
               {signal.current_status && (
                 <div className={`mb-4 p-3 border-l-4 ${
@@ -336,21 +413,24 @@ export function SignalEnginePage() {
                 </div>
               </div>
 
-              {/* Flow Diagram */}
-              <div className="flex items-center gap-6 mb-6 p-6 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 flex-wrap justify-center">
-                {/* Source Panel */}
-                <div className="flex-1 min-w-[200px] p-4 border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900">
-                  <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">Source</div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="font-semibold text-base">{signal.source_metric}</div>
-                    <InfoTooltip metricName={signal.source_metric} size="sm" />
+              {/* Redesigned Flow Diagram — V1.5.5 Driver/Outcome Labelling */}
+              <div className="border-2 border-stone-300 dark:border-stone-700 mb-6">
+                {/* Source Panel — Independent Variable (Driver) */}
+                <div className="p-6 border-b-2 border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-3">
+                    {signal.driver_label || "INDEPENDENT VARIABLE — DRIVER"}
                   </div>
-                  <div className="text-xs text-stone-600 dark:text-stone-400 mb-3">{signal.source_asset}</div>
-
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="font-semibold text-xl">{signal.source_metric}</div>
+                    <InfoTooltip metricName={signal.source_metric} size="sm" />
+                    <span className="px-2 py-1 bg-stone-200 dark:bg-stone-700 font-mono text-xs font-semibold rounded">
+                      {signal.source_asset}
+                    </span>
+                  </div>
                   {signal.source_current_value !== null && signal.source_current_value !== undefined ? (
-                    <>
-                      <div className="font-mono text-sm text-ink dark:text-stone-100 mb-2">
-                        NOW: {signal.source_current_value.toLocaleString()}
+                    <div className="flex items-center gap-4">
+                      <div className="font-mono text-sm text-ink dark:text-stone-100">
+                        Current: {signal.source_current_value.toLocaleString()}
                       </div>
                       {signal.source_trend_pct_change !== null && signal.source_trend_pct_change !== undefined && (
                         <div className={`font-mono text-xs font-semibold ${
@@ -363,38 +443,44 @@ export function SignalEnginePage() {
                           {signal.source_trend_pct_change > 0 ? '↑' : signal.source_trend_pct_change < 0 ? '↓' : '→'} {Math.abs(signal.source_trend_pct_change).toFixed(1)}%
                         </div>
                       )}
-                    </>
+                    </div>
                   ) : (
                     <div className="font-mono text-sm text-stone-400 dark:text-stone-600">—</div>
                   )}
                 </div>
 
-                {/* Arrow Connector */}
-                <div className="flex-shrink-0 flex flex-col items-center">
-                  <div className={`font-mono text-xs uppercase tracking-widest mb-2 ${
+                {/* Arrow Connector with Lag */}
+                <div className="p-4 bg-white dark:bg-stone-900 border-b-2 border-stone-300 dark:border-stone-700 flex items-center justify-center">
+                  <div className={`font-mono text-xs uppercase tracking-widest ${
                     signal.current_status === 'firing_positive'
                       ? 'text-good-light dark:text-good-dark'
                       : signal.current_status === 'firing_negative'
                       ? 'text-critical-light dark:text-critical-dark'
                       : 'text-stone-500 dark:text-stone-400'
                   }`}>
-                    ── {signal.lag_months} month lag ──▶
+                    ── {signal.lag_months}-month predictive lag ──▶
+                  </div>
+                  <div className="ml-4 px-3 py-1 bg-stone-200 dark:bg-stone-700 font-mono text-xs font-semibold">
+                    {(signal.strength_score * 100).toFixed(0)}% validated signal
                   </div>
                 </div>
 
-                {/* Target Panel */}
-                <div className="flex-1 min-w-[200px] p-4 border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900">
-                  <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">Target</div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="font-semibold text-base">{signal.target_metric}</div>
-                    <InfoTooltip metricName={signal.target_metric} size="sm" />
+                {/* Target Panel — Dependent Variable (Outcome) */}
+                <div className="p-6 bg-stone-50 dark:bg-stone-800">
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-3">
+                    {signal.outcome_label || "DEPENDENT VARIABLE — PREDICTED OUTCOME"}
                   </div>
-                  <div className="text-xs text-stone-600 dark:text-stone-400 mb-3">{signal.target_asset}</div>
-
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="font-semibold text-xl">{signal.target_metric}</div>
+                    <InfoTooltip metricName={signal.target_metric} size="sm" />
+                    <span className="px-2 py-1 bg-stone-200 dark:bg-stone-700 font-mono text-xs font-semibold rounded">
+                      {signal.target_asset}
+                    </span>
+                  </div>
                   {signal.target_current_value !== null && signal.target_current_value !== undefined ? (
-                    <>
-                      <div className="font-mono text-sm text-ink dark:text-stone-100 mb-2">
-                        NOW: {signal.target_current_value.toLocaleString()}
+                    <div className="flex items-center gap-4">
+                      <div className="font-mono text-sm text-ink dark:text-stone-100">
+                        Current: {signal.target_current_value.toLocaleString()}
                       </div>
                       {signal.target_health_status && (
                         <span className={`px-2 py-1 rounded font-mono text-xs font-semibold uppercase ${
@@ -407,7 +493,7 @@ export function SignalEnginePage() {
                           {signal.target_health_status}
                         </span>
                       )}
-                    </>
+                    </div>
                   ) : (
                     <div className="font-mono text-sm text-stone-400 dark:text-stone-600">—</div>
                   )}
@@ -519,14 +605,51 @@ export function SignalEnginePage() {
                 </button>
               </div>
 
-              {/* Business Interpretation */}
+              {/* Action Statement & Causal Direction (V1.5.5) */}
               {selectedSignal?.signal_id === signal.signal_id && (
                 <div className="mt-6 p-6 border-t-2 border-stone-300 dark:border-stone-700">
-                  <h4 className="font-headline text-xl mb-4">Business Interpretation</h4>
-                  <p className="font-body text-base mb-4 text-stone-600 dark:text-stone-400">
-                    {signal.business_interpretation}
+                  {/* Action Statement */}
+                  <h4 className="font-headline text-xl mb-4">Recommended Action</h4>
+                  <p className="font-body text-base mb-6 text-stone-600 dark:text-stone-400">
+                    {signal.action_statement || signal.business_interpretation}
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
+                  {/* How to Read This Signal */}
+                  {signal.causal_direction_statement && (
+                    <div className="mb-6">
+                      <h4 className="font-headline text-xl mb-4">How to Read This Signal</h4>
+                      <p className="font-body text-sm mb-4 text-stone-600 dark:text-stone-400">
+                        {signal.causal_direction_statement}
+                      </p>
+                      {/* Two-column table */}
+                      <div className="border border-stone-300 dark:border-stone-700">
+                        <table className="w-full data-table font-mono text-sm border-collapse">
+                          <thead>
+                            <tr className="bg-stone-100 dark:bg-stone-800">
+                              <th className="text-left p-3 font-semibold uppercase text-xs tracking-widest border border-stone-300 dark:border-stone-700">Role</th>
+                              <th className="text-left p-3 font-semibold uppercase text-xs tracking-widest border border-stone-300 dark:border-stone-700">Metric</th>
+                              <th className="text-left p-3 font-semibold uppercase text-xs tracking-widest border border-stone-300 dark:border-stone-700">Asset</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="p-3 border border-stone-300 dark:border-stone-700 font-semibold">Driver (cause)</td>
+                              <td className="p-3 border border-stone-300 dark:border-stone-700">{signal.source_metric}</td>
+                              <td className="p-3 border border-stone-300 dark:border-stone-700">{signal.source_asset}</td>
+                            </tr>
+                            <tr className="bg-stone-50 dark:bg-stone-800/50">
+                              <td className="p-3 border border-stone-300 dark:border-stone-700 font-semibold">Outcome (effect)</td>
+                              <td className="p-3 border border-stone-300 dark:border-stone-700">{signal.target_metric}</td>
+                              <td className="p-3 border border-stone-300 dark:border-stone-700">{signal.target_asset}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Asset Info & Last Validated */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div className="p-4 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
                       <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
                         Source Asset
@@ -540,7 +663,7 @@ export function SignalEnginePage() {
                       <div className="font-semibold">{signal.target_asset}</div>
                     </div>
                   </div>
-                  <div className="mt-4 p-4 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+                  <div className="mb-6 p-4 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
                     <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
                       Last Validated
                     </div>
@@ -636,6 +759,10 @@ export function SignalEnginePage() {
             {
               title: "What are commercial signals?",
               content: "Commercial signals are validated leading indicator relationships where one metric (the source) reliably predicts another metric (the target) 1-3 months in advance. For example, if Website unique_visitors predicts eCommerce net_sales 1 month later with 70% correlation, that's a signal. These relationships give you early warning when key outcomes are about to change, allowing proactive decision-making instead of reactive responses."
+            },
+            {
+              title: "Understanding independent vs dependent variables",
+              content: "The driver (independent variable) is the metric whose movement precedes the other. The outcome (dependent variable) is the metric predicted to follow. ClubOS only shows validated relationships where the direction of influence has passed a business logic check — meaning 'traffic drives sales' is accepted but 'sales driving traffic' is rejected as reverse causality. This ensures you're looking at true predictive relationships, not backwards correlations."
             },
             {
               title: "How were these validated?",

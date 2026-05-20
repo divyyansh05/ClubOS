@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getLatestPriorities, getPriorityDetail } from "../../lib/api";
+import { getLatestPriorities, getPriorityDetail, fetchEventsNearMetric, fetchSeasonalBaseline } from "../../lib/api";
 import type { PriorityCard, PriorityDetail } from "../../types/clubos";
+import type { EventSchema } from "../../types/events";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, BarChart, Bar, Cell, ReferenceArea } from "recharts";
+import { ConversionVolumePanel } from "../../components/ui/ConversionVolumePanel";
 import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { ChartTooltip } from "../../components/ui/ChartTooltip";
 import { WelcomeBanner } from "../../components/ui/WelcomeBanner";
@@ -20,6 +22,8 @@ export function PriorityBoardPage() {
   const [selectedDetail, setSelectedDetail] = useState<PriorityDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [nearbyEvents, setNearbyEvents] = useState<EventSchema[]>([]);
+  const [seasonalBaseline, setSeasonalBaseline] = useState<any>(null);
 
   useEffect(() => {
     async function loadPriorities() {
@@ -62,6 +66,24 @@ export function PriorityBoardPage() {
       setDetailLoading(true);
       const detail = await getPriorityDetail(priorityId);
       setSelectedDetail(detail);
+
+      // Fetch nearby events for this metric
+      try {
+        const eventsData = await fetchEventsNearMetric(detail.asset_name, detail.primary_metric, detail.month);
+        setNearbyEvents(eventsData.items);
+      } catch (eventErr) {
+        console.error("Failed to load events:", eventErr);
+        setNearbyEvents([]);
+      }
+
+      // Fetch seasonal baseline for this metric (V1.5.3)
+      try {
+        const seasonalData = await fetchSeasonalBaseline(detail.asset_name, detail.primary_metric);
+        setSeasonalBaseline(seasonalData.baseline);
+      } catch (seasonalErr) {
+        console.error("Failed to load seasonal baseline:", seasonalErr);
+        setSeasonalBaseline(null);
+      }
     } catch (err) {
       console.error("Failed to load priority detail:", err);
     } finally {
@@ -280,6 +302,32 @@ export function PriorityBoardPage() {
             >
               {/* Gradient accent overlay */}
               <div className={`absolute top-0 left-0 w-2 h-full ${colors.bg} opacity-80 group-hover:w-3 transition-all`}></div>
+
+              {/* Event-Driven Banner (V1.5.2) */}
+              {priority.anomaly_context?.context_type === "event_driven" && (
+                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-r-lg">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📅</span>
+                    <div className="flex-1">
+                      <div className="font-semibold text-amber-900 dark:text-amber-300 text-sm mb-1">
+                        EVENT-DRIVEN MOVEMENT
+                      </div>
+                      <div className="font-mono text-xs text-amber-800 dark:text-amber-400 mb-1">
+                        {priority.anomaly_context.event_name} · {priority.anomaly_context.event_date}
+                      </div>
+                      <div className="text-xs text-amber-700 dark:text-amber-400">
+                        {priority.anomaly_context.interpretation}
+                      </div>
+                      {priority.event_suppressed && (
+                        <div className="mt-2 text-xs italic text-amber-600 dark:text-amber-500">
+                          Score includes event-driven component — may normalize next month
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-baseline gap-4">
@@ -291,6 +339,11 @@ export function PriorityBoardPage() {
                       <span className={`font-mono text-[10px] uppercase tracking-widest ${colors.text}`}>
                         {priority.category}
                       </span>
+                      {priority.anomaly_context?.context_type === "event_driven" && (
+                        <span className="px-2 py-0.5 rounded-full font-mono text-[10px] font-semibold tracking-wide bg-amber-500 text-white">
+                          EVENT CONTEXT
+                        </span>
+                      )}
                       {priority.consecutive_declining_months && priority.consecutive_declining_months >= 2 && (
                         <span
                           className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-semibold tracking-wide ${
@@ -398,6 +451,13 @@ export function PriorityBoardPage() {
                 <p className="font-sans text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
                   <strong className="font-semibold text-ink dark:text-stone-100">Why It Matters:</strong> {priority.why_it_matters}
                 </p>
+                {priority.anomaly_context?.context_type === "partially_explained" && (
+                  <div className="mt-3 pt-3 border-t border-stone-300 dark:border-stone-600">
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      ⚡ Partially explained by {priority.anomaly_context.event_name} — interpret with context
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Mini Sparkline (6-month trend) */}
@@ -494,6 +554,11 @@ export function PriorityBoardPage() {
 
                 {/* Modal Body */}
                 <div className="p-8 space-y-8">
+                  {/* Conversion Volume Panel (V1.5.4) - Only for conversion_rate */}
+                  {selectedDetail.primary_metric === "conversion_rate" && selectedDetail.conversion_context && (
+                    <ConversionVolumePanel conversion_context={selectedDetail.conversion_context} />
+                  )}
+
                   {/* 12-Month Trend Chart */}
                   {selectedDetail.historical_values && selectedDetail.historical_values.length > 0 ? (
                     <section>
@@ -553,13 +618,13 @@ export function PriorityBoardPage() {
                                     label={{ value: unit, angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#75756F' } }}
                                   />
                                   <Tooltip content={<ChartTooltip metricName={selectedDetail.primary_metric} sixMonthAvg={sixMonthAvg} />} />
-                                  {/* 6-month average reference line */}
+                                  {/* 6-month rolling average reference line */}
                                   <ReferenceLine
                                     y={sixMonthAvg}
                                     stroke="#2563EB"
                                     strokeDasharray="5 5"
                                     strokeWidth={1.5}
-                                    label={{ value: '6-mo avg', position: 'right', fontSize: 10, fill: '#2563EB' }}
+                                    label={{ value: '6-mo rolling avg', position: 'right', fontSize: 10, fill: '#2563EB' }}
                                   />
                                   {/* Last 3 months highlight area */}
                                   {refAreaStart && refAreaEnd && (
@@ -573,6 +638,22 @@ export function PriorityBoardPage() {
                                       label={{ value: 'Last 3 months', position: 'top', fontSize: 9, fill: '#fbbf24' }}
                                     />
                                   )}
+                                  {/* Event markers */}
+                                  {nearbyEvents.map((event, idx) => (
+                                    <ReferenceLine
+                                      key={`event-${event.event_id}-${idx}`}
+                                      x={event.event_date}
+                                      stroke="#F59E0B"
+                                      strokeDasharray="3 3"
+                                      strokeWidth={1.5}
+                                      label={{
+                                        value: '⚡',
+                                        position: 'top',
+                                        fontSize: 14,
+                                        fill: '#F59E0B'
+                                      }}
+                                    />
+                                  ))}
                                   <Line
                                     type="monotone"
                                     dataKey="value"
@@ -602,6 +683,38 @@ export function PriorityBoardPage() {
                                   />
                                 </LineChart>
                               </ResponsiveContainer>
+                              {/* Event Markers Legend */}
+                              {nearbyEvents.length > 0 && (
+                                <div className="mt-4 p-3 border-t border-stone-300 dark:border-stone-700">
+                                  <p className="font-mono text-xs text-stone-600 dark:text-stone-400 mb-2">
+                                    <strong className="text-amber-600 dark:text-amber-400">⚡ Event Markers:</strong> {nearbyEvents.length} event{nearbyEvents.length !== 1 ? 's' : ''} detected within 30 days of this metric's movement
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nearbyEvents.slice(0, 3).map((event) => (
+                                      <span
+                                        key={event.event_id}
+                                        className="px-2 py-1 text-xs rounded bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                                        title={event.event_description}
+                                      >
+                                        {event.event_name}
+                                      </span>
+                                    ))}
+                                    {nearbyEvents.length > 3 && (
+                                      <span className="px-2 py-1 text-xs rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400">
+                                        +{nearbyEvents.length - 3} more
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {/* Seasonal Intelligence Legend (V1.5.3) */}
+                              {seasonalBaseline && (
+                                <div className="mt-2 p-3 border-t border-stone-300 dark:border-stone-700">
+                                  <p className="font-mono text-xs text-stone-600 dark:text-stone-400">
+                                    <strong className="text-good-600 dark:text-good-dark">📊 Seasonal Intelligence:</strong> Chart shows 6-month rolling average (blue dashed line). Historical seasonal patterns available for each calendar month based on {Object.keys(seasonalBaseline).length} months of data.
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </>
                         );
@@ -616,6 +729,114 @@ export function PriorityBoardPage() {
                         <p className="font-mono text-sm text-stone-500 dark:text-stone-400 text-center">
                           Historical data unavailable
                         </p>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Seasonal Context Card (V1.5.3) */}
+                  {selectedDetail.seasonal_context && (
+                    <section>
+                      <h3 className="font-headline text-2xl mb-4 pb-2 border-b border-stone-300 dark:border-stone-700">
+                        Seasonal Intelligence
+                      </h3>
+                      <div className={`p-6 rounded-lg border-2 ${
+                        selectedDetail.seasonal_context.is_within_normal_range
+                          ? 'bg-good-50 dark:bg-good-dark/10 border-good-light dark:border-good-dark'
+                          : Math.abs(selectedDetail.seasonal_context.z_score) >= 2.0
+                          ? 'bg-critical-50 dark:bg-critical-dark/10 border-critical-light dark:border-critical-dark'
+                          : 'bg-warning-50 dark:bg-warning-dark/10 border-warning-light dark:border-warning-dark'
+                      }`}>
+                        {/* Header Info */}
+                        <div className="mb-4">
+                          <div className="font-semibold text-ink dark:text-stone-100 mb-2">
+                            {selectedDetail.primary_metric} in {selectedDetail.seasonal_context.month_name}
+                          </div>
+                          <div className="font-mono text-sm text-stone-700 dark:text-stone-300 mb-1">
+                            Historical baseline: <span className="font-bold">{selectedDetail.seasonal_context.seasonal_mean.toFixed(4)}</span>
+                            {' '}(based on {selectedDetail.seasonal_context.year_count} years of data)
+                          </div>
+                          <div className="font-mono text-sm text-stone-700 dark:text-stone-300">
+                            Current reading: <span className="font-bold">{selectedDetail.seasonal_context.actual_value.toFixed(4)}</span> —{' '}
+                            <span className={`font-semibold ${
+                              selectedDetail.seasonal_context.is_within_normal_range
+                                ? 'text-good-600 dark:text-good-dark'
+                                : 'text-critical-600 dark:text-critical-dark'
+                            }`}>
+                              {selectedDetail.seasonal_context.is_within_normal_range ? 'within' : 'outside'} seasonal norm
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Interpretation */}
+                        <div className="mb-4 p-3 bg-white/50 dark:bg-stone-900/50 rounded border border-stone-200 dark:border-stone-700">
+                          <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
+                            {selectedDetail.seasonal_context.interpretation}
+                          </p>
+                        </div>
+
+                        {/* Visual Range Bar */}
+                        <div>
+                          <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+                            Historical Range for {selectedDetail.seasonal_context.month_name}
+                          </div>
+                          <div className="relative h-8 bg-stone-200 dark:bg-stone-800 rounded-lg overflow-hidden">
+                            {/* Background gradient from min to max */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-critical-light/20 via-good-light/20 to-critical-light/20"></div>
+
+                            {/* P25-P75 normal range highlight */}
+                            <div
+                              className="absolute top-0 bottom-0 bg-good-light/30 dark:bg-good-dark/30 border-l-2 border-r-2 border-good-light dark:border-good-dark"
+                              style={{
+                                left: `${((selectedDetail.seasonal_context.seasonal_p25 - selectedDetail.seasonal_context.seasonal_min) / (selectedDetail.seasonal_context.seasonal_max - selectedDetail.seasonal_context.seasonal_min)) * 100}%`,
+                                right: `${100 - ((selectedDetail.seasonal_context.seasonal_p75 - selectedDetail.seasonal_context.seasonal_min) / (selectedDetail.seasonal_context.seasonal_max - selectedDetail.seasonal_context.seasonal_min)) * 100}%`
+                              }}
+                            ></div>
+
+                            {/* Current value marker */}
+                            <div
+                              className="absolute top-0 bottom-0 w-1 bg-sport-blue-600 shadow-lg"
+                              style={{
+                                left: `${((selectedDetail.seasonal_context.actual_value - selectedDetail.seasonal_context.seasonal_min) / (selectedDetail.seasonal_context.seasonal_max - selectedDetail.seasonal_context.seasonal_min)) * 100}%`
+                              }}
+                              title={`Current: ${selectedDetail.seasonal_context.actual_value.toFixed(4)}`}
+                            >
+                              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-sport-blue-600 rotate-45"></div>
+                            </div>
+
+                            {/* Min/Max labels */}
+                            <div className="absolute inset-0 flex items-center justify-between px-2 font-mono text-xs text-stone-600 dark:text-stone-400">
+                              <span title={`Min: ${selectedDetail.seasonal_context.seasonal_min.toFixed(4)}`}>min</span>
+                              <span title={`Mean: ${selectedDetail.seasonal_context.seasonal_mean.toFixed(4)}`}>mean</span>
+                              <span title={`Max: ${selectedDetail.seasonal_context.seasonal_max.toFixed(4)}`}>max</span>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex justify-between font-mono text-xs text-stone-500 dark:text-stone-400">
+                            <span>{selectedDetail.seasonal_context.seasonal_min.toFixed(4)}</span>
+                            <span className="text-good-600 dark:text-good-dark" title="Normal range (p25–p75)">
+                              [{selectedDetail.seasonal_context.seasonal_p25.toFixed(4)} – {selectedDetail.seasonal_context.seasonal_p75.toFixed(4)}]
+                            </span>
+                            <span>{selectedDetail.seasonal_context.seasonal_max.toFixed(4)}</span>
+                          </div>
+                        </div>
+
+                        {/* Z-score badge */}
+                        <div className="mt-4 flex items-center gap-2">
+                          <span className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                            Z-score:
+                          </span>
+                          <span className={`px-3 py-1 rounded-full font-mono text-sm font-bold ${
+                            Math.abs(selectedDetail.seasonal_context.z_score) >= 2.0
+                              ? 'bg-critical-light dark:bg-critical-dark text-white'
+                              : Math.abs(selectedDetail.seasonal_context.z_score) >= 1.5
+                              ? 'bg-warning-light dark:bg-warning-dark text-white'
+                              : 'bg-good-light dark:bg-good-dark text-white'
+                          }`}>
+                            {selectedDetail.seasonal_context.z_score >= 0 ? '+' : ''}{selectedDetail.seasonal_context.z_score.toFixed(2)}σ
+                          </span>
+                          <span className="text-xs text-stone-600 dark:text-stone-400">
+                            ({Math.abs(selectedDetail.seasonal_context.z_score) < 1.5 ? 'Normal variation' : Math.abs(selectedDetail.seasonal_context.z_score) < 2.0 ? 'Noteworthy' : 'Anomalous'})
+                          </span>
+                        </div>
                       </div>
                     </section>
                   )}
@@ -787,6 +1008,51 @@ export function PriorityBoardPage() {
                     <p className="font-body text-base leading-relaxed text-stone-700 dark:text-stone-300">
                       {selectedDetail.why_it_matters}
                     </p>
+                  </section>
+
+                  {/* Event Context (V1.5.2) */}
+                  <section>
+                    <h3 className="font-headline text-2xl mb-4 pb-2 border-b border-stone-300 dark:border-stone-700">
+                      Event Context
+                    </h3>
+                    {selectedDetail.anomaly_context && selectedDetail.anomaly_context.context_type !== "unexplained" ? (
+                      <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="text-2xl">📅</span>
+                          <div className="flex-1">
+                            <div className="font-semibold text-amber-900 dark:text-amber-300 mb-1">
+                              {selectedDetail.anomaly_context.event_name}
+                            </div>
+                            <div className="font-mono text-xs text-amber-800 dark:text-amber-400 mb-2">
+                              {selectedDetail.anomaly_context.event_date} · {selectedDetail.anomaly_context.event_category?.replace(/_/g, ' ')}
+                            </div>
+                            <div className="text-sm text-amber-700 dark:text-amber-400 mb-3">
+                              {selectedDetail.anomaly_context.interpretation}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                selectedDetail.anomaly_context.context_type === "event_driven"
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-300"
+                              }`}>
+                                {selectedDetail.anomaly_context.adjusted_status}
+                              </span>
+                              {selectedDetail.event_suppressed && (
+                                <span className="text-xs italic text-amber-600 dark:text-amber-500">
+                                  May normalize next month
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
+                        <p className="text-sm text-stone-600 dark:text-stone-400">
+                          No registered events within 30 days of this data point. Movement is unexplained by known club events.
+                        </p>
+                      </div>
+                    )}
                   </section>
 
                   {/* Summary */}

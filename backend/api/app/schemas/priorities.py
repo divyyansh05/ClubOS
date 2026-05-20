@@ -42,6 +42,13 @@ class PriorityCard(BaseModel):
     peer_values: Optional[list[PeerValue]] = None
     peer_median: Optional[float] = None
     peer_leader_value: Optional[float] = None
+    # Event-adjusted anomaly detection (V1.5.2)
+    anomaly_context: Optional[dict[str, Any]] = None
+    event_suppressed: Optional[bool] = None
+    # Seasonal baseline intelligence (V1.5.3)
+    seasonal_context: Optional[dict[str, Any]] = None
+    # Conversion rate volume pairing (V1.5.4)
+    conversion_context: Optional[dict[str, Any]] = None
 
 
 class PriorityListResponse(BaseModel):
@@ -71,3 +78,10 @@ class PriorityDetailResponse(BaseModel):
     peer_values: Optional[list[PeerValue]] = None
     peer_median: Optional[float] = None
     peer_leader_value: Optional[float] = None
+    # Event-adjusted anomaly detection (V1.5.2)
+    anomaly_context: Optional[dict[str, Any]] = None
+    event_suppressed: Optional[bool] = None
+    # Seasonal baseline intelligence (V1.5.3)
+    seasonal_context: Optional[dict[str, Any]] = None
+    # Conversion rate volume pairing (V1.5.4)
+    conversion_context: Optional[dict[str, Any]] = None
