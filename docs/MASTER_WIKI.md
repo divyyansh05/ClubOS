@@ -3757,6 +3757,177 @@ When stuck, check:
 
 ---
 
+### Version 1.7.0 (Social Media Analytics Intelligence Layer - 2026-05-20)
+
+**Status**: V1.7 COMPLETE — Post-level analytics, dynamic insights, content recommendations, Priority Board integration
+
+**Scope**: Advanced social media analytics layer with post-level processing, plain-English insight generation, content team recommendations, and full Priority Board integration for social metrics.
+
+**Changes**:
+- **Data Processing Layer** (Phase 1):
+  - Created scripts/process_social_posts.py → gold_social_posts.csv (55,598 posts)
+  - Created scripts/process_social_dayofweek.py → gold_social_dayofweek.csv (411 aggregated rows)
+  - Created scripts/process_social_hashtags.py → gold_social_hashtags.csv (2,143 hashtag performances)
+  - Embedded constants from dataset analysis (IG_REEL_MULTIPLIER = 7.8x, POST_MATCH_AVG = 131K, etc.)
+
+- **Backend Analytics Service** (Phase 2):
+  - Created backend/api/app/services/social_analytics_service.py (457 lines, 7 core functions)
+  - Functions: get_day_of_week_analysis(), get_match_moment_analysis(), get_format_performance(), get_hashtag_performance(), get_peer_comparison_analytics(), generate_dynamic_insights() (5+ insight templates), get_content_recommendations()
+  - Added 7 new API endpoints to routers/social.py: /social/analytics/{dayofweek,moments,formats,hashtags,insights,recommendations,peer/{metric}}
+  - Added 14 new Pydantic schemas to schemas/social.py (DayOfWeekAnalysisResponse, MatchMomentAnalysisResponse, FormatPerformanceResponse, HashtagPerformanceResponse, DynamicInsightsResponse, ContentRecommendationsResponse, PeerComparisonResponse + supporting models)
+  - Modified scripts/build_local_snapshots.py: added social metrics to priority scoring with commercial weights (engagement_rate: 0.9, avg_engagement_per_post: 0.8, international_engagement_ratio: 0.6)
+  - Added "social engagement" category for social_media priorities
+  - 24 new tests in backend/api/tests/test_social_analytics.py (128 total backend tests passing)
+
+- **Frontend Analytics Views** (Phase 3):
+  - Massively expanded SocialIntelligencePage.tsx (+500 lines, 4 major new sections)
+  - **Section 1: Dynamic Insights Panel** (FIRST section after header) - 2-column grid of InsightCards with priority badges (CRITICAL/HIGH/MEDIUM), category icons, filter pills, expandable details, evidence strips, recommendation callouts
+  - **Section 2: Content Team Recommendations Panel** - Numbered priority-ranked actions (CONVERT/SCHEDULE/INCREASE/REDUCE) with effort badges (LOW/MEDIUM/HIGH), impact estimates, expandable evidence
+  - **Section 3: Day of Week Performance View** - 7×5 heatmap (days × platforms), match moment horizontal bar chart with underutilisation alerts, format performance table showing Reel 7.8x multiplier
+  - **Section 4: Hashtag Performance Index** - Filterable leaderboard table (by type: event/player/branded/farewell), 4-box category comparison, auto-generated top 3 hashtag recommendations
+  - Added 7 API functions to lib/api.ts
+  - Added 14 types to clubos.ts
+  - All sections responsive, dark mode compliant, use existing design system
+
+- **Priority Board Integration** (Phase 4):
+  - Added "social engagement" to PriorityCategory type
+  - Updated PriorityBoardPage.tsx: social priorities display with purple/accent color pill
+  - Added 3-tab evidence modal for social priorities: (1) Trend - 12-month chart, (2) Timing Analysis - match moment breakdown, (3) Format Breakdown - variety performance
+  - Added InsightCard section to social evidence modal (pulls relevant insight from analytics)
+  - Added Content Team Recommendation callout (amber background) in evidence modal
+  - Updated SignalEnginePage.tsx: social_media source signals show 📱 icon and purple badge styling
+  - Maintained driver/outcome labelling from V1.5.5 pattern
+
+- **Documentation**:
+  - Updated MASTER_WIKI.md changelog (this entry)
+  - Added comprehensive Phase 1-5 completion reports in build session
+  - Test coverage verified: 128/128 tests passing
+
+**Key Features**:
+- **Dynamic Insights**: Auto-generated from 55,598 posts, refreshes with new data
+  - Insight templates: Reel Multiplier (7.8x), Post-Match Underutilisation (2.1x engagement, 0.5% of posts), Thursday Timing Advantage (17.8% above weekly avg)
+  - Categories: timing, format, content, hashtag, peer
+  - Priorities: critical, high, medium
+
+- **Content Recommendations**: Priority-ranked actionable recommendations for content team
+  - Actions: CONVERT (format shift), SCHEDULE (timing optimization), INCREASE (scale opportunities), REDUCE (deprioritize low performers)
+  - Effort estimates, impact estimates, evidence summaries
+
+- **Analytics Insights**:
+  - Instagram Reels: 522,611 avg engagement (7.8x standard posts)
+  - Post-match content: 131,555 avg (2.1x non-matchday, only 0.5% of posts = underutilised)
+  - Thursday Instagram avg: 426,506 (best day, 17.8% above weekly)
+  - Top hashtags: #graciasluka (896K), #nationsleague (792K), #elclasico (633K)
+
+**Files Created**:
+- scripts/process_social_posts.py (189 lines)
+- scripts/process_social_dayofweek.py (108 lines)
+- scripts/process_social_hashtags.py (131 lines)
+- backend/api/app/services/social_analytics_service.py (457 lines)
+- backend/api/tests/test_social_analytics.py (304 lines)
+- data/gold_snapshots/gold_social_posts.csv (55,598 rows)
+- data/gold_snapshots/gold_social_dayofweek.csv (411 rows)
+- data/gold_snapshots/gold_social_hashtags.csv (2,143 rows)
+
+**Files Modified**:
+- Backend: 3 files (+767 lines) - social.py (schemas), social.py (router), build_local_snapshots.py
+- Frontend: 4 files (+711 lines) - api.ts, clubos.ts, SocialIntelligencePage.tsx, PriorityBoardPage.tsx, SignalEnginePage.tsx
+- Tests: 1 file (304 lines)
+
+**Tests**: 24 new backend tests, all 128 tests passing (104 original + 24 new)
+
+**New Gold Tables**: 3 (gold_social_posts, gold_social_dayofweek, gold_social_hashtags)
+
+**New Endpoints**: 7 analytics endpoints
+
+**Total Lines Added**: ~2,506 (production + tests + data processing scripts)
+
+
+
+### Version 1.6.7 (Social Intelligence Screen UX/UI Enhancements - 2026-05-20)
+
+**Status**: COMPLETE — 10 comprehensive UX/UI fixes to Social Intelligence screen
+
+**Scope**: Interactive stat cards, multi-platform trend visualization, dark theme support, negative correlation language fixes, month selector, market comparison modes, and overall design system consistency
+
+**Changes**:
+
+**FIX 1 — Stat Cards Context & Click Behavior**:
+- Added always-visible context lines to all 4 summary stat cards
+- Made cards clickable with inline expansion panels (slide-down, not modal)
+- Colored MoM arrows (green for positive, red for negative)
+- Fixed Instagram metric label from "Instagram Engagement Rate" to "Instagram Share of Total Engagement"
+- Expansion panels show platform breakdown hints, year averages, and drill-down links
+
+**FIX 2 — Multi-Platform Trend Lines with Filter**:
+- Backend: Extended `/social/monthly` endpoint to return platform-level engagement arrays
+- Frontend: Redesigned 12-Month Engagement Trend with 5 simultaneous platform lines
+- Platform filter pills with click-to-isolate and Shift+click for multi-select
+- Platform brand colors (Instagram #E1306C, TikTok #69C9D0, X #1DA1F2, Facebook #4267B2, YouTube #FF0000)
+- Y-axis abbreviation formatter, dashed total engagement reference line
+
+**FIX 3 — Platform Performance Chart Rendering**:
+- Fixed empty chart with horizontal bars using platform brand colors
+- Added toggle button ("Avg Per Post" vs "Total Engagement")
+- Bars sorted descending by selected metric
+
+**FIX 4 — Dark Theme Color Fixes**:
+- Created chartColors object with dark mode detection
+- Applied to ALL recharts: axis, grid, tooltips, legends
+- Content Type chart uses sequential color palette
+- All charts readable in both light and dark modes
+
+**FIX 5 — Negative Correlation Language**:
+- Backend: Updated interpretation to "tends to be HIGHER/LOWER than usual"
+- Frontend: Added Direction column ("↑ Positive" / "↓ Inverse") with tooltips
+- Added "What this means" explanation panels for inverse relationships
+
+**FIX 6 — Content Type Bar Click Drill-Down**:
+- Made Content Type bars clickable with inline expanded panel
+- Panel shows: Performance Stats, Commercial Correlations, Monthly Trend placeholder
+
+**FIX 7 — Language Market Chart Empty State**:
+- Set explicit height (240px), added empty state check
+- Applied dark mode colors
+
+**FIX 8 — Month Selector Component**:
+- Added global month selector with pills (Jan-Dec)
+- Selected month updates Platform Performance and Content Type sections
+- useEffect refetches data on month change
+
+**FIX 9 — Market Growth Year Comparison**:
+- Backend: Added compare_month parameter to /social/international/growth
+- Frontend: Compare Mode dropdown (MoM, YoY, vs Selected Month)
+- Dynamic month picker for custom comparison
+
+**FIX 10 — Overall Color Scheme Consistency**:
+- Updated card borders to border-[0.5px]
+- Applied monospace uppercase pill style to labels
+- Aligned with newsprint design system
+
+**Files Modified**:
+- Backend: social_service.py (+35), content_intelligence_service.py (+20), social.py (+15)
+- Frontend: SocialIntelligencePage.tsx (+380), clubos.ts (+5), api.ts (+2)
+
+**Tests**: 104/104 backend tests passing, no regressions
+
+**Key Achievements**:
+✅ Interactive stat cards with drill-down
+✅ Multi-platform trend with filters
+✅ Full dark mode support
+✅ Clear correlation explanations
+✅ Historical data exploration
+✅ Flexible comparison modes
+✅ Design system consistency
+
+**Known Limitations**:
+- Month selector doesn't update summary cards (endpoint limitation)
+- Content Type monthly trend shows placeholder
+- Peer language breakdown comparison not implemented
+
+---
+---
+
 ### Version 1.5.3 (Seasonal Baseline Intelligence - 2026-05-19)
 
 **Status**: Seasonal intelligence layer complete — distinguishes seasonal patterns from genuine anomalies

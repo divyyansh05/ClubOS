@@ -296,6 +296,69 @@ React frontend       (typed fetch via lib/api.ts)
 
 **Benchmarked subset**: 8 of the 52 metrics have peer comparison data in the benchmark dataset. Only these 8 appear in `gold_peer_benchmark` and receive a non-zero peer_gap score component in priority scoring.
 
+### 2.8 gold_social_posts (V1.7.0)
+
+**Purpose**: Post-level social media data for Real Madrid CF. Unlike gold_social_metrics (monthly aggregated), this table preserves individual posts for granular analytics.
+
+**Row count**: 55,598 posts (Real Madrid only, filtered from 1.1M source posts)
+
+**Columns** (22 total):
+- `post_id` — Unique post identifier
+- `entity` — Always "Real Madrid CF" (filtered)
+- `username` — Account username
+- `platform` — Platform name (Instagram, TikTok, X, Facebook, YouTube, Douyin)
+- `media_type` — Content type (image, video)
+- `variety` — Format variety (post, reel, story, etc.)
+- `post_text` — Post caption (truncated to 500 chars)
+- `post_date` — DD/MM/YYYY format
+- `day_of_week` — Monday through Sunday
+- `day_number` — 1-7 (1=Monday)
+- `month` — YYYY-MM format
+- `scene` — Content scene (Goal Celebration, Training, Birthday, etc.)
+- `match_moment` — Classified moment: pre_match | during_match | post_match | non_matchday | other
+- `engagement` — Total engagement (likes + comments + reposts + saves)
+- `likes`, `comments`, `reposts`, `saves` — Individual metrics
+- `estimated_views`, `estimated_impressions` — Platform estimates
+- `follower_count` — Account followers at post time
+- `hashtags` — Comma-separated lowercase hashtags extracted from post_text
+
+**Key insight**: 7.8x engagement multiplier for ig_reel vs standard post (522K vs 67K avg)
+
+### 2.9 gold_social_dayofweek (V1.7.0)
+
+**Purpose**: Day of week × platform × match moment aggregated performance for timing optimization.
+
+**Row count**: 411 rows (7 days × ~60 unique combinations of platform/moment/media/variety)
+
+**Columns** (17 total):
+- `day_of_week`, `day_number` — Day identification
+- `platform`, `match_moment`, `media_type`, `variety` — Grouping dimensions
+- `post_count` — Posts in this group
+- `total_engagement`, `avg_engagement_per_post`, `median_engagement_per_post` — Engagement stats
+- `max_engagement_post_date` — Date of highest-performing post
+- `total_likes`, `total_comments`, `total_reposts` — Sums
+- `avg_likes`, `avg_comments`, `avg_reposts` — Averages
+
+**Key insight**: Thursday on Instagram averages 426K engagement (17.8% above weekly average)
+
+### 2.10 gold_social_hashtags (V1.7.0)
+
+**Purpose**: Hashtag performance analysis by type (branded, event, player, farewell) for content strategy.
+
+**Row count**: 2,143 rows (unique hashtag × platform × month combinations)
+
+**Columns** (11 total):
+- `hashtag` — Hashtag with # prefix (e.g., #graciasluka)
+- `platform`, `month` — Grouping dimensions
+- `post_count`, `total_engagement`, `avg_engagement_per_post` — Performance metrics
+- `posts_with_this_hashtag` — Count (same as post_count)
+- `is_branded` — True if hashtag in [#rmcity, #realmadrid, #madridistas, #halamadrideternamente]
+- `is_event` — True if matches event keywords (ucl, laliga, elclasico, championsleague, nationsleague)
+- `is_player` — True if player name (mbappe, vinicius, bellingham, modric, etc.)
+- `is_farewell` — True if starts with "gracias" (#graciasluka, #graciascarlo)
+
+**Key insight**: Farewell hashtags (#graciasluka: 896K avg) outperform branded hashtags by 12.4x
+
 ---
 
 ## 4. API Endpoints
@@ -335,6 +398,13 @@ All routes are prefixed at `http://localhost:8000`. No `/api/` or `/api/v1/` pre
 | GET | `/social/international/trend` | social.py | 12-month trend of international audience breakdown by language market (V1.6.6) |
 | GET | `/social/international/correlation` | social.py | International engagement → commercial metric correlations (streaming, ecommerce) (V1.6.6) |
 | GET | `/social/international/growth` | social.py | Market growth ranking sorted by month-over-month change (V1.6.6) |
+| GET | `/social/analytics/dayofweek?platform={all}&match_moment={all}` | social.py | Day of week performance analysis with best/worst days, weekly averages (V1.7.0) |
+| GET | `/social/analytics/moments?platform={all}` | social.py | Match moment performance analysis (pre/during/post/non-matchday) with underutilisation detection (V1.7.0) |
+| GET | `/social/analytics/formats?platform={all}&scene={scene}` | social.py | Content format performance (Reel vs standard post multipliers, recommended formats) (V1.7.0) |
+| GET | `/social/analytics/hashtags?platform={all}&hashtag_type={all}&min_posts=10` | social.py | Hashtag performance ranked by engagement, filtered by type (branded/event/player/farewell) (V1.7.0) |
+| GET | `/social/analytics/insights?data_month={YYYY-MM}` | social.py | Dynamically generated InsightCards from live data (auto-refreshes with new uploads) (V1.7.0) |
+| GET | `/social/analytics/recommendations?team=content` | social.py | Priority-ranked actionable recommendations for content team (CONVERT/SCHEDULE/INCREASE/REDUCE) (V1.7.0) |
+| GET | `/social/analytics/peer/{metric}` | social.py | Peer comparison on analytics metrics (Real Madrid vs 9 clubs on goal_celebration_avg, post_match_avg, reel_multiplier, etc.) (V1.7.0) |
 
 **CORS**: Allowed origins — `http://localhost:5176`, `http://127.0.0.1:5176`, `http://localhost:5177`, `http://127.0.0.1:5177`, `http://localhost:5174`, `http://127.0.0.1:5174`. All methods and headers allowed.
 

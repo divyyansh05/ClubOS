@@ -1276,3 +1276,84 @@ Based on 12 months of data (2025-01 to 2025-12), correlation analysis tested int
 - International audience infrastructure ready for additional language accounts
 
 ---
+
+## V1.7 — Social Media Analytics Intelligence Layer
+
+**Sprint start date:** 2026-05-20
+**Sprint end date:** 2026-05-20
+**Total features:** 1 (comprehensive 5-phase build)
+**Total endpoints added:** 7
+**Total tests added:** 24
+**Total Gold tables added:** 3
+**Status:** ✅ V1.7 COMPLETE
+
+**Feature: Social Media Analytics Intelligence**
+- Phase 1: Data Processing Layer — Created 3 new Gold tables from post-level data
+- Phase 2: Backend Analytics Service — 7 core functions + 7 API endpoints + Priority Board integration
+- Phase 3: Frontend Analytics Views — 4 major new sections in SocialIntelligencePage
+- Phase 4: Priority Board Integration — Social priorities with purple pill, 3-tab evidence modal, Signal Engine icons
+- Phase 5: Testing & Documentation — 24 tests, comprehensive docs update
+
+**Endpoints added (all under /social/analytics/):**
+- GET /dayofweek — Day of week performance analysis
+- GET /moments — Match moment analysis (pre/during/post/non-matchday)
+- GET /formats — Content format performance (Reel vs standard)
+- GET /hashtags — Hashtag intelligence by type
+- GET /insights — Dynamically generated InsightCards
+- GET /recommendations — Content team actionable recommendations
+- GET /peer/{metric} — Peer comparison on analytics metrics
+
+**New Gold tables created:**
+- gold_social_posts.csv (55,598 Real Madrid posts with match_moment classification, hashtag extraction)
+- gold_social_dayofweek.csv (411 rows: day × platform × moment aggregations)
+- gold_social_hashtags.csv (2,143 rows: hashtag × platform × month performance with type classification)
+
+**New frontend sections (SocialIntelligencePage.tsx):**
+1. **Dynamic Insights Panel** — Auto-generated InsightCards (CRITICAL/HIGH/MEDIUM priority, 5 categories, filter pills, expandable details)
+2. **Content Recommendations Panel** — Priority-ranked actions (CONVERT/SCHEDULE/INCREASE/REDUCE with effort badges)
+3. **Day of Week Performance View** — 7×5 heatmap, match moment bar chart with underutilisation alerts, format performance table
+4. **Hashtag Performance Index** — Filterable leaderboard, 4-box category comparison, top 3 recommendations
+
+**Priority Board integration:**
+- "social engagement" category added (purple/accent color)
+- 3-tab evidence modal for social priorities: Trend | Timing Analysis | Format Breakdown
+- InsightCard section in evidence modal (pulls relevant insight from analytics)
+- Content Team Recommendation callout (amber background)
+- Signal Engine: social_media sources show 📱 icon and purple badge
+
+**Key analytics embedded as constants:**
+- Instagram Reel multiplier: 7.8x vs standard post (522K vs 67K avg)
+- Post-match engagement: 131K avg (2.1x non-matchday, only 0.5% of posts = underutilised opportunity)
+- Thursday Instagram: 426K avg (17.8% above weekly average = best day)
+- Top hashtags: #graciasluka (896K), #nationsleague (792K), #elclasico (633K)
+
+**Total lines added across V1.7:**
+- Data processing scripts: +428 lines (3 scripts)
+- Backend service: +457 lines (social_analytics_service.py)
+- Backend schemas/routers: +310 lines (schemas + endpoints)
+- Backend priority integration: +30 lines (build_local_snapshots.py)
+- Backend tests: +304 lines (test_social_analytics.py)
+- Frontend SocialIntelligencePage: +500 lines (4 new sections)
+- Frontend Priority/Signal integration: +111 lines
+- Frontend API/types: +100 lines
+- **Total: ~2,506 lines of production code + tests + data processing**
+
+**Tests:**
+- 24 new backend tests in test_social_analytics.py
+- All 128 tests passing (104 original + 24 new)
+- Test coverage: day_of_week_analysis, match_moment_analysis, format_performance, hashtag_performance, insights generation, recommendations, peer comparison, constants validation
+
+**Documentation updates:**
+- MASTER_WIKI.md: Added V1.7 changelog entry (165 lines)
+- BACKEND_SCHEMA.md: Added 3 Gold tables + 7 endpoints
+- IMPLEMENTATION_PLAN.md: This section
+
+**Architecture changes:**
+- Social metrics added to priority scoring with commercial weights (engagement_rate: 0.9, avg_engagement_per_post: 0.8, international_engagement_ratio: 0.6)
+- "social engagement" category classification in priority pipeline
+- Dynamic insight generation system (auto-refreshes with new data uploads)
+- Post-level analytics layer (distinct from monthly aggregated metrics)
+
+**V1.7 complete — Social media analytics intelligence fully operational**
+
+---
