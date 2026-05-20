@@ -20,6 +20,7 @@ export function PriorityBoardPage() {
   const [priorities, setPriorities] = useState<PriorityCard[]>([]);
   const [filteredPriorities, setFilteredPriorities] = useState<PriorityCard[]>([]);
   const [selectedDetail, setSelectedDetail] = useState<PriorityDetail | null>(null);
+  const [socialEvidenceTab, setSocialEvidenceTab] = useState<"trend" | "timing" | "format">("trend"); // V1.7 — Tabs for social evidence modal
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [nearbyEvents, setNearbyEvents] = useState<EventSchema[]>([]);
@@ -108,6 +109,7 @@ export function PriorityBoardPage() {
     if (category.toLowerCase().includes('opportunity')) return 'good';
     if (category.toLowerCase().includes('benchmark')) return 'info';
     if (category.toLowerCase().includes('warning')) return 'warning';
+    if (category.toLowerCase().includes('social engagement')) return 'accent'; // V1.7 — Social priorities use purple/accent color
     return 'accent';
   }
 
@@ -559,8 +561,123 @@ export function PriorityBoardPage() {
                     <ConversionVolumePanel conversion_context={selectedDetail.conversion_context} />
                   )}
 
-                  {/* 12-Month Trend Chart */}
-                  {selectedDetail.historical_values && selectedDetail.historical_values.length > 0 ? (
+                  {/* V1.7 — Social Priority Evidence Modal with Tabs */}
+                  {selectedDetail.asset_name === "social_media" && (
+                    <div className="mb-6">
+                      {/* Tab Navigation */}
+                      <div className="flex gap-2 mb-4 border-b border-stone-300 dark:border-stone-700">
+                        {[
+                          { id: "trend", label: "Trend" },
+                          { id: "timing", label: "Timing Analysis" },
+                          { id: "format", label: "Format Breakdown" },
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setSocialEvidenceTab(tab.id as typeof socialEvidenceTab)}
+                            className={`px-4 py-2 font-semibold text-sm transition-colors ${
+                              socialEvidenceTab === tab.id
+                                ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Tab Content */}
+                      {socialEvidenceTab === "trend" && selectedDetail.historical_values && selectedDetail.historical_values.length > 0 && (
+                        <div className="border border-stone-300 dark:border-stone-700 p-6 bg-stone-50 dark:bg-stone-800/50 rounded-lg">
+                          <h3 className="font-headline text-xl mb-4">
+                            {selectedDetail.primary_metric} — Last 12 Months
+                          </h3>
+                          <ResponsiveContainer width="100%" height={200}>
+                            <LineChart data={selectedDetail.historical_values}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#A3A39E" opacity={0.3} />
+                              <XAxis
+                                dataKey="month"
+                                tick={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+                                stroke="#75756F"
+                              />
+                              <YAxis tick={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace" }} stroke="#75756F" />
+                              <Tooltip />
+                              <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4 }} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+
+                      {socialEvidenceTab === "timing" && (
+                        <div className="border border-stone-300 dark:border-stone-700 p-6 bg-stone-50 dark:bg-stone-800/50 rounded-lg">
+                          <h3 className="font-headline text-xl mb-4">Match Moment Performance</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Placeholder: Match moment breakdown chart will be fetched from analytics API and displayed here.
+                            Shows pre_match, during_match, post_match, non_matchday engagement patterns.
+                          </p>
+                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded">
+                            <p className="text-sm text-blue-900 dark:text-blue-300">
+                              This tab will show a horizontal bar chart of match moment performance with underutilisation alerts.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {socialEvidenceTab === "format" && (
+                        <div className="border border-stone-300 dark:border-stone-700 p-6 bg-stone-50 dark:bg-stone-800/50 rounded-lg">
+                          <h3 className="font-headline text-xl mb-4">Format Performance</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Placeholder: Format breakdown table will be fetched from analytics API and displayed here.
+                            Shows Reel vs standard post multipliers, video vs image performance.
+                          </p>
+                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded">
+                            <p className="text-sm text-blue-900 dark:text-blue-300">
+                              This tab will show a table of content formats ranked by avg engagement with "Recommended" flags.
+                              Key insight: Instagram Reels generate 7.8x more engagement than standard posts.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Relevant Insight Card */}
+                      <div className="mt-6 p-6 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300">
+                            HIGH
+                          </span>
+                          <span className="text-2xl">📊</span>
+                        </div>
+                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                          Relevant Insight for {selectedDetail.primary_metric}
+                        </h4>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                          This section will show the most relevant InsightCard from the analytics API that relates to this metric.
+                          For example, if the priority is about engagement_rate, it would show the "Instagram Reels generate 7.8x more engagement" insight.
+                        </p>
+                        <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded font-mono text-xs text-gray-800 dark:text-gray-200">
+                          <strong>Evidence:</strong> Dynamic evidence from analytics data will appear here
+                        </div>
+                      </div>
+
+                      {/* Content Team Recommendation */}
+                      <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded">
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg">📋</span>
+                          <div>
+                            <div className="font-semibold text-amber-900 dark:text-amber-300 mb-2">
+                              Content Team Action
+                            </div>
+                            <p className="text-sm text-amber-800 dark:text-amber-400">
+                              This section will show the most relevant recommendation from the content team recommendations API.
+                              For example: "Prioritise Reel format for all non-time-sensitive content. For every 10 standard image posts planned, consider converting 3-4 to Reels."
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 12-Month Trend Chart (for non-social priorities) */}
+                  {selectedDetail.asset_name !== "social_media" && selectedDetail.historical_values && selectedDetail.historical_values.length > 0 ? (
                     <section>
                       {(() => {
                         // Calculate 6-month average

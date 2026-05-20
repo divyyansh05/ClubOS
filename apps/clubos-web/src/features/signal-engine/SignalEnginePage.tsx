@@ -421,9 +421,18 @@ export function SignalEnginePage() {
                     {signal.driver_label || "INDEPENDENT VARIABLE — DRIVER"}
                   </div>
                   <div className="flex items-center gap-3 mb-2">
+                    {signal.source_asset === "social_media" && (
+                      <span className="text-2xl" title="Social Media">
+                        📱
+                      </span>
+                    )}
                     <div className="font-semibold text-xl">{signal.source_metric}</div>
                     <InfoTooltip metricName={signal.source_metric} size="sm" />
-                    <span className="px-2 py-1 bg-stone-200 dark:bg-stone-700 font-mono text-xs font-semibold rounded">
+                    <span className={`px-2 py-1 font-mono text-xs font-semibold rounded ${
+                      signal.source_asset === "social_media"
+                        ? "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
+                        : "bg-stone-200 dark:bg-stone-700"
+                    }`}>
                       {signal.source_asset}
                     </span>
                   </div>
