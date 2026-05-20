@@ -329,7 +329,29 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
     if not signals.empty:
         signal_keys = set((signals["source_asset"] + "_" + signals["source_metric"]).tolist())
     target_keys = {"ecommerce_net_sales", "ecommerce_conversion_rate", "streaming_subscriptions"}
-    df["commercial_weight_score"] = np.where(df["metric_key"].isin(target_keys), 1.0, np.where(df["metric_key"].isin(signal_keys), 0.8, 0.4))
+
+    # V1.7 — Social metrics with specific commercial weights
+    social_high_commercial = {"social_media_engagement_rate"}  # 0.9
+    social_medium_commercial = {"social_media_avg_engagement_per_post"}  # 0.8
+    social_low_commercial = {"social_media_international_engagement_ratio"}  # 0.6
+
+    df["commercial_weight_score"] = np.where(
+        df["metric_key"].isin(target_keys),
+        1.0,
+        np.where(
+            df["metric_key"].isin(social_high_commercial),
+            0.9,
+            np.where(
+                df["metric_key"].isin(social_medium_commercial),
+                0.8,
+                np.where(
+                    df["metric_key"].isin(social_low_commercial),
+                    0.6,
+                    np.where(df["metric_key"].isin(signal_keys), 0.8, 0.4)
+                )
+            )
+        )
+    )
     df = df[df["is_active"] == 1].copy()
     if df.empty:
         return pd.DataFrame(columns=[
@@ -350,7 +372,11 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
                 np.where(
                     (df["health_status"] == "good") & (df["metric_name"].str.contains("recurrence|heavy_users", regex=True)),
                     "engagement opportunity",
-                    np.where(df["health_status"] == "review", "resilience concern", "engagement opportunity"),
+                    np.where(
+                        (df["asset_name"] == "social_media") & (df["health_status"] == "review"),
+                        "social engagement",
+                        np.where(df["health_status"] == "review", "resilience concern", "engagement opportunity"),
+                    ),
                 ),
             ),
         ),
