@@ -1,5 +1,5 @@
 """
-Social media metrics API router for V1.6.1 - Fifth Digital Platform.
+Social media metrics API router for V1.6.1 - Fifth Digital Platform + V1.7 Social Analytics.
 
 Endpoints:
 - GET /social/summary — Latest month summary with MoM changes
@@ -9,10 +9,17 @@ Endpoints:
 - GET /social/content-intelligence — Content-to-commercial correlations (V1.6.4)
 - GET /social/content-intelligence/summary — Strongest correlations summary (V1.6.4)
 - GET /social/content-intelligence/{month} — Month-specific content analysis (V1.6.4)
+- GET /social/analytics/dayofweek — Day of week analysis (V1.7)
+- GET /social/analytics/moments — Match moment analysis (V1.7)
+- GET /social/analytics/formats — Format performance (V1.7)
+- GET /social/analytics/hashtags — Hashtag performance (V1.7)
+- GET /social/analytics/insights — Dynamic insights (V1.7)
+- GET /social/analytics/recommendations — Content recommendations (V1.7)
+- GET /social/analytics/peer/{metric} — Peer comparison (V1.7)
 """
 
-from fastapi import APIRouter, HTTPException
-from app.services import social_service, content_intelligence_service
+from fastapi import APIRouter, HTTPException, Query
+from app.services import social_service, content_intelligence_service, social_analytics_service
 from app.schemas.social import (
     SocialSummaryResponse,
     SocialMonthlyTrendResponse,
@@ -21,7 +28,14 @@ from app.schemas.social import (
     InternationalBreakdownResponse,
     InternationalTrendResponse,
     InternationalCommercialCorrelationResponse,
-    MarketGrowthRankingResponse
+    MarketGrowthRankingResponse,
+    DayOfWeekAnalysisResponse,
+    MatchMomentAnalysisResponse,
+    FormatPerformanceResponse,
+    HashtagPerformanceResponse,
+    DynamicInsightsResponse,
+    ContentRecommendationsResponse,
+    PeerComparisonResponse
 )
 from app.schemas.content_intelligence import (
     ContentIntelligenceResponse,
@@ -225,15 +239,20 @@ def get_international_commercial_correlation():
 
 
 @router.get("/international/growth", response_model=MarketGrowthRankingResponse)
-def get_market_growth_ranking():
+def get_market_growth_ranking(compare_month: str = None):
     """
     Get market growth ranking (which language markets growing fastest) (V1.6.6).
 
-    Returns language markets sorted by month-over-month engagement change.
+    Args:
+        compare_month: Optional comparison month in YYYY-MM format.
+                      If provided, compares latest month vs this specific month.
+                      If not provided, defaults to month-over-month.
+
+    Returns language markets sorted by engagement change.
     Shows which international markets are accelerating vs decelerating.
     """
     try:
-        result = social_service.get_market_growth_ranking()
+        result = social_service.get_market_growth_ranking(compare_month)
         return MarketGrowthRankingResponse(**result)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -343,3 +362,176 @@ def dismiss_anomaly(month: str):
     return {
         "message": f"Anomaly for {month} dismissed (not shown in unconfirmed list anymore)"
     }
+
+
+# V1.7 — Social Analytics Intelligence endpoints
+
+@router.get("/analytics/dayofweek", response_model=DayOfWeekAnalysisResponse)
+def get_day_of_week_analysis(
+    platform: str = Query(default="all", description="Platform filter: Instagram/TikTok/X/Facebook/YouTube/all"),
+    match_moment: str = Query(default="all", description="Match moment filter: pre_match/during_match/post_match/non_matchday/all")
+):
+    """
+    Get day of week performance analysis (V1.7).
+
+    Analyzes engagement patterns by day of week across platforms and match moments.
+    Returns best/worst days, weekly averages, and platform-specific best days.
+
+    Used for: Timing optimization recommendations, heatmap visualization
+    """
+    try:
+        result = social_analytics_service.get_day_of_week_analysis(platform, match_moment)
+        return DayOfWeekAnalysisResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/analytics/moments", response_model=MatchMomentAnalysisResponse)
+def get_match_moment_analysis(
+    platform: str = Query(default="all", description="Platform filter: Instagram/TikTok/X/Facebook/YouTube/all")
+):
+    """
+    Get match moment performance analysis (V1.7).
+
+    Analyzes engagement by match moment: pre_match, during_match, post_match, non_matchday.
+    Identifies underutilised high-performing moments (high engagement but low post volume).
+
+    Used for: Content strategy recommendations, opportunity gap identification
+    """
+    try:
+        result = social_analytics_service.get_match_moment_analysis(platform)
+        return MatchMomentAnalysisResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/analytics/formats", response_model=FormatPerformanceResponse)
+def get_format_performance(
+    platform: str = Query(default="all", description="Platform filter"),
+    scene: str = Query(default=None, description="Scene filter")
+):
+    """
+    Get content format performance analysis (V1.7).
+
+    Analyzes format performance (Reels vs standard posts, videos vs images, etc.).
+    Returns multipliers vs standard Instagram posts and identifies underused high performers.
+
+    Key insight: Instagram Reels generate 7.8x more engagement than standard posts.
+
+    Used for: Format optimization recommendations, content team guidance
+    """
+    try:
+        result = social_analytics_service.get_format_performance(platform, scene)
+        return FormatPerformanceResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/analytics/hashtags", response_model=HashtagPerformanceResponse)
+def get_hashtag_performance(
+    platform: str = Query(default="all", description="Platform filter"),
+    hashtag_type: str = Query(default="all", description="Hashtag type: branded/event/player/farewell/all"),
+    min_posts: int = Query(default=10, description="Minimum post count threshold")
+):
+    """
+    Get hashtag performance analysis (V1.7).
+
+    Analyzes hashtag performance by type (branded, event, player, farewell).
+    Returns top hashtags by engagement and identifies evergreen vs seasonal hashtags.
+
+    Key insight: #graciasluka (farewell) averaged 896K engagement vs #realmadrid (branded) 67K.
+
+    Used for: Hashtag strategy, campaign planning, content team recommendations
+    """
+    try:
+        result = social_analytics_service.get_hashtag_performance(platform, hashtag_type, min_posts)
+        return HashtagPerformanceResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/analytics/insights", response_model=DynamicInsightsResponse)
+def get_dynamic_insights(
+    data_month: str = Query(default=None, description="Optional month filter")
+):
+    """
+    Get dynamically generated insights from social data (V1.7).
+
+    Generates plain-English InsightCards that auto-populate from live data:
+    - Reel multiplier insights (7.8x standard posts)
+    - Post-match underutilisation (2.1x engagement, only 0.5% of posts)
+    - Thursday timing advantage (17.8% above weekly average)
+    - Event hashtag performance
+    - Peer benchmarking insights
+
+    Insights refresh automatically when new data is uploaded.
+
+    Used for: Social Intelligence dashboard, content team guidance, Monthly Briefing
+    """
+    try:
+        insights = social_analytics_service.generate_dynamic_insights(data_month)
+        return DynamicInsightsResponse(
+            insights=insights,
+            total_count=len(insights)
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/analytics/recommendations", response_model=ContentRecommendationsResponse)
+def get_content_recommendations(
+    team: str = Query(default="content", description="Target team")
+):
+    """
+    Get priority-ranked content team recommendations (V1.7).
+
+    Converts insights into actionable recommendations ranked by impact:
+    - CONVERT: Shift format strategy (e.g., convert posts to Reels)
+    - SCHEDULE: Optimize timing (e.g., publish on Thursday not Wednesday)
+    - INCREASE: Scale up underutilised opportunities (e.g., post-match content)
+    - REDUCE: Deprioritise low performers
+
+    Each recommendation includes:
+    - Priority rank (1 = most impactful)
+    - Action verb and title
+    - Rationale and evidence
+    - Expected impact estimate
+    - Effort estimate (low/medium/high)
+
+    Used for: Content team task list, editorial planning, strategy meetings
+    """
+    try:
+        recommendations = social_analytics_service.get_content_recommendations(team)
+        return ContentRecommendationsResponse(
+            recommendations=recommendations,
+            total_count=len(recommendations)
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/analytics/peer/{metric}", response_model=PeerComparisonResponse)
+def get_peer_comparison(
+    metric: str
+):
+    """
+    Get peer comparison on analytics metrics (V1.7).
+
+    Compares Real Madrid vs 9 peer clubs on analytics metrics:
+    - goal_celebration_avg: Goal Celebration post avg engagement
+    - post_match_avg: Post-Match content avg engagement
+    - reel_multiplier: Reel engagement vs standard posts
+    - day_of_week_consistency: Variance in day-of-week performance
+
+    Returns:
+    - All clubs ranked by metric value
+    - Real Madrid's rank
+    - Peer median and leader
+
+    Used for: Competitive benchmarking, identifying best practices, gap analysis
+    """
+    try:
+        result = social_analytics_service.get_peer_comparison_analytics(metric)
+        return PeerComparisonResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
