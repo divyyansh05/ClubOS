@@ -3,7 +3,8 @@ export type PriorityCategory =
   | "conversion weakness"
   | "benchmark underperformance"
   | "engagement opportunity"
-  | "resilience concern";
+  | "resilience concern"
+  | "social engagement"; // V1.7 — Social media priorities
 
 export interface ScoreBreakdown {
   severity: number;
@@ -299,6 +300,12 @@ export interface SocialMonthlyTrend {
   total_engagement: number[];
   avg_engagement_per_post: number[];
   total_posts: number[];
+  // Platform-level data for multi-line charts
+  instagram_engagement: number[];
+  tiktok_engagement: number[];
+  x_engagement: number[];
+  facebook_engagement: number[];
+  youtube_engagement: number[];
 }
 
 export interface SocialPlatformBreakdownResponse {
@@ -490,4 +497,125 @@ export interface InternationalCommercialCorrelation {
 export interface InternationalCommercialCorrelationResponse {
   correlations: InternationalCommercialCorrelation[];
   strongest_correlation: InternationalCommercialCorrelation | null;
+}
+
+// V1.7 — Social Analytics Intelligence Types
+
+export interface DayOfWeekPerformance {
+  day_of_week: string;
+  day_number: number;
+  avg_engagement_per_post: number;
+  post_count: number;
+  vs_weekly_average_pct: number;
+  best_platform_on_this_day: string;
+}
+
+export interface DayOfWeekAnalysisResponse {
+  days: DayOfWeekPerformance[];
+  best_day: string | null;
+  worst_day: string | null;
+  best_day_avg: number;
+  worst_day_avg: number;
+  weekly_average: number;
+}
+
+export interface MatchMomentPerformance {
+  moment: string;
+  label: string;
+  avg_engagement: number;
+  post_count: number;
+  pct_of_total_posts: number;
+  vs_non_matchday_multiplier: number;
+  opportunity_gap: string;
+}
+
+export interface MatchMomentAnalysisResponse {
+  moments: MatchMomentPerformance[];
+  underutilised_moments: MatchMomentPerformance[];
+  biggest_multiplier: {
+    moment: string;
+    multiplier: number;
+  } | null;
+}
+
+export interface FormatPerformance {
+  variety: string;
+  label: string;
+  platform: string;
+  avg_engagement: number;
+  post_count: number;
+  vs_standard_post_multiplier: number;
+  recommended: boolean;
+}
+
+export interface FormatPerformanceResponse {
+  formats: FormatPerformance[];
+  top_format: string | null;
+  top_format_multiplier: number;
+  underused_high_performers: FormatPerformance[];
+}
+
+export interface HashtagPerformance {
+  hashtag: string;
+  avg_engagement: number;
+  post_count: number;
+  hashtag_type: string;
+  vs_no_hashtag_baseline: number;
+  trend: string;
+}
+
+export interface HashtagPerformanceResponse {
+  hashtags: HashtagPerformance[];
+  top_hashtag_overall: string | null;
+  top_evergreen_hashtag: string | null;
+  top_branded_hashtag: string | null;
+  top_player_hashtag: string | null;
+}
+
+export interface InsightCard {
+  insight_id: string;
+  category: "timing" | "format" | "content" | "hashtag" | "peer";
+  priority: "critical" | "high" | "medium";
+  headline: string;
+  finding: string;
+  evidence: string;
+  recommendation: string;
+  impact_estimate: string;
+  data_source: string;
+  refreshes_with_new_data: boolean;
+}
+
+export interface DynamicInsightsResponse {
+  insights: InsightCard[];
+  total_count: number;
+}
+
+export interface ContentRecommendation {
+  rank: number;
+  action: "CONVERT" | "SCHEDULE" | "INCREASE" | "REDUCE";
+  title: string;
+  rationale: string;
+  expected_impact: string;
+  effort_estimate: "low" | "medium" | "high";
+  evidence_summary: string;
+  category: "format" | "timing" | "content_type" | "hashtag";
+}
+
+export interface ContentRecommendationsResponse {
+  recommendations: ContentRecommendation[];
+  total_count: number;
+}
+
+export interface PeerComparisonClub {
+  club: string;
+  value: number;
+}
+
+export interface PeerComparisonResponse {
+  metric: string;
+  clubs: PeerComparisonClub[];
+  real_madrid_rank: number | null;
+  peer_median: number | null;
+  peer_leader: string | null;
+  peer_leader_value: number | null;
 }

@@ -14,6 +14,13 @@ import type {
   ContentCommercialSummary,
   ContentMonthlyPerformance,
   SocialAnomalyListResponse,
+  DayOfWeekAnalysisResponse,
+  MatchMomentAnalysisResponse,
+  FormatPerformanceResponse,
+  HashtagPerformanceResponse,
+  DynamicInsightsResponse,
+  ContentRecommendationsResponse,
+  PeerComparisonResponse,
 } from "../types/clubos";
 import type {
   EventListResponse,
@@ -202,6 +209,64 @@ export async function fetchInternationalCorrelation(): Promise<InternationalComm
   return fetchJson<InternationalCommercialCorrelationResponse>("/social/international/correlation");
 }
 
-export async function fetchMarketGrowthRanking(): Promise<MarketGrowthRankingResponse> {
-  return fetchJson<MarketGrowthRankingResponse>("/social/international/growth");
+export async function fetchMarketGrowthRanking(compareMonth?: string): Promise<MarketGrowthRankingResponse> {
+  const url = compareMonth
+    ? `/social/international/growth?compare_month=${compareMonth}`
+    : "/social/international/growth";
+  return fetchJson<MarketGrowthRankingResponse>(url);
+}
+
+// Social Analytics Intelligence API calls (V1.7)
+export async function fetchDayOfWeekAnalysis(platform = "all", matchMoment = "all"): Promise<DayOfWeekAnalysisResponse> {
+  const params = new URLSearchParams();
+  if (platform !== "all") params.append("platform", platform);
+  if (matchMoment !== "all") params.append("match_moment", matchMoment);
+  const queryString = params.toString();
+  return fetchJson<DayOfWeekAnalysisResponse>(`/social/analytics/dayofweek${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function fetchMatchMomentAnalysis(platform = "all"): Promise<MatchMomentAnalysisResponse> {
+  const params = new URLSearchParams();
+  if (platform !== "all") params.append("platform", platform);
+  const queryString = params.toString();
+  return fetchJson<MatchMomentAnalysisResponse>(`/social/analytics/moments${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function fetchFormatPerformance(platform = "all", scene?: string): Promise<FormatPerformanceResponse> {
+  const params = new URLSearchParams();
+  if (platform !== "all") params.append("platform", platform);
+  if (scene) params.append("scene", scene);
+  const queryString = params.toString();
+  return fetchJson<FormatPerformanceResponse>(`/social/analytics/formats${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function fetchHashtagPerformance(
+  platform = "all",
+  hashtagType = "all",
+  minPosts = 10
+): Promise<HashtagPerformanceResponse> {
+  const params = new URLSearchParams();
+  if (platform !== "all") params.append("platform", platform);
+  if (hashtagType !== "all") params.append("hashtag_type", hashtagType);
+  params.append("min_posts", minPosts.toString());
+  const queryString = params.toString();
+  return fetchJson<HashtagPerformanceResponse>(`/social/analytics/hashtags${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function fetchDynamicInsights(dataMonth?: string): Promise<DynamicInsightsResponse> {
+  const params = new URLSearchParams();
+  if (dataMonth) params.append("data_month", dataMonth);
+  const queryString = params.toString();
+  return fetchJson<DynamicInsightsResponse>(`/social/analytics/insights${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function fetchContentRecommendations(team = "content"): Promise<ContentRecommendationsResponse> {
+  const params = new URLSearchParams();
+  if (team !== "content") params.append("team", team);
+  const queryString = params.toString();
+  return fetchJson<ContentRecommendationsResponse>(`/social/analytics/recommendations${queryString ? `?${queryString}` : ""}`);
+}
+
+export async function fetchPeerComparison(metric: string): Promise<PeerComparisonResponse> {
+  return fetchJson<PeerComparisonResponse>(`/social/analytics/peer/${metric}`);
 }
