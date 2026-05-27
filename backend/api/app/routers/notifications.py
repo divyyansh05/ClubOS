@@ -40,7 +40,7 @@ def test_slack_alert():
         current_priorities=current,
         previous_priorities=previous,
         month=months[0][:7],
-        app_url=os.getenv("CLUBOS_APP_URL", "https://app.clubos.dev"),
+        app_url=os.getenv("CLUBOS_APP_URL", "https://clubos-gviwty5niq-ew.a.run.app"),
         force=True
     )
     return result
