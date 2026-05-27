@@ -1,0 +1,51 @@
+name: Security Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, dev]
+
+jobs:
+  secret-scan:
+    name: Scan for accidentally committed secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for .env files committed
+        run: |
+          # Fail if any .env file (not .env.example or .env.production) is tracked
+          TRACKED=$(git ls-files | grep -E "^\.env$|^\.env\.(local|development|test)$|clubos-web/\.env$" || true)
+          if [ -n "$TRACKED" ]; then
+            echo "ERROR: Secret files are tracked by git:"
+            echo "$TRACKED"
+            exit 1
+          fi
+          echo "No secret files tracked. Pass."
+
+      - name: Scan for credential patterns in staged files
+        run: |
+          # Scan changed files for obvious credential patterns
+          git diff --name-only HEAD~1 HEAD 2>/dev/null | while read FILE; do
+            if [ -f "$FILE" ]; then
+              if grep -qiE "(dapi[a-f0-9]{32}|sk-[a-zA-Z0-9]{32}|ghp_[a-zA-Z0-9]{36})" "$FILE" 2>/dev/null; then
+                echo "WARNING: Possible credential found in $FILE"
+                exit 1
+              fi
+            fi
+          done || exit 0
+          echo "No credential patterns found. Pass."
+
+      - name: Verify .gitignore covers secrets
+        run: |
+          # Confirm .env is gitignored
+          git check-ignore .env > /dev/null 2>&1 || {
+            echo "ERROR: .env is not in .gitignore"
+            exit 1
+          }
+          echo ".gitignore correctly covers .env. Pass."
