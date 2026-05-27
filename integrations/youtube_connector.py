@@ -3,7 +3,7 @@ import requests
 from datetime import datetime
 from base_connector import BaseConnector, ConnectorStatus, ConnectorResult
 
-REAL_MADRID_CHANNEL_ID = "UCgnj7FRt2VGdFMf5bBEnlKA"
+REAL_MADRID_CHANNEL_ID = "UCWV3obpZVGgJ3j9FVhEjF2Q"
 YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3"
 
 class YouTubeConnector(BaseConnector):
