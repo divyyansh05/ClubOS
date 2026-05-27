@@ -1,14 +1,27 @@
 import os
+import sys
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+# Startup debugging
+print(f"[STARTUP] Python version: {sys.version}", flush=True)
+print(f"[STARTUP] Current working directory: {os.getcwd()}", flush=True)
+print(f"[STARTUP] PYTHONPATH: {sys.path}", flush=True)
+print(f"[STARTUP] PORT env var: {os.environ.get('PORT', 'NOT SET')}", flush=True)
+print(f"[STARTUP] CLUBOS_SNAPSHOT_DIR: {os.environ.get('CLUBOS_SNAPSHOT_DIR', 'NOT SET')}", flush=True)
+print(f"[STARTUP] CLUBOS_FRONTEND_DIST: {os.environ.get('CLUBOS_FRONTEND_DIST', 'NOT SET')}", flush=True)
+
 from app.clients.databricks import SnapshotAccessError
 from app.routers import analytics, benchmark, briefing, config, events, health, priorities, refresh, signals, social
 
+print("[STARTUP] All imports successful", flush=True)
+
 app = FastAPI(title="ClubOS API", version="0.1.0")
+
+print("[STARTUP] FastAPI app created", flush=True)
 
 # CORS middleware (configure with CLUBOS_CORS_ORIGINS env var or default to *)
 _cors_origins = os.getenv("CLUBOS_CORS_ORIGINS", "*")

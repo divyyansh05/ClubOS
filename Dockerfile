@@ -58,9 +58,22 @@ EXPOSE 8080
 # Set working directory to backend/api to match local behavior
 WORKDIR /app/backend/api
 
+# Verify directory structure
+RUN echo "=== Verifying container structure ===" && \
+    ls -la /app/ && \
+    echo "=== Backend directory ===" && \
+    ls -la /app/backend/api/app/ && \
+    echo "=== Data directory ===" && \
+    ls -la /app/data/gold_snapshots/ | head -5 && \
+    echo "=== Frontend dist ===" && \
+    ls -la /app/apps/clubos-web/dist/ && \
+    echo "=== Verification complete ==="
+
 # Cloud Run injects PORT — read it at startup
 CMD ["sh", "-c", \
-     "uvicorn app.main:app \
+     "echo 'Starting uvicorn...' && \
+      uvicorn app.main:app \
       --host 0.0.0.0 \
       --port ${PORT:-8080} \
-      --workers 1"]
+      --workers 1 \
+      --log-level debug"]

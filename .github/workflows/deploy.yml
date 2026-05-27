@@ -62,6 +62,7 @@ jobs:
             --min-instances=0 \
             --max-instances=2 \
             --port=8080 \
+            --timeout=300 \
             --set-env-vars="CLUBOS_SNAPSHOT_DIR=/app/data/gold_snapshots,CLUBOS_FRONTEND_DIST=/app/apps/clubos-web/dist,CLUBOS_CORS_ORIGINS=*" \
             --quiet
 
