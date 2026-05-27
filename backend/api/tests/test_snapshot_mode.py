@@ -38,6 +38,15 @@ def test_snapshot_backed_priorities_and_refresh(tmp_path) -> None:
         ),
         encoding="utf-8",
     )
+    (tmp_path / "gold_peer_benchmark.csv").write_text(
+        "\n".join(
+            [
+                "month,asset_name,metric_name,rm_value,peer_median,peer_leader_value,peer_mean",
+                "2025-01-01,ecommerce,conversion_rate,0.20,0.25,0.30,0.24",
+            ]
+        ),
+        encoding="utf-8",
+    )
     (tmp_path / "silver_data_quality_checks.csv").write_text(
         "\n".join(
             [

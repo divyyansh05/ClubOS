@@ -16,12 +16,17 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+
 export default function ConnectorsPage() {
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [youtubeData, setYoutubeData] = useState<ConnectorDataResponse | null>(null);
   const [wikipediaData, setWikipediaData] = useState<ConnectorDataResponse | null>(null);
   const [showArchitecture, setShowArchitecture] = useState(false);
+  const [slackConfigured, setSlackConfigured] = useState(false);
+  const [slackTesting, setSlackTesting] = useState(false);
+  const [slackMessage, setSlackMessage] = useState<{type: "success" | "error", text: string} | null>(null);
 
   useEffect(() => {
     loadData();
@@ -50,10 +55,41 @@ export default function ConnectorsPage() {
         const wikiData = await fetchConnectorData("wikipedia", 30);
         setWikipediaData(wikiData);
       }
+
+      try {
+        const slackResp = await fetch(`${API_BASE_URL}/api/notifications/status`);
+        if (slackResp.ok) {
+          const slackData = await slackResp.json();
+          setSlackConfigured(slackData.slack_configured);
+        }
+      } catch (error) {
+        console.error("Failed to load slack status:", error);
+      }
     } catch (error) {
       console.error("Failed to load connectors:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function testSlackAlert() {
+    setSlackTesting(true);
+    setSlackMessage(null);
+    try {
+      const resp = await fetch(`${API_BASE_URL}/api/notifications/test-slack`, {
+        method: "POST"
+      });
+      const data = await resp.json();
+      if (resp.ok && data.sent) {
+        setSlackMessage({ type: "success", text: "✓ Alert sent to Slack — check #clubos-alerts" });
+        setTimeout(() => setSlackMessage(null), 5000);
+      } else {
+        setSlackMessage({ type: "error", text: `✗ ${data.reason || "Unknown error"}` });
+      }
+    } catch (e: any) {
+      setSlackMessage({ type: "error", text: `✗ ${e.message}` });
+    } finally {
+      setSlackTesting(false);
     }
   }
 
@@ -164,6 +200,55 @@ export default function ConnectorsPage() {
               </div>
             </div>
           ))}
+
+          {/* Slack Connector Card */}
+          <div className="bg-white dark:bg-stone-800 rounded-lg border border-stone-300 dark:border-stone-700 p-4">
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="font-sans font-semibold text-sm">Slack Alerts</h3>
+              <span
+                className={`${
+                  slackConfigured ? "bg-good-500 text-white" : "bg-warning-500 text-white"
+                } text-xs px-2 py-1 rounded uppercase font-mono`}
+              >
+                {slackConfigured ? "✓ Connected" : "Not Configured"}
+              </span>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-600 dark:text-stone-400">Auth Type:</span>
+                <span className="bg-stone-200 text-stone-700 dark:bg-stone-700 dark:text-stone-200 px-2 py-0.5 rounded font-mono uppercase">
+                  Webhook
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-stone-600 dark:text-stone-400">Status:</span>
+                <span className="text-stone-900 dark:text-stone-100 font-mono text-[10px]">
+                  {slackConfigured ? "Priority alerts enabled" : "Set SLACK_WEBHOOK_URL to enable"}
+                </span>
+              </div>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-stone-200 dark:border-stone-700">
+              <button
+                onClick={testSlackAlert}
+                disabled={!slackConfigured || slackTesting}
+                className={`w-full py-2 text-sm font-sans rounded-md transition-colors ${
+                  !slackConfigured || slackTesting 
+                    ? "bg-stone-200 text-stone-400 cursor-not-allowed" 
+                    : "bg-stone-800 hover:bg-stone-700 text-white dark:bg-stone-200 dark:hover:bg-stone-300 dark:text-stone-900"
+                }`}
+              >
+                {slackTesting ? "Sending..." : "Send Test Alert"}
+              </button>
+              {slackMessage && (
+                <p className={`mt-2 text-xs text-center font-mono ${
+                  slackMessage.type === "success" ? "text-good-600 dark:text-good-400" : "text-critical-600 dark:text-critical-400"
+                }`}>
+                  {slackMessage.text}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
