@@ -60,34 +60,37 @@ def _format_slack_message(
         })
         blocks.append({"type": "divider"})
 
-    # Top 3 priorities
+    # Top 5 priorities
     blocks.append({
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": "*Current Top 3 Priorities:*"
+            "text": "*Current Top 5 Priorities:*"
         }
     })
 
-    for p in top_priorities[:3]:
+    for p in top_priorities[:5]:
         emoji = _get_category_emoji(p.get("priority_category", ""))
         score = p.get("priority_score", 0)
+        
+        # Get important details, preferring summary text
+        details = p.get("summary_text", "") or p.get("why_it_matters", "No details provided.")
+        if len(details) > 120:
+            details = details[:117] + "..."
+            
+        # Create deep link if app_url is configured, otherwise fallback to ID
+        action_link = f"<{app_url}/priorities?id={p.get('priority_id', '')}|View Priority in ClubOS>" if app_url else f"`Priority ID: {p.get('priority_id', '')}`"
+
         blocks.append({
             "type": "section",
-            "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": (
-                        f"{emoji} *#{p['priority_rank']} "
-                        f"{p.get('primary_metric', '')}*\n"
-                        f"_{p.get('asset_name', '').upper()}_"
-                    )
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"Score: *{score:.2f}*"
-                }
-            ]
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"{emoji} *#{p.get('priority_rank', '?')} {p.get('primary_metric', '')}* — _{p.get('asset_name', '').upper()}_\n"
+                    f"> {details}\n"
+                    f"Score: *{score:.2f}* | {action_link}"
+                )
+            }
         })
 
     blocks.append({"type": "divider"})
