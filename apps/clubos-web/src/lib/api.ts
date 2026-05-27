@@ -304,3 +304,43 @@ export async function fetchPeerComparison(metric: string): Promise<PeerCompariso
 export async function fetchScoringConfig(): Promise<ScoringConfig> {
   return fetchJson<ScoringConfig>("/config/scoring");
 }
+
+// Live Data Connectors API calls
+export interface ConnectorStatus {
+  connector_id: string;
+  name: string;
+  status: "connected" | "error" | "not_configured";
+  last_sync: string | null;
+  records_fetched: number;
+  error_message: string | null;
+  auth_type: string;
+  data_type: string;
+}
+
+export interface ConnectorStatusResponse {
+  connectors: ConnectorStatus[];
+  connected_count: number;
+  total_count: number;
+}
+
+export interface ConnectorDataResponse {
+  connector_id: string;
+  fetched_at: string;
+  records: Array<{
+    metric: string;
+    label: string;
+    value: number;
+    unit: string;
+    source: string;
+    [key: string]: any;
+  }>;
+  error?: string;
+}
+
+export async function fetchConnectorStatus(): Promise<ConnectorStatusResponse> {
+  return fetchJson<ConnectorStatusResponse>("/api/connectors/status");
+}
+
+export async function fetchConnectorData(connectorId: string, daysBack = 30): Promise<ConnectorDataResponse> {
+  return fetchJson<ConnectorDataResponse>(`/api/connectors/data/${connectorId}?days_back=${daysBack}`);
+}
