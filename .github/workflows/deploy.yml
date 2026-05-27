@@ -9,7 +9,7 @@ env:
   PROJECT_ID:   ${{ secrets.GCP_PROJECT_ID }}
   REGION:       ${{ secrets.GCP_REGION }}
   SERVICE:      clubos
-  IMAGE:        gcr.io/${{ secrets.GCP_PROJECT_ID }}/clubos
+  IMAGE:        europe-west1-docker.pkg.dev/cloud-deployment-495611/clubos/clubos
 
 permissions:
   contents:      read
@@ -35,8 +35,8 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker --quiet
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
 
       - name: Build Docker image
         run: |
@@ -45,7 +45,7 @@ jobs:
             --tag ${{ env.IMAGE }}:latest \
             .
 
-      - name: Push Docker image to GCR
+      - name: Push Docker image to Artifact Registry
         run: |
           docker push ${{ env.IMAGE }}:${{ github.sha }}
           docker push ${{ env.IMAGE }}:latest
