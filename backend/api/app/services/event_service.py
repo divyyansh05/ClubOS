@@ -17,18 +17,23 @@ def _read_events_csv() -> list[dict]:
     with open(EVENTS_CSV_PATH, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            # Skip empty rows
+            if not row.get("event_id"):
+                continue
+
             # Parse affected_assets from expected_impact (comma-separated)
-            affected_assets = [asset.strip() for asset in row["expected_impact"].split(",") if asset.strip()]
+            expected_impact = row.get("expected_impact", "")
+            affected_assets = [asset.strip() for asset in expected_impact.split(",") if asset.strip()]
 
             events.append({
-                "event_id": row["event_id"],
-                "event_date": row["event_date"],
-                "event_name": row["event_name"],
-                "event_category": row["event_category"],
-                "event_description": row["event_description"],
-                "expected_impact": row["expected_impact"],
+                "event_id": row.get("event_id", ""),
+                "event_date": row.get("event_date", ""),
+                "event_name": row.get("event_name", ""),
+                "event_category": row.get("event_category", ""),
+                "event_description": row.get("event_description", ""),
+                "expected_impact": expected_impact,
                 "affected_assets": affected_assets,
-                "impact_magnitude": row["impact_magnitude"],
+                "impact_magnitude": row.get("impact_magnitude", ""),
             })
 
     return events

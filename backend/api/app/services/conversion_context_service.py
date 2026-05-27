@@ -11,7 +11,8 @@ def _client() -> DatabricksClient:
 
 def _month_str(row: dict[str, Any], key: str = "month") -> str:
     """Extract YYYY-MM-DD format date string from row"""
-    return str(row[key])[:10]
+    val = row.get(key, "")
+    return str(val)[:10] if val else ""
 
 
 def get_conversion_context(asset: str, month_str: str) -> Optional[dict[str, Any]]:

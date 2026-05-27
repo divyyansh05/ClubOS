@@ -13,7 +13,8 @@ def _client() -> DatabricksClient:
 
 
 def _month_str(row: dict[str, Any], key: str) -> str:
-    return str(row[key])[:10]
+    val = row.get(key, "")
+    return str(val)[:10] if val else ""
 
 
 def _get_source_metric_health(asset_name: str, metric_name: str, month: str) -> Optional[dict[str, Any]]:
@@ -293,18 +294,18 @@ def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
     for row in rows:
         signal_id = "__".join(
             [
-                str(row["source_asset"]),
-                str(row["source_metric"]),
-                str(row["target_asset"]),
-                str(row["target_metric"]),
-                str(int(row["lag_months"])),
+                str(row.get("source_asset", "")),
+                str(row.get("source_metric", "")),
+                str(row.get("target_asset", "")),
+                str(row.get("target_metric", "")),
+                str(int(row.get("lag_months", 0))),
             ]
         )
 
-        source_asset = str(row["source_asset"])
-        source_metric = str(row["source_metric"])
-        relationship_direction = str(row["relationship_direction"])
-        lag_months = int(row["lag_months"])
+        source_asset = str(row.get("source_asset", ""))
+        source_metric = str(row.get("source_metric", ""))
+        relationship_direction = str(row.get("relationship_direction", ""))
+        lag_months = int(row.get("lag_months", 0))
 
         # Get source metric health data
         source_health = _get_source_metric_health(source_asset, source_metric, latest_validated_month)
@@ -335,8 +336,8 @@ def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
                 source_trend_pct_change = ((metric_value - prior_month_value) / prior_month_value) * 100
 
         # Get target metric health data
-        target_asset = str(row["target_asset"])
-        target_metric = str(row["target_metric"])
+        target_asset = str(row.get("target_asset", ""))
+        target_metric = str(row.get("target_metric", ""))
         target_health = _get_source_metric_health(target_asset, target_metric, latest_validated_month)
 
         target_current_value = None
@@ -353,7 +354,7 @@ def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
             "source_asset": source_asset,
             "target_metric": target_metric,
             "target_asset": target_asset,
-            "strength_score": float(row["strength_score"]),
+            "strength_score": float(row.get("strength_score", 0)),
             "lag_months": lag_months,
         }
         dynamic_interpretation = _build_dynamic_interpretation(signal_dict, current_status, source_health)
@@ -377,8 +378,8 @@ def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
                 "target_metric": target_metric,
                 "lag_months": lag_months,
                 "relationship_direction": relationship_direction,
-                "strength_score": float(row["strength_score"]),
-                "validation_status": str(row["validation_status"]),
+                "strength_score": float(row.get("strength_score", 0)),
+                "validation_status": str(row.get("validation_status", "")),
                 "business_interpretation": dynamic_interpretation,
                 "last_validated_month": _month_str(row, "last_validated_month"),
                 # New enriched fields

@@ -63,7 +63,13 @@ class DatabricksClient:
                 return [json.loads(line) for line in raw.splitlines() if line.strip()]
 
             if path.suffix == ".csv":
-                return pd.read_csv(path).to_dict(orient="records")
+                df = pd.read_csv(path)
+                # Drop rows where all values are NaN
+                df = df.dropna(how="all")
+                # Convert to dict and filter out empty rows
+                records = df.to_dict(orient="records")
+                # Filter out rows where all values are None/NaN
+                return [r for r in records if any(v is not None and str(v).strip() for v in r.values())]
 
             if path.suffix == ".parquet":
                 return pd.read_parquet(path).to_dict(orient="records")

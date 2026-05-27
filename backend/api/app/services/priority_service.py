@@ -16,7 +16,8 @@ def _client() -> DatabricksClient:
 
 
 def _month_str(row: dict[str, Any], key: str = "month") -> str:
-    return str(row[key])[:10]
+    val = row.get(key, "")
+    return str(val)[:10] if val else ""
 
 
 def _norm(value: Any) -> str:
@@ -234,8 +235,8 @@ def _enrich_priority_row(
 ) -> dict[str, Any]:
     """Normalize and enrich a priority row with additional data"""
     month = _month_str(row)
-    asset_name = str(row["asset_name"])
-    metric_name = str(row["primary_metric"])
+    asset_name = str(row.get("asset_name", ""))
+    metric_name = str(row.get("primary_metric", ""))
 
     # Parse supporting metrics JSON
     raw_support = str(row.get("supporting_metrics_json", "{}"))
@@ -397,17 +398,17 @@ def _enrich_priority_row(
 
     # Base normalized data
     result = {
-        "priority_id": str(row["priority_id"]),
+        "priority_id": str(row.get("priority_id", "")),
         "month": month,
-        "title": str(row["priority_title"]),
-        "category": str(row["priority_category"]),
-        "score": float(row["priority_score"]),
-        "rank": int(row["priority_rank"]),
+        "title": str(row.get("priority_title", "")),
+        "category": str(row.get("priority_category", "")),
+        "score": float(row.get("priority_score", 0)),
+        "rank": int(row.get("priority_rank", 0)),
         "asset_name": asset_name,
         "primary_metric": metric_name,
-        "summary_text": str(row["summary_text"]),
+        "summary_text": str(row.get("summary_text", "")),
         "why_it_matters": why_it_matters,
-        "suggested_next_investigation": str(row["suggested_next_investigation"]),
+        "suggested_next_investigation": str(row.get("suggested_next_investigation", "")),
         # New enriched fields
         "consecutive_declining_months": consecutive_declining if consecutive_declining > 0 else None,
         "trend_direction": trend_direction,

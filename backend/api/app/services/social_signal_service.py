@@ -24,7 +24,8 @@ def _client() -> DatabricksClient:
 
 def _month_str(row: dict[str, Any], key: str) -> str:
     """Extract YYYY-MM-DD date string from row"""
-    return str(row[key])[:10]
+    val = row.get(key, "")
+    return str(val)[:10] if val else ""
 
 
 def _get_social_metric_series(metric_name: str) -> Optional[pd.Series]:

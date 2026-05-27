@@ -22,7 +22,8 @@ def _client() -> DatabricksClient:
 
 def _month_str(row: dict[str, Any], key: str = "month") -> str:
     """Extract YYYY-MM-DD date string from row"""
-    return str(row[key])[:10]
+    val = row.get(key, "")
+    return str(val)[:10] if val else ""
 
 
 def get_social_peer_benchmark(metric: str, month_str: Optional[str] = None) -> dict[str, Any]:
@@ -95,11 +96,12 @@ def get_social_peer_benchmark(metric: str, month_str: Optional[str] = None) -> d
     # Sort clubs by metric value (descending = best first for positive metrics)
     clubs_data = []
     for row in filtered:
-        value = float(row[column_name])
+        value = float(row.get(column_name, 0))
+        club_name = str(row.get("club_name", ""))
         clubs_data.append({
-            "club": str(row["club_name"]),
+            "club": club_name,
             "value": value,
-            "is_real_madrid": str(row["club_name"]) == "real_madrid",
+            "is_real_madrid": club_name == "real_madrid",
         })
 
     clubs_data.sort(key=lambda x: x["value"], reverse=True)
@@ -191,9 +193,9 @@ def get_social_benchmark_trend(metric: str) -> dict[str, Any]:
         # Sort by metric
         clubs_data = []
         for row in month_rows:
-            value = float(row[column_name])
+            value = float(row.get(column_name, 0))
             clubs_data.append({
-                "club": str(row["club_name"]),
+                "club": str(row.get("club_name", "")),
                 "value": value,
             })
 

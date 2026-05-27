@@ -10,7 +10,8 @@ def _client() -> DatabricksClient:
 
 
 def _month_str(row: dict[str, Any]) -> str:
-    return str(row["month"])[:10]
+    val = row.get("month", "")
+    return str(val)[:10] if val else ""
 
 
 def get_latest_briefing() -> dict[str, Any]:
