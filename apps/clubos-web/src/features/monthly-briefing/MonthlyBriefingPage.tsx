@@ -6,6 +6,7 @@ import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
 import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { ScreenGuide } from "../../components/ui/ScreenGuide";
 import { formatMonthYear } from "../../lib/dateFormat";
+import { formatMetricValue } from "../../lib/formatNumber";
 
 interface MetricDetail {
   name: string;
@@ -246,14 +247,14 @@ export function MonthlyBriefingPage() {
                       key={`${anomaly.asset_name}_${anomaly.metric_name}`}
                       onClick={() => showMetricDetail({
                         name: `Anomaly: ${anomaly.metric_name}`,
-                        value: anomaly.metric_value.toLocaleString(),
+                        value: formatMetricValue(anomaly.metric_name, anomaly.metric_value),
                         category: isNegative ? "Declining Performance" : "Surging Performance",
-                        explanation: `${anomaly.metric_name} for ${anomaly.asset_name} is showing a ${Math.abs(anomaly.deviation_from_seasonal_baseline * 100).toFixed(1)}% ${isNegative ? 'decline' : 'surge'} compared to the seasonal baseline. Current value is ${anomaly.metric_value.toLocaleString()}.`,
+                        explanation: `${anomaly.metric_name} for ${anomaly.asset_name} is showing a ${Math.abs(anomaly.deviation_from_seasonal_baseline * 100).toFixed(1)}% ${isNegative ? 'decline' : 'surge'} compared to the seasonal baseline. Current value is ${formatMetricValue(anomaly.metric_name, anomaly.metric_value)}.`,
                         businessContext: isNegative
                           ? `A ${Math.abs(anomaly.deviation_from_seasonal_baseline * 100).toFixed(1)}% drop from seasonal expectations is significant. This suggests something changed - could be market conditions, campaign performance, user behavior, or technical issues. Investigation needed to understand root cause and determine if intervention is required.`
                           : `A ${(anomaly.deviation_from_seasonal_baseline * 100).toFixed(1)}% surge above seasonal expectations is notable. This could indicate successful campaigns, viral content, seasonal spikes, or data anomalies. Investigate whether this is sustainable growth or a temporary spike.`,
                         additionalInfo: {
-                          "Current Value": anomaly.metric_value.toLocaleString(),
+                          "Current Value": formatMetricValue(anomaly.metric_name, anomaly.metric_value),
                           "Deviation": `${(anomaly.deviation_from_seasonal_baseline * 100).toFixed(1)}%`,
                           "Asset": anomaly.asset_name,
                           "Status": isNegative ? "Declining" : "Surging",
@@ -269,7 +270,7 @@ export function MonthlyBriefingPage() {
                       </td>
                       <td className="p-4 border border-ink dark:border-stone-700">{anomaly.asset_name}</td>
                       <td className="p-4 text-right border border-ink dark:border-stone-700">
-                        {anomaly.metric_value.toLocaleString()}
+                        {formatMetricValue(anomaly.metric_name, anomaly.metric_value)}
                       </td>
                       <td className={`p-4 text-right font-bold border border-ink dark:border-stone-700 ${textColor}`}>
                         {(anomaly.deviation_from_seasonal_baseline * 100).toFixed(1)}%

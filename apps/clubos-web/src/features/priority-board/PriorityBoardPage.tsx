@@ -12,6 +12,7 @@ import { ScreenGuide } from "../../components/ui/ScreenGuide";
 import { ScoreComponentBar } from "../../components/ui/ScoreComponentBar";
 import { getMetricDef, getMetricUnit, getPolaritySymbol } from "../../lib/metricDefinitions";
 import { formatMonthYear } from "../../lib/dateFormat";
+import { formatMetricValue } from "../../lib/formatNumber";
 
 const SCORING_WEIGHTS = {
   severity: 0.30,
@@ -1447,16 +1448,26 @@ export function PriorityBoardPage() {
                         Competitive Context
                       </h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {Object.entries(selectedDetail.supporting_metrics.peer_context).map(([key, value]) => (
-                          <div key={key} className="p-4 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
-                            <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
-                              {key.replace(/_/g, ' ')}
+                        {Object.entries(selectedDetail.supporting_metrics.peer_context).map(([key, value]) => {
+                          // Format metric values, keep counts/ranks as-is
+                          const shouldFormat = key.includes('median') || key.includes('leader') || key.includes('gap');
+                          const formattedValue = typeof value === 'number'
+                            ? shouldFormat
+                              ? formatMetricValue(selectedDetail.primary_metric, Math.abs(value))
+                              : value
+                            : value;
+
+                          return (
+                            <div key={key} className="p-4 border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+                              <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
+                                {key.replace(/_/g, ' ')}
+                              </div>
+                              <div className="font-mono text-lg font-semibold text-ink dark:text-stone-100">
+                                {formattedValue}
+                              </div>
                             </div>
-                            <div className="font-mono text-lg font-semibold text-ink dark:text-stone-100">
-                              {typeof value === 'number' ? value.toLocaleString() : value}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       {/* Gap Annotation (V1.8.3) */}
@@ -1481,7 +1492,7 @@ export function PriorityBoardPage() {
                               </p>
                             ) : (
                               <p className="font-mono text-sm text-critical-light dark:text-critical-dark">
-                                <span className="font-bold">▼ Real Madrid is {Math.abs(rawGap).toFixed(4)} behind peer median</span>
+                                <span className="font-bold">▼ Real Madrid is {formatMetricValue(selectedDetail.primary_metric, Math.abs(rawGap))} behind peer median</span>
                                 {polarity === -1 && rawGap > 0 && (
                                   <span className="block mt-1 text-xs text-stone-600 dark:text-stone-400">
                                     (Lower is better for this metric — being above median indicates underperformance)

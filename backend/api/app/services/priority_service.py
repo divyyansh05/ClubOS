@@ -7,6 +7,7 @@ from typing import Any, Optional
 from app.clients.databricks import DatabricksClient
 from app.config.settings import settings
 from app.services import anomaly_context_service, conversion_context_service, seasonal_service
+from app.services.format_utils import format_metric_value
 
 logger = logging.getLogger(__name__)
 
@@ -198,9 +199,12 @@ def _build_data_driven_why_it_matters(
         direction = "ahead of" if gap_to_median > 0 else "behind"
         abs_gap = abs(gap_to_median)
 
+        # Format gap values using the metric-aware formatter
+        formatted_gap = format_metric_value(metric_name, abs_gap)
+
         sentences.append(
             f"Ranked {peer_rank} of {peer_count + 1} clubs on {metric_name}. "
-            f"Gap to peer median: {gap_to_median:.4f} ({direction} peers by {abs_gap:.4f})."
+            f"Gap to peer median: {formatted_gap} ({direction} peers)."
         )
 
     # Persistence sentence

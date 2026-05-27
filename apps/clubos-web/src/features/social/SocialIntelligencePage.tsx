@@ -46,6 +46,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ScreenGuide } from "../../components/ui/ScreenGuide";
+import { abbreviateNumber } from "../../lib/formatNumber";
 
 // ─── Tab definitions ─────────────────────────────────────────────────────────
 //
@@ -1039,7 +1040,7 @@ export default function SocialIntelligencePage() {
             <span className="text-ink dark:text-stone-100 font-semibold">
               {dayOfWeekData.best_day}
             </span>{" "}
-            — avg {dayOfWeekData.best_day_avg.toLocaleString()}
+            — avg {abbreviateNumber(dayOfWeekData.best_day_avg)}
           </p>
         </div>
       )}
@@ -1101,8 +1102,8 @@ export default function SocialIntelligencePage() {
                   <tr key={idx} className={idx % 2 === 0 ? "bg-paper dark:bg-stone-800" : "bg-stone-50 dark:bg-stone-900"}>
                     <td className={tableCell + " font-semibold"}>{format.label}</td>
                     <td className={tableCell}>{format.platform}</td>
-                    <td className={tableCellMono + " text-right"}>{format.avg_engagement.toLocaleString()}</td>
-                    <td className={tableCell + " text-right"}>{format.post_count.toLocaleString()}</td>
+                    <td className={tableCellMono + " text-right"}>{abbreviateNumber(format.avg_engagement)}</td>
+                    <td className={tableCell + " text-right"}>{abbreviateNumber(format.post_count)}</td>
                     <td className={tableCellMono + " text-right font-semibold"}>{format.vs_standard_post_multiplier.toFixed(1)}x</td>
                     <td className="border border-stone-300 dark:border-stone-700 p-3 text-center font-mono text-sm">
                       {format.recommended ? (
@@ -1166,7 +1167,7 @@ export default function SocialIntelligencePage() {
                       >
                         <td className={tableCellMono + " text-stone-400 dark:text-stone-500"}>{idx + 1}</td>
                         <td className={tableCellMono + " text-info-600 dark:text-info-dark font-semibold"}>{hashtag.hashtag}</td>
-                        <td className={tableCellMono + " text-right"}>{hashtag.avg_engagement.toLocaleString()}</td>
+                        <td className={tableCellMono + " text-right"}>{abbreviateNumber(hashtag.avg_engagement)}</td>
                         <td className={tableCell + " text-right"}>{hashtag.post_count}</td>
                         <td className="border border-stone-300 dark:border-stone-700 p-3">
                           <span
@@ -1362,7 +1363,7 @@ export default function SocialIntelligencePage() {
                     <td className={tableCell + " font-semibold"}>
                       {signal.content_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                     </td>
-                    <td className={tableCellMono + " text-right"}>{signal.avg_content_engagement.toLocaleString()}</td>
+                    <td className={tableCellMono + " text-right"}>{abbreviateNumber(signal.avg_content_engagement)}</td>
                     <td className={tableCell}>{signal.commercial_metric} ({signal.commercial_asset})</td>
                     <td className="border border-stone-300 dark:border-stone-700 p-3 text-center">
                       <span className={`font-mono text-xs uppercase tracking-wider px-2 py-1 border ${signal.strength_label === "Strong" ? "border-good-600 text-good-700 dark:text-good-dark" : signal.strength_label === "Moderate" ? "border-warning-600 text-warning-700 dark:text-warning-dark" : "border-stone-400 text-stone-500"}`}>

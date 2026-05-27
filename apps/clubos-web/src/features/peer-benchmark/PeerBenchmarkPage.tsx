@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { getBenchmark, getSocialBenchmark, getSocialBenchmarkTrend, getSocialBenchmarkSummary } from "../../lib/api";
+import { getBenchmark, getSocialBenchmark, getSocialBenchmarkTrend, getSocialBenchmarkSummary, getAvailableMetrics, type AvailableMetric } from "../../lib/api";
 import type { BenchmarkResponse, SocialBenchmarkResponse, SocialBenchmarkTrendResponse, SocialBenchmarkSummaryResponse } from "../../types/clubos";
 import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
 import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { ScreenGuide } from "../../components/ui/ScreenGuide";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { getMetricUnit } from "../../lib/metricDefinitions";
+import { formatMetricValue, abbreviateNumber } from "../../lib/formatNumber";
 
 const METRICS = [
   { asset: "main_website", metric: "unique_visitors", label: "Website - Unique Visitors" },
@@ -40,7 +42,8 @@ export function PeerBenchmarkPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null);
-  const [selectedMetric, setSelectedMetric] = useState(METRICS[2]); // ecommerce conversion_rate
+  const [availableMetrics, setAvailableMetrics] = useState<AvailableMetric[]>([]);
+  const [selectedMetric, setSelectedMetric] = useState<{ asset: string; metric: string; label: string } | null>(null);
   const [selectedMetricDetail, setSelectedMetricDetail] = useState<MetricDetail | null>(null);
 
   // Social benchmark state
@@ -49,11 +52,41 @@ export function PeerBenchmarkPage() {
   const [socialSummary, setSocialSummary] = useState<SocialBenchmarkSummaryResponse | null>(null);
   const [selectedSocialMetric, setSelectedSocialMetric] = useState(SOCIAL_METRICS[0]); // avg_engagement_per_post
 
+  // Load available metrics on mount
+  useEffect(() => {
+    async function loadAvailableMetrics() {
+      try {
+        const metrics = await getAvailableMetrics();
+        setAvailableMetrics(metrics);
+        // Set default to first available metric (or conversion_rate if available)
+        const conversionMetric = metrics.find(m => m.metric_name === 'conversion_rate' && m.asset_name === 'ecommerce');
+        const defaultMetric = conversionMetric || metrics[0];
+        if (defaultMetric) {
+          setSelectedMetric({
+            asset: defaultMetric.asset_name,
+            metric: defaultMetric.metric_name,
+            label: defaultMetric.label,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load available metrics:', err);
+        // Fallback to empty array
+        setAvailableMetrics([]);
+      }
+    }
+    loadAvailableMetrics();
+  }, []);
+
   useEffect(() => {
     async function loadBenchmark() {
+      if (activeTab === "commercial" && !selectedMetric) {
+        // Wait for selectedMetric to be set
+        return;
+      }
+
       try {
         setLoading(true);
-        if (activeTab === "commercial") {
+        if (activeTab === "commercial" && selectedMetric) {
           const data = await getBenchmark(selectedMetric.asset, selectedMetric.metric);
           setBenchmark(data);
         } else {
@@ -76,10 +109,15 @@ export function PeerBenchmarkPage() {
     loadBenchmark();
   }, [selectedMetric, selectedSocialMetric, activeTab]);
 
-  function handleMetricChange(asset: string, metric: string) {
-    const selected = METRICS.find((m) => m.asset === asset && m.metric === metric);
+  function handleMetricChange(value: string) {
+    const [asset, metric] = value.split('__');
+    const selected = availableMetrics.find((m) => m.asset_name === asset && m.metric_name === metric);
     if (selected) {
-      setSelectedMetric(selected);
+      setSelectedMetric({
+        asset: selected.asset_name,
+        metric: selected.metric_name,
+        label: selected.label,
+      });
     }
   }
 
@@ -216,26 +254,33 @@ export function PeerBenchmarkPage() {
         <label className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 block mb-3">
           Select Metric
         </label>
-        <div className="flex items-center gap-3 flex-wrap">
-          <select
-            className="px-4 py-3 border-2 border-ink dark:border-stone-700 bg-paper dark:bg-stone-900 font-mono text-sm cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-            value={`${selectedMetric.asset}:${selectedMetric.metric}`}
-            onChange={(e) => {
-              const [asset, metric] = e.target.value.split(":");
-              handleMetricChange(asset, metric);
-            }}
-          >
-            {METRICS.map((m) => (
-              <option key={`${m.asset}:${m.metric}`} value={`${m.asset}:${m.metric}`}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm text-stone-600 dark:text-stone-400">About this metric:</span>
-            <InfoTooltip metricName={selectedMetric.metric} size="md" />
+        {availableMetrics.length === 0 ? (
+          <div className="p-4 border border-warning-light dark:border-warning-dark bg-warning-50 dark:bg-warning-dark/10">
+            <p className="font-mono text-sm text-warning-600 dark:text-warning-dark">
+              No benchmarked metrics available
+            </p>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3 flex-wrap">
+            <CustomSelect
+              options={availableMetrics.map(m => ({
+                value: `${m.asset_name}__${m.metric_name}`,
+                label: m.label,
+                group: m.asset_label,
+              }))}
+              value={selectedMetric ? `${selectedMetric.asset}__${selectedMetric.metric}` : ''}
+              onChange={handleMetricChange}
+              placeholder="Select metric"
+              className="min-w-[300px]"
+            />
+            {selectedMetric && (
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm text-stone-600 dark:text-stone-400">About this metric:</span>
+                <InfoTooltip metricName={selectedMetric.metric} size="md" />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Current Position */}
@@ -261,8 +306,8 @@ export function PeerBenchmarkPage() {
                   additionalInfo: {
                     "Current Rank": `#${latestPoint.rm_rank}`,
                     "Total Clubs": latestPoint.club_count,
-                    "Gap to Leader": latestPoint.gap_to_leader.toFixed(4),
-                    "Gap to Median": latestPoint.gap_to_peer_median.toFixed(4),
+                    "Gap to Leader": formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.gap_to_leader)),
+                    "Gap to Median": formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.gap_to_peer_median)),
                   }
                 })}
                 className="font-mono text-xl hover:underline cursor-pointer"
@@ -280,21 +325,21 @@ export function PeerBenchmarkPage() {
               <button
                 onClick={() => showMetricDetail({
                   name: selectedMetric.label,
-                  value: latestPoint.rm_value.toLocaleString(),
+                  value: formatMetricValue(selectedMetric.metric, latestPoint.rm_value),
                   category: rankCategory,
-                  explanation: `Real Madrid's current value for ${selectedMetric.label} is ${latestPoint.rm_value.toLocaleString()}. This compares to a peer median of ${latestPoint.peer_median.toLocaleString()} and a leader value of ${latestPoint.peer_leader_value.toLocaleString()}.`,
-                  businessContext: `This metric represents actual performance data. ${latestPoint.gap_to_peer_median < 0 ? `Being ${Math.abs(latestPoint.gap_to_peer_median).toLocaleString()} below the median indicates an area requiring strategic focus and investment.` : `Performing above the median shows competitive strength in this area.`}`,
+                  explanation: `Real Madrid's current value for ${selectedMetric.label} is ${formatMetricValue(selectedMetric.metric, latestPoint.rm_value)}. This compares to a peer median of ${formatMetricValue(selectedMetric.metric, latestPoint.peer_median)} and a leader value of ${formatMetricValue(selectedMetric.metric, latestPoint.peer_leader_value)}.`,
+                  businessContext: `This metric represents actual performance data. ${latestPoint.gap_to_peer_median < 0 ? `Being ${formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.gap_to_peer_median))} below the median indicates an area requiring strategic focus and investment.` : `Performing above the median shows competitive strength in this area.`}`,
                   trendData: benchmark.points.slice(-12).map(p => ({ month: p.month.substring(5, 7), value: p.rm_value })),
                   additionalInfo: {
-                    "RM Value": latestPoint.rm_value.toLocaleString(),
-                    "Peer Median": latestPoint.peer_median.toLocaleString(),
-                    "Peer Leader": latestPoint.peer_leader_value.toLocaleString(),
+                    "RM Value": formatMetricValue(selectedMetric.metric, latestPoint.rm_value),
+                    "Peer Median": formatMetricValue(selectedMetric.metric, latestPoint.peer_median),
+                    "Peer Leader": formatMetricValue(selectedMetric.metric, latestPoint.peer_leader_value),
                     "Month": latestPoint.month,
                   }
                 })}
                 className={`font-mono text-5xl font-bold hover:underline cursor-pointer ${latestPoint.rm_rank <= 2 ? 'text-good-light dark:text-good-dark' : latestPoint.rm_rank === 3 ? 'text-info-light dark:text-info-dark' : 'text-critical-light dark:text-critical-dark'}`}
               >
-                {latestPoint.rm_value.toLocaleString()}
+                {formatMetricValue(selectedMetric.metric, latestPoint.rm_value)}
               </button>
             </div>
           </div>
@@ -307,7 +352,7 @@ export function PeerBenchmarkPage() {
                   1
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Leader</div>
-                <div className="font-mono text-sm font-bold mt-1">{latestPoint.peer_leader_value.toLocaleString()}</div>
+                <div className="font-mono text-sm font-bold mt-1">{formatMetricValue(selectedMetric.metric, latestPoint.peer_leader_value)}</div>
               </div>
 
               <div className="flex-1 h-px bg-stone-300 dark:bg-stone-700 mx-2 min-w-[20px]"></div>
@@ -317,7 +362,7 @@ export function PeerBenchmarkPage() {
                   M
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Median</div>
-                <div className="font-mono text-sm font-bold mt-1">{latestPoint.peer_median.toLocaleString()}</div>
+                <div className="font-mono text-sm font-bold mt-1">{formatMetricValue(selectedMetric.metric, latestPoint.peer_median)}</div>
               </div>
 
               <div className="flex-1 h-px bg-stone-300 dark:bg-stone-700 mx-2 min-w-[20px]"></div>
@@ -328,7 +373,7 @@ export function PeerBenchmarkPage() {
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Real Madrid</div>
                 <div className={`font-mono text-sm font-bold mt-1 ${latestPoint.rm_rank <= 2 ? 'text-good-light dark:text-good-dark' : 'text-critical-light dark:text-critical-dark'}`}>
-                  {latestPoint.rm_value.toLocaleString()}
+                  {formatMetricValue(selectedMetric.metric, latestPoint.rm_value)}
                 </div>
               </div>
 
@@ -354,11 +399,11 @@ export function PeerBenchmarkPage() {
 
                 showMetricDetail({
                   name: "Gap to Peer Median",
-                  value: rawGap.toLocaleString(),
+                  value: formatMetricValue(selectedMetric.metric, Math.abs(rawGap)),
                   category: isGoodPerformance ? "Good Performance" : "Review Needed",
                   explanation: isNegativePolarity
-                    ? `Real Madrid's ${selectedMetric.label} is ${Math.abs(rawGap).toLocaleString()} ${rawGap < 0 ? 'lower than' : 'higher than'} the peer median. For ${selectedMetric.label}, ${rawGap < 0 ? 'lower is better — this indicates good performance' : 'higher is worse — this indicates underperformance'}. The median represents the middle value when all ${latestPoint.club_count} clubs are ranked.`
-                    : `Real Madrid is ${Math.abs(rawGap).toLocaleString()} ${rawGap < 0 ? 'behind' : 'ahead of'} the peer median for ${selectedMetric.label}. The median represents the middle value when all ${latestPoint.club_count} clubs are ranked.`,
+                    ? `Real Madrid's ${selectedMetric.label} is ${formatMetricValue(selectedMetric.metric, Math.abs(rawGap))} ${rawGap < 0 ? 'lower than' : 'higher than'} the peer median. For ${selectedMetric.label}, ${rawGap < 0 ? 'lower is better — this indicates good performance' : 'higher is worse — this indicates underperformance'}. The median represents the middle value when all ${latestPoint.club_count} clubs are ranked.`
+                    : `Real Madrid is ${formatMetricValue(selectedMetric.metric, Math.abs(rawGap))} ${rawGap < 0 ? 'behind' : 'ahead of'} the peer median for ${selectedMetric.label}. The median represents the middle value when all ${latestPoint.club_count} clubs are ranked.`,
                   businessContext: isNegativePolarity
                     ? (rawGap < 0
                         ? `Being below the median in ${selectedMetric.label} means Real Madrid has better user engagement than half of peer clubs. This demonstrates competitive strength.`
@@ -367,9 +412,9 @@ export function PeerBenchmarkPage() {
                         ? 'Being behind the median means Real Madrid is performing worse than half of peer clubs. This gap represents lost revenue potential and competitive disadvantage.'
                         : 'Performing above the median demonstrates competitive strength and positions Real Madrid in the upper tier of peer clubs.'),
                   additionalInfo: {
-                    "Raw Gap": rawGap.toLocaleString(),
-                    "RM Value": latestPoint.rm_value.toLocaleString(),
-                    "Peer Median": latestPoint.peer_median.toLocaleString(),
+                    "Raw Gap": formatMetricValue(selectedMetric.metric, Math.abs(rawGap)),
+                    "RM Value": formatMetricValue(selectedMetric.metric, latestPoint.rm_value),
+                    "Peer Median": formatMetricValue(selectedMetric.metric, latestPoint.peer_median),
                     "Status": isGoodPerformance ? "Good" : "Needs Review",
                   }
                 });
@@ -387,7 +432,7 @@ export function PeerBenchmarkPage() {
               </div>
               <div className="font-mono text-xl font-bold text-ink dark:text-stone-100">
                 {latestPoint.raw_gap_to_peer_median > 0 ? "+" : ""}
-                {latestPoint.raw_gap_to_peer_median.toLocaleString()}
+                {formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.raw_gap_to_peer_median))}
               </div>
               <div className={`font-mono text-sm ${
                 selectedMetric.metric === "bounce_rate"
@@ -402,14 +447,14 @@ export function PeerBenchmarkPage() {
             <button
               onClick={() => showMetricDetail({
                 name: "Gap to Leader",
-                value: latestPoint.gap_to_leader.toLocaleString(),
+                value: formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.gap_to_leader)),
                 category: latestPoint.gap_to_leader < 0 ? "Growth Opportunity" : "Market Leader",
-                explanation: `Real Madrid is ${Math.abs(latestPoint.gap_to_leader).toLocaleString()} ${latestPoint.gap_to_leader < 0 ? 'behind' : 'ahead of'} the peer leader for ${selectedMetric.label}. The leader represents best-in-class performance among peer clubs.`,
+                explanation: `Real Madrid is ${formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.gap_to_leader))} ${latestPoint.gap_to_leader < 0 ? 'behind' : 'ahead of'} the peer leader for ${selectedMetric.label}. The leader represents best-in-class performance among peer clubs.`,
                 businessContext: `${latestPoint.gap_to_leader < 0 ? 'The gap to the leader shows the ceiling for potential improvement. Closing this gap represents the maximum upside opportunity if Real Madrid achieves industry-leading performance.' : 'Leading peers in this metric demonstrates market-leading performance and sets the standard for competitors.'}`,
                 additionalInfo: {
-                  "Gap": latestPoint.gap_to_leader.toLocaleString(),
-                  "RM Value": latestPoint.rm_value.toLocaleString(),
-                  "Leader Value": latestPoint.peer_leader_value.toLocaleString(),
+                  "Gap": formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.gap_to_leader)),
+                  "RM Value": formatMetricValue(selectedMetric.metric, latestPoint.rm_value),
+                  "Leader Value": formatMetricValue(selectedMetric.metric, latestPoint.peer_leader_value),
                   "RM Rank": `#${latestPoint.rm_rank}`,
                 }
               })}
@@ -420,7 +465,7 @@ export function PeerBenchmarkPage() {
               </div>
               <div className="font-mono text-xl font-bold text-ink dark:text-stone-100">
                 {latestPoint.gap_to_leader > 0 ? "+" : ""}
-                {latestPoint.gap_to_leader.toLocaleString()}
+                {formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.gap_to_leader))}
               </div>
               <div className={`font-mono text-sm ${latestPoint.gap_to_leader < 0 ? 'text-critical-light dark:text-critical-dark' : 'text-good-light dark:text-good-dark'}`}>
                 {latestPoint.gap_to_leader < 0 ? "Behind" : "Ahead"}
@@ -505,7 +550,7 @@ export function PeerBenchmarkPage() {
                 <>
                   Real Madrid (red line) has a bounce rate that is{" "}
                   <span className={latestPoint.raw_gap_to_peer_median < 0 ? 'text-good-600 dark:text-good-dark font-semibold' : 'text-critical-600 dark:text-critical-dark font-semibold'}>
-                    {Math.abs(latestPoint.raw_gap_to_peer_median).toFixed(4)} {latestPoint.raw_gap_to_peer_median < 0 ? 'lower than' : 'higher than'}
+                    {formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.raw_gap_to_peer_median))} {latestPoint.raw_gap_to_peer_median < 0 ? 'lower than' : 'higher than'}
                   </span>{" "}
                   the peer median (blue line){latestPoint.raw_gap_to_peer_median < 0 ? ' — lower bounce rate indicates better user engagement' : ' — higher bounce rate indicates engagement challenges'}.{" "}
                   {latestPoint.raw_gap_to_peer_median < 0 ? 'This demonstrates competitive strength in user engagement.' : 'Reducing bounce rate represents significant upside potential.'}
@@ -514,7 +559,7 @@ export function PeerBenchmarkPage() {
                 <>
                   Real Madrid (red line) is currently{" "}
                   <span className={latestPoint.raw_gap_to_peer_median < 0 ? 'text-critical-600 dark:text-critical-dark font-semibold' : 'text-good-600 dark:text-good-dark font-semibold'}>
-                    {latestPoint.raw_gap_to_peer_median < 0 ? Math.abs(latestPoint.raw_gap_to_peer_median).toFixed(4) + ' behind' : '+' + latestPoint.raw_gap_to_peer_median.toFixed(4) + ' ahead of'}
+                    {latestPoint.raw_gap_to_peer_median < 0 ? formatMetricValue(selectedMetric.metric, Math.abs(latestPoint.raw_gap_to_peer_median)) + ' behind' : '+' + formatMetricValue(selectedMetric.metric, latestPoint.raw_gap_to_peer_median) + ' ahead of'}
                   </span>{" "}
                   the peer median (blue line). {latestPoint.raw_gap_to_peer_median < 0 ? 'Closing this gap represents significant commercial upside potential.' : 'Maintaining performance above peers demonstrates competitive strength.'}
                 </>
@@ -576,17 +621,17 @@ export function PeerBenchmarkPage() {
 
                       showMetricDetail({
                         name: `${selectedMetric.label} - ${point.month}`,
-                        value: point.rm_value.toLocaleString(),
+                        value: formatMetricValue(selectedMetric.metric, point.rm_value),
                         category: isGoodPerformance ? "Above Peers" : "Behind Peers",
                         explanation: isNegativePolarity
-                          ? `In ${point.month}, Real Madrid's ${selectedMetric.label} was ${point.rm_value.toLocaleString()}, ranking #${point.rm_rank} out of ${point.club_count} clubs. This was ${Math.abs(rawGap).toLocaleString()} ${rawGap < 0 ? 'lower than' : 'higher than'} the peer median of ${point.peer_median.toLocaleString()}. For ${selectedMetric.label}, ${rawGap < 0 ? 'lower is better' : 'higher is worse'}.`
-                          : `In ${point.month}, Real Madrid's ${selectedMetric.label} was ${point.rm_value.toLocaleString()}, ranking #${point.rm_rank} out of ${point.club_count} clubs. This was ${Math.abs(rawGap).toLocaleString()} ${rawGap < 0 ? 'below' : 'above'} the peer median of ${point.peer_median.toLocaleString()}.`,
+                          ? `In ${point.month}, Real Madrid's ${selectedMetric.label} was ${formatMetricValue(selectedMetric.metric, point.rm_value)}, ranking #${point.rm_rank} out of ${point.club_count} clubs. This was ${formatMetricValue(selectedMetric.metric, Math.abs(rawGap))} ${rawGap < 0 ? 'lower than' : 'higher than'} the peer median of ${formatMetricValue(selectedMetric.metric, point.peer_median)}. For ${selectedMetric.label}, ${rawGap < 0 ? 'lower is better' : 'higher is worse'}.`
+                          : `In ${point.month}, Real Madrid's ${selectedMetric.label} was ${formatMetricValue(selectedMetric.metric, point.rm_value)}, ranking #${point.rm_rank} out of ${point.club_count} clubs. This was ${formatMetricValue(selectedMetric.metric, Math.abs(rawGap))} ${rawGap < 0 ? 'below' : 'above'} the peer median of ${formatMetricValue(selectedMetric.metric, point.peer_median)}.`,
                         businessContext: `Historical performance shows how Real Madrid's competitive position has evolved over time. ${isGoodPerformance ? 'Sustained performance above peers demonstrates competitive strength.' : 'Consistent underperformance vs peers indicates a structural issue requiring strategic intervention.'}`,
                         additionalInfo: {
                           "Month": point.month,
-                          "RM Value": point.rm_value.toLocaleString(),
-                          "Peer Median": point.peer_median.toLocaleString(),
-                          "Raw Gap": rawGap.toLocaleString(),
+                          "RM Value": formatMetricValue(selectedMetric.metric, point.rm_value),
+                          "Peer Median": formatMetricValue(selectedMetric.metric, point.peer_median),
+                          "Raw Gap": formatMetricValue(selectedMetric.metric, Math.abs(rawGap)),
                           "Rank": `#${point.rm_rank}`,
                         }
                       });
@@ -594,15 +639,15 @@ export function PeerBenchmarkPage() {
                     className="hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
                   >
                     <td className="p-4 text-ink dark:text-stone-100 font-semibold border border-ink dark:border-stone-700">{point.month}</td>
-                    <td className="p-4 text-right font-bold border border-ink dark:border-stone-700">{point.rm_value.toLocaleString()}</td>
-                    <td className="p-4 text-right border border-ink dark:border-stone-700">{point.peer_median.toLocaleString()}</td>
+                    <td className="p-4 text-right font-bold border border-ink dark:border-stone-700">{formatMetricValue(selectedMetric.metric, point.rm_value)}</td>
+                    <td className="p-4 text-right border border-ink dark:border-stone-700">{formatMetricValue(selectedMetric.metric, point.peer_median)}</td>
                     <td className={`p-4 text-right font-bold border border-ink dark:border-stone-700 ${
                       selectedMetric.metric === "bounce_rate"
                         ? (point.raw_gap_to_peer_median < 0 ? 'text-good-light dark:text-good-dark' : 'text-critical-light dark:text-critical-dark')
                         : (point.raw_gap_to_peer_median < 0 ? 'text-critical-light dark:text-critical-dark' : 'text-good-light dark:text-good-dark')
                     }`}>
                       {point.raw_gap_to_peer_median > 0 ? "+" : ""}
-                      {point.raw_gap_to_peer_median.toLocaleString()}
+                      {formatMetricValue(selectedMetric.metric, Math.abs(point.raw_gap_to_peer_median))}
                     </td>
                     <td className={`p-4 text-right border border-ink dark:border-stone-700 ${trendColor}`}>{trendIcon}</td>
                   </tr>
@@ -625,20 +670,19 @@ export function PeerBenchmarkPage() {
             <label className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 block mb-3">
               Select Social Metric
             </label>
-            <select
-              className="px-4 py-3 border-2 border-ink dark:border-stone-700 bg-paper dark:bg-stone-900 font-mono text-sm cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+            <CustomSelect
+              options={SOCIAL_METRICS.map(m => ({
+                value: m.metric,
+                label: m.label,
+              }))}
               value={selectedSocialMetric.metric}
-              onChange={(e) => {
-                const selected = SOCIAL_METRICS.find((m) => m.metric === e.target.value);
+              onChange={(value) => {
+                const selected = SOCIAL_METRICS.find((m) => m.metric === value);
                 if (selected) setSelectedSocialMetric(selected);
               }}
-            >
-              {SOCIAL_METRICS.map((m) => (
-                <option key={m.metric} value={m.metric}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
+              placeholder="Select social metric"
+              className="min-w-[300px]"
+            />
           </div>
 
           {/* Section 1: Hero Stat */}
@@ -706,7 +750,7 @@ export function PeerBenchmarkPage() {
                 </div>
                 {socialBenchmark.peer_median && (
                   <div className="text-stone-600 dark:text-stone-400">
-                    Peer Median: {socialBenchmark.peer_median.toLocaleString()}
+                    Peer Median: {abbreviateNumber(socialBenchmark.peer_median)}
                   </div>
                 )}
               </div>
@@ -768,10 +812,10 @@ export function PeerBenchmarkPage() {
                       <tr key={m.metric} className={i % 2 === 0 ? "" : "bg-stone-50 dark:bg-stone-800/50"}>
                         <td className="p-3 border border-ink dark:border-stone-700">{metricLabel}</td>
                         <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">
-                          {m.rm_value?.toLocaleString() || "—"}
+                          {m.rm_value ? abbreviateNumber(m.rm_value) : "—"}
                         </td>
                         <td className="p-3 text-right border border-ink dark:border-stone-700">
-                          {m.peer_median?.toLocaleString() || "—"}
+                          {m.peer_median ? abbreviateNumber(m.peer_median) : "—"}
                         </td>
                         <td className="p-3 text-center border border-ink dark:border-stone-700">
                           <span className={`px-2 py-1 rounded ${
