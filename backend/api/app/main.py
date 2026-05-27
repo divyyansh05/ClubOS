@@ -1,21 +1,34 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.clients.databricks import SnapshotAccessError
-from app.config.settings import get_cors_origins
 from app.routers import analytics, benchmark, briefing, config, events, health, priorities, refresh, signals, social
 
 app = FastAPI(title="ClubOS API", version="0.1.0")
 
-# CORS middleware (configure with CLUBOS_CORS_ORIGINS comma-separated env var)
+# CORS middleware (configure with CLUBOS_CORS_ORIGINS env var or default to *)
+_cors_origins = os.getenv("CLUBOS_CORS_ORIGINS", "*")
+_origins_list = (
+    ["*"] if _cors_origins == "*"
+    else [o.strip() for o in _cors_origins.split(",")]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_cors_origins(),
+    allow_origins=_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/health", include_in_schema=False)
+def health_check():
+    return {"status": "ok", "mode": "snapshot"}
+
 
 app.include_router(health.router)
 app.include_router(priorities.router, prefix="/priorities", tags=["priorities"])
@@ -38,3 +51,31 @@ def snapshot_access_error_handler(_: Request, exc: SnapshotAccessError) -> JSONR
             "message": str(exc),
         },
     )
+
+
+# ── Production static file serving ──────────────────────
+_DIST = os.getenv(
+    "CLUBOS_FRONTEND_DIST",
+    os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..", "..", "..",
+            "apps", "clubos-web", "dist"
+        )
+    )
+)
+
+if os.path.isdir(_DIST):
+    _assets = os.path.join(_DIST, "assets")
+    if os.path.isdir(_assets):
+        app.mount("/assets",
+                  StaticFiles(directory=_assets),
+                  name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def _serve_spa(request: Request, full_path: str):
+        target = os.path.join(_DIST, full_path)
+        if os.path.isfile(target):
+            return FileResponse(target)
+        return FileResponse(os.path.join(_DIST, "index.html"))
+# ────────────────────────────────────────────────────────

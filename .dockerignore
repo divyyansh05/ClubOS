@@ -1,0 +1,46 @@
+# Git
+.git
+.github
+
+# Python
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+venv/
+.venv/
+clubosvenv/
+
+# Frontend build and deps
+apps/clubos-web/node_modules/
+apps/clubos-web/dist/
+apps/clubos-web/.cache/
+
+# Raw source data — large files, not needed in container
+# Gold snapshots ARE included (data/gold_snapshots/ is copied)
+data/source/
+
+# Secrets
+.env
+.env.*
+!.env.example
+apps/clubos-web/.env
+apps/clubos-web/.env.local
+apps/clubos-web/.env.development
+
+# Internal docs
+agents/
+AGENTS.md
+docs/product/
+docs/research/
+docs/delivery/
+
+# Databricks notebooks (not needed — snapshots are baked in)
+databricks/notebooks/
+
+# Misc
+*.log
+.DS_Store
+**/.DS_Store
+scripts/
