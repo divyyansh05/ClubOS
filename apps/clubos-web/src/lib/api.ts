@@ -76,6 +76,17 @@ export async function getBenchmark(asset: string, metric: string): Promise<Bench
   return fetchJson<BenchmarkResponse>(`/benchmark/${asset}/${metric}`);
 }
 
+export interface AvailableMetric {
+  asset_name: string;
+  metric_name: string;
+  label: string;
+  asset_label: string;
+}
+
+export async function getAvailableMetrics(): Promise<AvailableMetric[]> {
+  return fetchJson<AvailableMetric[]>("/benchmark/available-metrics");
+}
+
 export async function getSignals(signalType?: string): Promise<SignalResponse> {
   const params = new URLSearchParams();
   if (signalType) params.append("signal_type", signalType);

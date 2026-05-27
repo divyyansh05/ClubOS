@@ -5,6 +5,7 @@ import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
 import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { ScreenGuide } from "../../components/ui/ScreenGuide";
 import { formatMonthYear } from "../../lib/dateFormat";
+import { formatMetricValue } from "../../lib/formatNumber";
 
 interface MetricDetail {
   name: string;
@@ -451,7 +452,7 @@ export function SignalEnginePage() {
                   {signal.source_current_value !== null && signal.source_current_value !== undefined ? (
                     <div className="flex items-center gap-4">
                       <div className="font-mono text-sm text-ink dark:text-stone-100">
-                        Current: {signal.source_current_value.toLocaleString()}
+                        Current: {formatMetricValue(signal.source_metric, signal.source_current_value)}
                       </div>
                       {signal.source_trend_pct_change !== null && signal.source_trend_pct_change !== undefined && (
                         <div className={`font-mono text-xs font-semibold ${
@@ -501,7 +502,7 @@ export function SignalEnginePage() {
                   {signal.target_current_value !== null && signal.target_current_value !== undefined ? (
                     <div className="flex items-center gap-4">
                       <div className="font-mono text-sm text-ink dark:text-stone-100">
-                        Current: {signal.target_current_value.toLocaleString()}
+                        Current: {formatMetricValue(signal.target_metric, signal.target_current_value)}
                       </div>
                       {signal.target_health_status && (
                         <span className={`px-2 py-1 rounded font-mono text-xs font-semibold uppercase ${
