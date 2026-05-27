@@ -37,6 +37,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Backend application
 COPY backend/ ./backend/
 
+# Connectors and integrations
+COPY integrations/ ./integrations/
+
 # Gold snapshots only — NOT data/source/ (too large, not needed)
 COPY data/gold_snapshots/ ./data/gold_snapshots/
 
