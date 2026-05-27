@@ -65,7 +65,7 @@ jobs:
             --max-instances=2 \
             --port=8080 \
             --timeout=300 \
-            --set-env-vars="CLUBOS_SNAPSHOT_DIR=/app/data/gold_snapshots,CLUBOS_FRONTEND_DIST=/app/apps/clubos-web/dist,CLUBOS_CORS_ORIGINS=*" \
+            --set-env-vars="CLUBOS_SNAPSHOT_DIR=/app/data/gold_snapshots,CLUBOS_FRONTEND_DIST=/app/apps/clubos-web/dist,CLUBOS_CORS_ORIGINS=*,YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }},SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" \
             --quiet
 
       - name: Print deployed URL
