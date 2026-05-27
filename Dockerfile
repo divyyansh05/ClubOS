@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Python dependencies (cached layer — rarely changes)
-COPY requirements.txt ./
+COPY requirements/base.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Backend application
