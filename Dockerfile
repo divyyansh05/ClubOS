@@ -47,7 +47,7 @@ COPY databricks/seeds/ ./databricks/seeds/
 COPY --from=frontend /build/dist ./apps/clubos-web/dist
 
 # Environment
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/backend/api
 ENV CLUBOS_SNAPSHOT_DIR=/app/data/gold_snapshots
 ENV CLUBOS_FRONTEND_DIST=/app/apps/clubos-web/dist
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -55,9 +55,12 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8080
 
+# Set working directory to backend/api to match local behavior
+WORKDIR /app/backend/api
+
 # Cloud Run injects PORT — read it at startup
 CMD ["sh", "-c", \
-     "uvicorn backend.api.app.main:app \
+     "uvicorn app.main:app \
       --host 0.0.0.0 \
       --port ${PORT:-8080} \
       --workers 1"]
