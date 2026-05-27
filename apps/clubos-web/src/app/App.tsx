@@ -8,6 +8,7 @@ import EventCalendarPage from "../features/events/EventCalendarPage";
 import { MonthlyBriefingPage } from "../features/monthly-briefing/MonthlyBriefingPage";
 import SocialIntelligencePage from "../features/social/SocialIntelligencePage";
 import ConnectorsPage from "../features/connectors/ConnectorsPage";
+import UpcomingPage from "../features/upcoming/UpcomingPage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/social" element={<SocialIntelligencePage />} />
         <Route path="/connectors" element={<ConnectorsPage />} />
         <Route path="/briefing" element={<MonthlyBriefingPage />} />
+        <Route path="/upcoming" element={<UpcomingPage />} />
       </Routes>
     </PageShell>
   );
