@@ -351,15 +351,11 @@ def get_format_performance(
             "post_count": data["total_posts"]
         })
 
-    # Compute multipliers vs standard post
-    if standard_post_avg and standard_post_avg > 0:
-        for fmt in formats:
-            fmt["vs_standard_post_multiplier"] = round(fmt["avg_engagement"] / standard_post_avg, 2)
-            fmt["recommended"] = fmt["vs_standard_post_multiplier"] > 2.0 and fmt["post_count"] > 50
-    else:
-        for fmt in formats:
-            fmt["vs_standard_post_multiplier"] = 1.0
-            fmt["recommended"] = False
+    # Compute multipliers vs standard post baseline (constant STANDARD_POST_AVG_ENGAGEMENT)
+    standard_post_avg = STANDARD_POST_AVG_ENGAGEMENT
+    for fmt in formats:
+        fmt["vs_standard_post_multiplier"] = round(fmt["avg_engagement"] / standard_post_avg, 2)
+        fmt["recommended"] = fmt["vs_standard_post_multiplier"] > 2.0 and fmt["post_count"] > 50
 
     # Sort by avg_engagement descending
     formats.sort(key=lambda f: f["avg_engagement"], reverse=True)
@@ -375,7 +371,7 @@ def get_format_performance(
 
     return {
         "formats": formats,
-        "top_format": top_format["variety"] if top_format else None,
+        "top_format": top_format["label"] if top_format else None,
         "top_format_multiplier": top_format.get("vs_standard_post_multiplier", 0) if top_format else 0,
         "underused_high_performers": underused
     }

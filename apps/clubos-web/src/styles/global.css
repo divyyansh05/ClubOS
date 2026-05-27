@@ -65,6 +65,10 @@
     @apply border border-ink dark:border-stone-700;
   }
 
+  /* Hide scrollbar while preserving scroll functionality */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
   /* Modal transitions */
   .modal-enter {
     @apply opacity-0;

@@ -637,6 +637,57 @@ export const METRIC_DEFINITIONS: Record<string, MetricDefinition> = {
     benchmarked: false,
     asset: "fan_app",
     commercialImpact: "Drives acquisition - higher ratings improve app store ranking and conversion rate, lowering cost per install for new user acquisition."
+  },
+  // Social Media Metrics
+  total_engagement: {
+    label: "Total Engagement",
+    definition: "Total interactions (likes, comments, shares, etc.) across all social media platforms during the month.",
+    polarity: 1,
+    polarityLabel: "Higher is better",
+    example: "1M total engagements indicates a large volume of audience interaction.",
+    benchmarked: true,
+    asset: "social_media",
+    commercialImpact: "Drives top-of-funnel brand awareness and sponsorship value."
+  },
+  avg_engagement_per_post: {
+    label: "Avg Engagement Per Post",
+    definition: "The average number of interactions per post across social media platforms.",
+    polarity: 1,
+    polarityLabel: "Higher is better",
+    example: "50K avg engagement per post shows high content quality.",
+    benchmarked: true,
+    asset: "social_media",
+    commercialImpact: "Indicates content resonance and audience connection."
+  },
+  engagement_rate: {
+    label: "Engagement Rate",
+    definition: "The percentage of followers who engage with the content.",
+    polarity: 1,
+    polarityLabel: "Higher is better",
+    example: "A 3% engagement rate means 3 out of 100 followers interacted with the post.",
+    benchmarked: true,
+    asset: "social_media",
+    commercialImpact: "Measures audience health and content relevance."
+  },
+  international_engagement_ratio: {
+    label: "International Engagement Ratio",
+    definition: "The proportion of total engagement coming from audiences outside the primary domestic market.",
+    polarity: 1,
+    polarityLabel: "Higher is better",
+    example: "An 80% international ratio indicates strong global brand appeal.",
+    benchmarked: true,
+    asset: "social_media",
+    commercialImpact: "Highlights global reach and potential for international merchandising and broadcasting."
+  },
+  total_estimated_views: {
+    label: "Total Estimated Views",
+    definition: "The estimated total number of views for social media content, particularly video content.",
+    polarity: 1,
+    polarityLabel: "Higher is better",
+    example: "10M estimated views indicates a large audience reach.",
+    benchmarked: false,
+    asset: "social_media",
+    commercialImpact: "Reflects broad reach for sponsor visibility."
   }
 };
 

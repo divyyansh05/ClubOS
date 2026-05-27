@@ -9,6 +9,7 @@ class BenchmarkPoint(BaseModel):
     peer_leader_value: float
     rm_rank: int
     club_count: int
+    raw_gap_to_peer_median: float
     gap_to_peer_median: float
     gap_to_leader: float
     rank_change_12m: Optional[int] = None

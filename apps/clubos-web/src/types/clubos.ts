@@ -7,11 +7,18 @@ export type PriorityCategory =
   | "social engagement"; // V1.7 — Social media priorities
 
 export interface ScoreBreakdown {
+  // Raw component scores (0-1 range)
   severity: number;
   persistence: number;
   peer_gap: number;
   commercial: number;
   evidence: number;
+  // Weighted contributions (what goes into final score)
+  severity_contribution: number;
+  persistence_contribution: number;
+  peer_gap_contribution: number;
+  commercial_contribution: number;
+  evidence_contribution: number;
 }
 
 export interface HistoricalValue {
@@ -22,6 +29,7 @@ export interface HistoricalValue {
 export interface PeerValue {
   club: string;
   value: number;
+  is_estimated?: boolean;
 }
 
 export interface PriorityCard {
@@ -104,6 +112,7 @@ export interface BenchmarkPoint {
   peer_leader_value: number;
   rm_rank: number;
   club_count: number;
+  raw_gap_to_peer_median: number;
   gap_to_peer_median: number;
   gap_to_leader: number;
   rank_change_12m: number | null;
@@ -156,6 +165,8 @@ export interface SignalItem {
   relationship_type?: string | null;
   // V1.6.2: Signal Type Classification
   signal_type?: string | null;
+  // V1.8.2: Signal Provisional Flag (Audit Fix 3)
+  provisional?: boolean;
 }
 
 export interface SignalResponse {

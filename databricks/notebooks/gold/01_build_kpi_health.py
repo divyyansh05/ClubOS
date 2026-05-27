@@ -42,15 +42,33 @@ w_12m_rolling = Window.partitionBy("asset_name", "metric_name").orderBy("month")
 df = df.withColumn("prior_month_value", F.lag("metric_value", 1).over(w_time))
 df = df.withColumn("prior_season_same_month_value", F.lag("metric_value", 12).over(w_time))
 
-# Rolling 12m avg acts as our simple baseline for MVP
+# Rolling 12m avg acts as our recent trend baseline
 df = df.withColumn("rolling_12m_avg", F.avg("metric_value").over(w_12m_rolling))
-df = df.withColumn("seasonal_baseline", F.col("rolling_12m_avg"))
 
-# Deviation from seasonal baseline
-df = df.withColumn("deviation_from_seasonal_baseline", 
-                   F.when(F.col("seasonal_baseline") != 0, 
-                          (F.col("metric_value") - F.col("seasonal_baseline")) / F.col("seasonal_baseline"))
+# Deviation from rolling 12-month average (NOT seasonally adjusted)
+df = df.withColumn("deviation_from_rolling_avg",
+                   F.when(F.col("rolling_12m_avg") != 0,
+                          (F.col("metric_value") - F.col("rolling_12m_avg")) / F.col("rolling_12m_avg"))
                     .otherwise(None))
+
+# NEW: Seasonal Z-score - comparing to historical same calendar month
+# Extract calendar month (1-12)
+df = df.withColumn("calendar_month", F.month(F.col("month")))
+
+# Compute seasonal statistics per metric + calendar month
+w_seasonal = Window.partitionBy("asset_name", "metric_name", "calendar_month").orderBy("month").rowsBetween(Window.unboundedPreceding, -1)
+df = df.withColumn("seasonal_mean", F.avg("metric_value").over(w_seasonal))
+df = df.withColumn("seasonal_std", F.stddev_samp("metric_value").over(w_seasonal))
+df = df.withColumn("seasonal_count", F.count("metric_value").over(w_seasonal))
+
+# Compute Z-score only if we have sufficient historical data (at least 2 points)
+df = df.withColumn("seasonal_z_score",
+                   F.when((F.col("seasonal_count") >= 2) & (F.col("seasonal_std") > 0),
+                          (F.col("metric_value") - F.col("seasonal_mean")) / F.col("seasonal_std"))
+                    .otherwise(F.lit(0.0)))
+
+# Drop temporary calculation columns
+df = df.drop("calendar_month", "seasonal_mean", "seasonal_std", "seasonal_count")
 
 # Trend direction
 df = df.withColumn("trend_direction", 
@@ -68,21 +86,21 @@ df = df.fillna({"polarity": 1}) # default to higher-is-better if missing
 # Metric-aware status logic utilizing polarity
 df = df.withColumn("health_status",
                    F.when(F.col("polarity") == 1,
-                          F.when(F.col("deviation_from_seasonal_baseline") > 0.05, "good")
-                           .when(F.col("deviation_from_seasonal_baseline") < -0.05, "review")
+                          F.when(F.col("deviation_from_rolling_avg") > 0.05, "good")
+                           .when(F.col("deviation_from_rolling_avg") < -0.05, "review")
                            .otherwise("stable"))
                     .when(F.col("polarity") == -1,
-                          F.when(F.col("deviation_from_seasonal_baseline") < -0.05, "good")
-                           .when(F.col("deviation_from_seasonal_baseline") > 0.05, "review")
+                          F.when(F.col("deviation_from_rolling_avg") < -0.05, "good")
+                           .when(F.col("deviation_from_rolling_avg") > 0.05, "review")
                            .otherwise("stable"))
                     .otherwise("stable") # neutral polarity
                   )
 
 # Select final columns adhering exactly to schema plan
 final_cols = [
-    "month", "asset_name", "metric_name", "metric_value", 
-    "prior_month_value", "prior_season_same_month_value", "rolling_12m_avg", 
-    "seasonal_baseline", "deviation_from_seasonal_baseline",
+    "month", "asset_name", "metric_name", "metric_value",
+    "prior_month_value", "prior_season_same_month_value", "rolling_12m_avg",
+    "deviation_from_rolling_avg", "seasonal_z_score",
     "trend_direction", "health_status"
 ]
 gold_df = df.select(*final_cols)

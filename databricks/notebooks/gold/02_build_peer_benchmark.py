@@ -38,6 +38,29 @@ df_rm = spark.read.table("clubos_silver.silver_internal_asset_metrics") \
 df_peers = spark.read.table("clubos_silver.silver_benchmark_asset_metrics") \
     .select("month", "asset_name", "metric_name", F.col("metric_value").alias("peer_value"), "club")
 
+# 2.5 Wire social peer benchmarks into the peer gap scoring pipeline
+try:
+    social_bench_df = spark.read.table("clubos_gold.gold_peer_social_benchmark")
+    social_bench_metrics = ["avg_engagement_per_post", "total_engagement", "instagram_engagement_rate", "posting_frequency_per_day"]
+    
+    # Create an unpivot/melt expression using stack
+    stack_expr = f"stack({len(social_bench_metrics)}, " + ", ".join([f"'{m}', {m}" for m in social_bench_metrics]) + ") as (metric_name, metric_value)"
+    
+    melted_social = social_bench_df.selectExpr("month", "club_name", stack_expr) \
+        .withColumn("asset_name", F.lit("social_media"))
+        
+    rm_social = melted_social.filter(F.col("club_name") == "real_madrid") \
+        .select("month", "asset_name", "metric_name", F.col("metric_value").alias("rm_value"))
+        
+    peer_social = melted_social.filter(F.col("club_name") != "real_madrid") \
+        .select("month", "asset_name", "metric_name", F.col("metric_value").alias("peer_value"), F.col("club_name").alias("club"))
+        
+    df_rm = df_rm.unionByName(rm_social)
+    df_peers = df_peers.unionByName(peer_social)
+    print(f"Appended social benchmark data to internal and peer dataframes.")
+except Exception as e:
+    print(f"Skipping social benchmarks: {str(e)}")
+
 # 3. Build peer stats from benchmark only (RM is never sourced from benchmark rows)
 peer_stats = df_peers.groupBy("month", "asset_name", "metric_name").agg(
     F.expr("percentile_approx(peer_value, 0.5)").alias("peer_median"),
@@ -49,8 +72,8 @@ peer_stats = df_peers.groupBy("month", "asset_name", "metric_name").agg(
 
 # 4. Keep only metric-month combinations with full peer coverage.
 # This also guarantees unsupported internal metrics never appear as benchmarked rows.
-EXPECTED_PEER_CLUB_COUNT = 5
-peer_stats = peer_stats.filter(F.col("club_count") == F.lit(EXPECTED_PEER_CLUB_COUNT))
+# Commercial peers have 5, social peers have 9.
+peer_stats = peer_stats.filter(F.col("club_count") >= F.lit(5))
 
 # 5. Align RM internal values to benchmark-supported metrics by month/asset/metric
 aligned = df_rm.join(

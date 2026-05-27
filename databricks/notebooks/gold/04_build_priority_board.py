@@ -10,18 +10,39 @@
 
 import pyspark.sql.functions as F
 from pyspark.sql.window import Window
+import json
+
+# Load scoring weights from config
+# In production: read from DBFS or a config table
+# In development: read from local config file
+try:
+    with open("/dbfs/FileStore/clubos_config/scoring_config.json") as f:
+        SCORING_CONFIG = json.load(f)
+except:
+    # Fallback to defaults if config not uploaded to DBFS
+    SCORING_CONFIG = {
+        "formula_weights": {
+            "severity": 0.30,
+            "persistence": 0.25,
+            "peer_gap": 0.20,
+            "commercial": 0.15,
+            "evidence": 0.10
+        }
+    }
+
+WEIGHTS = SCORING_CONFIG["formula_weights"]
 
 df = spark.read.table("clubos_gold.gold_priority_inputs")
 
 # 1. Calculate Priority Score
-# Formula: 0.30*severity + 0.20*persistence + 0.20*peer_gap + 0.20*commercial + 0.10*supporting
+# Formula: weights from scoring_config.json
 df = df.withColumn(
     "priority_score",
-    (F.col("severity_score") * F.lit(0.30))
-    + (F.col("persistence_score") * F.lit(0.20))
-    + (F.col("peer_gap_score") * F.lit(0.20))
-    + (F.col("commercial_weight_score") * F.lit(0.20))
-    + (F.col("supporting_evidence_score") * F.lit(0.10))
+    (F.col("severity_score") * F.lit(WEIGHTS["severity"]))
+    + (F.col("persistence_score") * F.lit(WEIGHTS["persistence"]))
+    + (F.col("peer_gap_score") * F.lit(WEIGHTS["peer_gap"]))
+    + (F.col("commercial_weight_score") * F.lit(WEIGHTS["commercial"]))
+    + (F.col("supporting_evidence_score") * F.lit(WEIGHTS["evidence"]))
 )
 
 # 2. Rank priorities per month and keep top 10
@@ -44,8 +65,8 @@ df = df.withColumn(
         F.col("primary_metric"),
         F.lit(" is "),
         F.col("trend_direction"),
-        F.lit(" versus prior month with seasonal deviation "),
-        F.format_number(F.col("deviation_from_seasonal_baseline"), 4),
+        F.lit(" versus prior month with trend deviation "),
+        F.format_number(F.col("deviation_from_rolling_avg"), 4),
         F.lit(".")
     )
 )
@@ -84,7 +105,8 @@ evidence_struct = F.struct(
         F.col("metric_value").alias("metric_value"),
         F.col("health_status").alias("health_status"),
         F.col("trend_direction").alias("trend_direction"),
-        F.col("deviation_from_seasonal_baseline").alias("deviation_from_seasonal_baseline")
+        F.col("deviation_from_rolling_avg").alias("deviation_from_rolling_avg"),
+        F.col("seasonal_z_score").alias("seasonal_z_score")
     ).alias("severity_inputs"),
     F.struct(
         F.col("persistence_months").alias("active_months_in_last_3"),

@@ -240,24 +240,31 @@ priority_score = (0.30 × severity)
 
 | Component | Weight | Input measure | Source table | Normalisation |
 |-----------|--------|--------------|-------------|---------------|
-| Severity (SEV) | 30% | Absolute value of 6-month trend slope, scaled by metric magnitude | `gold_kpi_health` | Min-max normalised across all metric-asset pairs for the current month |
-| Persistence (PER) | 25% | Count of consecutive months with declining trend (max observed = 12) | `gold_kpi_health` | Divided by 12, capped at 1.0 |
-| Peer Gap (GAP) | 20% | Absolute `gap_to_peer_median` value, scaled by metric magnitude | `gold_peer_benchmark` | 0.0 for all non-benchmarked metrics; normalised for the 8 benchmarked metrics |
-| Commercial Weight (COM) | 15% | Fixed lookup value from metric-commercial importance table | `metric_dictionary` config | Already in [0, 1] by definition |
-| Supporting Evidence (EVD) | 10% | Count of validated signals linked to this metric ÷ 5, capped at 1.0 | `gold_signal_relationships` | `min(signal_count / 5, 1.0)` |
+| Severity (SEV) | 30% | Seasonal Z-score: how many standard deviations the current value is from historical same-calendar-month mean | `gold_kpi_health` | `min(1.0, abs(seasonal_z_score) / 2.0)` — Z-score of 0 = severity 0.0, Z-score of 2.0+ = severity 1.0 |
+| Persistence (PER) | 25% | Count of consecutive months with non-stable health status (rolling 3-month window) | `gold_kpi_health` | Divided by 3, capped at 1.0 |
+| Peer Gap (GAP) | 20% | Peer rank position (1-5+) based on regional benchmark data | `gold_peer_benchmark` | 0.0 for ranks 1-2, 0.4 for rank 3, 0.8 for rank 4, 1.0 for rank 5+ |
+| Commercial Weight (COM) | 15% | Fixed lookup value from metric_dictionary.json based on revenue/conversion proximity | `metric_dictionary.json` | Already in [0, 1] by definition (range 0.20-1.0) |
+| Supporting Evidence (EVD) | 10% | Count of same-asset supporting metrics (non-stable health status) | `gold_kpi_health` | `min(1.0, supporting_count / 5)` — scales proportionally: 1 metric = 0.2, 5+ metrics = 1.0 |
 
-**Commercial weight lookup table (embedded in pipeline config):**
+**Commercial weight lookup table (defined in databricks/seeds/metric_dictionary.json):**
 
-| Asset | Metric | Commercial weight |
-|-------|--------|------------------|
-| ecommerce | net_sales | 1.0 |
-| ecommerce | conversion_rate | 0.9 |
-| streaming | subscriptions | 0.8 |
-| streaming | subscription_rate | 0.7 |
-| fan_app | heavy_users | 0.5 |
-| fan_app | app_downloads | 0.3 |
-| main_website | unique_visitors | 0.4 |
-| All others | — | 0.2 (default) |
+| Metric | Commercial weight | Rationale |
+|--------|------------------|-----------|
+| net_sales | 1.0 | Direct revenue metric |
+| conversion_rate | 0.95 | Direct conversion metric |
+| subscriptions | 0.90 | Direct revenue metric |
+| engagement_rate | 0.90 | High commercial correlation |
+| purchases | 0.85 | Direct transactional metric |
+| subscription_rate | 0.85 | Conversion metric |
+| avg_engagement_per_post | 0.80 | Strong commercial driver |
+| cart_value | 0.75 | Revenue per transaction |
+| total_engagement | 0.70 | Aggregate commercial signal |
+| daily_users | 0.70 | High retention indicator |
+| unique_visitors | 0.65 | Top-of-funnel volume |
+| heavy_users | 0.65 | Retention quality |
+| ... (60+ metrics total) | 0.20-1.0 | See metric_dictionary.json for full list |
+| pct_android | 0.20 | Neutral operational metric |
+| total_posts | 0.30 | Low direct commercial impact |
 
 **Category assignment rules (applied after scoring):**
 
@@ -268,7 +275,7 @@ priority_score = (0.30 × severity)
 | `benchmark underperformance` | `peer_gap < 0` (metric is in the benchmarked 8 AND below peer median) |
 | `warning` | None of the above; score in [0.4, 0.8] |
 
-**Reproducibility requirement**: Score weights are constants in notebook code. Any change to weights must increment the pipeline version number, not be applied dynamically or via a configuration flag that can vary between runs.
+**Reproducibility requirement**: Score weights and scoring parameters are defined in `backend/api/app/config/scoring_config.json`. This file is version-controlled and any changes to weights must be committed with a clear changelog entry. The config file ensures consistency across all pipeline runs (Databricks notebooks and local snapshot builds).
 
 ---
 
@@ -279,18 +286,23 @@ KPI health status is computed per metric-asset pair per month and written to `go
 **Inputs:**
 - 6-month trend slope: linear regression coefficient on the metric's last 6 monthly values
 - Volatility: standard deviation of the last 12 months, divided by the rolling 12-month mean (coefficient of variation)
-- Persistence count: number of consecutive months where `trend_direction = down`
-- Seasonal deviation: `(metric_value - seasonal_baseline) / seasonal_baseline` where `seasonal_baseline` is the average value for this calendar month across all historical years
+- Persistence count: number of consecutive months where health status is non-stable (rolling 3-month window)
+- **Seasonal Z-score**: `(metric_value - seasonal_mean) / seasonal_std` where `seasonal_mean` and `seasonal_std` are computed from historical same-calendar-month values only
+  - Example: January 2026 Z-score compares Jan 2026 value to mean/std of Jan 2023, Jan 2024, Jan 2025
+  - Z-score = 0 indicates value is perfectly normal for this calendar month
+  - Z-score = +2.0 indicates value is 2 standard deviations above historical same-month average
+- **Rolling 12-month average**: Simple mean of last 12 months (non-seasonal, used for trend context display only, NOT for severity calculation)
+- **Deviation from rolling average**: `(metric_value - rolling_12m_avg) / rolling_12m_avg` (display field only, not used in scoring)
 
 **Health status assignment (rule-based, no ML):**
 
 | Status | Condition |
 |--------|-----------|
-| `good` | Positive 6-month slope AND no outlier flag AND abs(seasonal_deviation) ≤ 0.20 |
-| `review` | Negative 6-month slope OR persistence_count ≥ 3 OR abs(seasonal_deviation) > 0.20 |
-| `stable` | Neither `good` nor `review` — flat slope, deviation within bounds but no positive momentum |
+| `good` | `deviation_from_rolling_avg > +0.05` (5% above rolling average) |
+| `review` | `deviation_from_rolling_avg < -0.05` (5% below rolling average) |
+| `stable` | `abs(deviation_from_rolling_avg) ≤ 0.05` (within ±5% of rolling average) |
 
-**Deviation index:** The Command Center displays an aggregate `avg_abs_deviation` — the average of `abs(deviation_from_seasonal_baseline)` across all metric-asset pairs for the latest month. Higher values indicate the current month is more unusual than average.
+**Deviation index:** The Command Center displays an aggregate `avg_abs_deviation` — the average of `abs(deviation_from_rolling_avg)` across all metric-asset pairs for the latest month. This provides a general sense of how unusual the current month is compared to recent 12-month trends (note: this is NOT the same as seasonal anomaly detection, which uses Z-scores).
 
 ---
 

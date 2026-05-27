@@ -365,6 +365,18 @@ export function SignalEnginePage() {
                 </div>
               )}
 
+              {/* Provisional Signal Badge (V1.8.2) */}
+              {signal.provisional && (
+                <div className="mb-4">
+                  <span className="inline-block px-3 py-1 bg-warning-light dark:bg-warning-dark text-white font-mono text-xs font-semibold uppercase tracking-widest">
+                    ⚠ PROVISIONAL
+                  </span>
+                  <p className="mt-2 font-mono text-xs text-warning-600 dark:text-warning-dark leading-relaxed">
+                    Based on limited data (&lt;60 months). Strengthens as more data is collected.
+                  </p>
+                </div>
+              )}
+
               {/* Status Banner */}
               {signal.current_status && (
                 <div className={`mb-4 p-3 border-l-4 ${

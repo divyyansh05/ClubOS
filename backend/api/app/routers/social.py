@@ -18,6 +18,7 @@ Endpoints:
 - GET /social/analytics/peer/{metric} — Peer comparison (V1.7)
 """
 
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from app.services import social_service, content_intelligence_service, social_analytics_service
 from app.schemas.social import (
@@ -54,15 +55,15 @@ router = APIRouter()
 
 
 @router.get("/summary", response_model=SocialSummaryResponse)
-def get_social_summary():
+def get_social_summary(month: Optional[str] = Query(default=None, description="Month in YYYY-MM format")):
     """
-    Get latest month social media summary with MoM comparison.
+    Get month social media summary with MoM comparison (defaults to latest month).
 
     Returns key metrics: total_engagement, avg_engagement_per_post,
     instagram_engagement_rate, international_engagement_ratio.
     """
     try:
-        return social_service.get_social_summary()
+        return social_service.get_social_summary(month)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

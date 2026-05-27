@@ -11,6 +11,18 @@ class Settings(BaseSettings):
 
     clubos_api_host: str = "0.0.0.0"
     clubos_api_port: int = 8000
+    clubos_cors_origins: str = ",".join(
+        [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5174",
+            "http://localhost:5176",
+            "http://127.0.0.1:5176",
+            "http://localhost:5177",
+            "http://127.0.0.1:5177",
+        ]
+    )
     clubos_databricks_host: Optional[str] = None
     clubos_databricks_token: Optional[str] = None
     clubos_databricks_http_path: Optional[str] = None
@@ -25,3 +37,7 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_cors_origins() -> list[str]:
+    return [origin.strip() for origin in settings.clubos_cors_origins.split(",") if origin.strip()]

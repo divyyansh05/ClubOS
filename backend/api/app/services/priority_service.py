@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any, Optional
@@ -7,6 +8,8 @@ from app.clients.databricks import DatabricksClient
 from app.config.settings import settings
 from app.services import anomaly_context_service, conversion_context_service, seasonal_service
 
+logger = logging.getLogger(__name__)
+
 
 def _client() -> DatabricksClient:
     return DatabricksClient(settings.clubos_databricks_host, settings.clubos_databricks_token)
@@ -14,6 +17,30 @@ def _client() -> DatabricksClient:
 
 def _month_str(row: dict[str, Any], key: str = "month") -> str:
     return str(row[key])[:10]
+
+
+def _norm(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
+def _build_health_index(all_health: list[dict[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    """Index health rows by (asset, metric), sorted newest first for fast 12m lookup."""
+    index: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in all_health:
+        key = (_norm(row.get("asset_name")), _norm(row.get("metric_name")))
+        index.setdefault(key, []).append(row)
+    for rows in index.values():
+        rows.sort(key=lambda x: _month_str(x), reverse=True)
+    return index
+
+
+def _build_peer_index(all_peer: list[dict[str, Any]]) -> dict[tuple[str, str, str], dict[str, Any]]:
+    """Index peer rows by (asset, metric, month)."""
+    index: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for row in all_peer:
+        key = (_norm(row.get("asset_name")), _norm(row.get("metric_name")), _month_str(row))
+        index[key] = row
+    return index
 
 
 def _load_metric_dictionary() -> dict[str, Any]:
@@ -25,53 +52,97 @@ def _load_metric_dictionary() -> dict[str, Any]:
     return {}
 
 
-def _get_kpi_health_for_metric(asset_name: str, metric_name: str, month: str) -> list[dict[str, Any]]:
+def _load_scoring_config() -> dict[str, Any]:
+    """Load scoring configuration"""
+    config_path = Path(__file__).parent.parent / "config" / "scoring_config.json"
+    if config_path.exists():
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    return {}
+
+
+def _get_kpi_health_for_metric(
+    asset_name: str,
+    metric_name: str,
+    month: str,
+    all_health: Optional[list[dict[str, Any]]] = None,
+    health_index: Optional[dict[tuple[str, str], list[dict[str, Any]]]] = None,
+) -> list[dict[str, Any]]:
     """Get 12 months of KPI health data for a metric"""
     try:
-        all_health = _client().read_gold_table("gold_kpi_health")
+        health_rows = all_health if all_health is not None else _client().read_gold_table("gold_kpi_health")
+        metric_rows = None
+        if health_index is not None:
+            metric_rows = health_index.get((_norm(asset_name), _norm(metric_name)), [])
+        if metric_rows is None:
+            metric_rows = [
+                r for r in health_rows
+                if _norm(r.get("asset_name")) == _norm(asset_name)
+                and _norm(r.get("metric_name")) == _norm(metric_name)
+            ]
+            metric_rows.sort(key=lambda x: _month_str(x), reverse=True)
         # Filter for this specific metric and last 12 months
         metric_health = [
-            r for r in all_health
-            if str(r.get("asset_name", "")).lower() == asset_name.lower()
-            and str(r.get("metric_name", "")).lower() == metric_name.lower()
-            and _month_str(r) <= month
+            r for r in metric_rows
+            if _month_str(r) <= month
         ]
-        # Sort by month descending and take last 12
-        metric_health.sort(key=lambda x: _month_str(x), reverse=True)
+        # Rows are already sorted descending from index path; keep behavior stable for fallback path.
         return metric_health[:12]
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed loading KPI health history for %s/%s: %s", asset_name, metric_name, exc)
         return []
 
 
-def _get_peer_data_for_metric(asset_name: str, metric_name: str, month: str) -> Optional[dict[str, Any]]:
+def _get_peer_data_for_metric(
+    asset_name: str,
+    metric_name: str,
+    month: str,
+    all_peer: Optional[list[dict[str, Any]]] = None,
+    peer_index: Optional[dict[tuple[str, str, str], dict[str, Any]]] = None,
+) -> Optional[dict[str, Any]]:
     """Get peer benchmark data for a metric for the specified month"""
     try:
-        all_peer = _client().read_gold_table("gold_peer_benchmark")
+        peer_rows = all_peer if all_peer is not None else _client().read_gold_table("gold_peer_benchmark")
+        if peer_index is not None:
+            return peer_index.get((_norm(asset_name), _norm(metric_name), month))
         match = next(
             (
-                r for r in all_peer
-                if str(r.get("asset_name", "")).lower() == asset_name.lower()
-                and str(r.get("metric_name", "")).lower() == metric_name.lower()
+                r for r in peer_rows
+                if _norm(r.get("asset_name")) == _norm(asset_name)
+                and _norm(r.get("metric_name")) == _norm(metric_name)
                 and _month_str(r) == month
             ),
             None
         )
         return match
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed loading peer data for %s/%s: %s", asset_name, metric_name, exc)
         return None
 
 
-def _get_all_clubs_for_metric(asset_name: str, metric_name: str, month: str) -> list[dict[str, Any]]:
+def _get_all_clubs_for_metric(
+    asset_name: str,
+    metric_name: str,
+    month: str,
+    all_peer: Optional[list[dict[str, Any]]] = None,
+    peer_index: Optional[dict[tuple[str, str, str], dict[str, Any]]] = None,
+) -> list[dict[str, Any]]:
     """Get all club values for a benchmarked metric in the specified month"""
     try:
-        peer_row = _get_peer_data_for_metric(asset_name, metric_name, month)
+        peer_row = _get_peer_data_for_metric(
+            asset_name,
+            metric_name,
+            month,
+            all_peer=all_peer,
+            peer_index=peer_index,
+        )
         if not peer_row:
             return []
 
         # Build club list: Real Madrid + anonymized peers
         clubs = []
         rm_value = float(peer_row.get("rm_value", 0))
-        clubs.append({"club": "Real Madrid", "value": rm_value})
+        clubs.append({"club": "Real Madrid", "value": rm_value, "is_estimated": False})
 
         # Get peer values - we don't have individual peer values in the CSV,
         # but we can approximate from median, mean, and leader
@@ -80,17 +151,18 @@ def _get_all_clubs_for_metric(asset_name: str, metric_name: str, month: str) -> 
         peer_mean = float(peer_row.get("peer_mean", 0))
 
         # Add peer values (anonymized)
-        clubs.append({"club": "Peer 1 (Leader)", "value": peer_leader})
-        clubs.append({"club": "Peer 2 (Median)", "value": peer_median})
+        clubs.append({"club": "Peer 1 (Leader)", "value": peer_leader, "is_estimated": False})
+        clubs.append({"club": "Peer 2 (Median)", "value": peer_median, "is_estimated": False})
 
         # Estimate other peer values around the mean
         if peer_mean > 0:
-            clubs.append({"club": "Peer 3", "value": peer_mean * 0.95})
-            clubs.append({"club": "Peer 4", "value": peer_mean * 1.05})
-            clubs.append({"club": "Peer 5", "value": peer_mean * 0.90})
+            clubs.append({"club": "Peer 3", "value": peer_mean * 0.95, "is_estimated": True})
+            clubs.append({"club": "Peer 4", "value": peer_mean * 1.05, "is_estimated": True})
+            clubs.append({"club": "Peer 5", "value": peer_mean * 0.90, "is_estimated": True})
 
         return clubs
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed building peer value list for %s/%s: %s", asset_name, metric_name, exc)
         return []
 
 
@@ -152,7 +224,14 @@ def _build_data_driven_why_it_matters(
     return " ".join(sentences[:2])
 
 
-def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> dict[str, Any]:
+def _enrich_priority_row(
+    row: dict[str, Any],
+    include_detail: bool = False,
+    all_health: Optional[list[dict[str, Any]]] = None,
+    all_peer: Optional[list[dict[str, Any]]] = None,
+    health_index: Optional[dict[tuple[str, str], list[dict[str, Any]]]] = None,
+    peer_index: Optional[dict[tuple[str, str, str], dict[str, Any]]] = None,
+) -> dict[str, Any]:
     """Normalize and enrich a priority row with additional data"""
     month = _month_str(row)
     asset_name = str(row["asset_name"])
@@ -163,10 +242,22 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
     supporting_json = json.loads(raw_support) if raw_support else {}
 
     # Get KPI health history
-    health_data = _get_kpi_health_for_metric(asset_name, metric_name, month)
+    health_data = _get_kpi_health_for_metric(
+        asset_name,
+        metric_name,
+        month,
+        all_health=all_health,
+        health_index=health_index,
+    )
 
     # Get peer data
-    peer_data = _get_peer_data_for_metric(asset_name, metric_name, month)
+    peer_data = _get_peer_data_for_metric(
+        asset_name,
+        metric_name,
+        month,
+        all_peer=all_peer,
+        peer_index=peer_index,
+    )
 
     # Extract trend data from most recent health row
     trend_direction = None
@@ -175,7 +266,7 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
         most_recent = health_data[0]
         trend_direction = str(most_recent.get("trend_direction", "stable"))
         # trend_slope not in CSV, use deviation as proxy
-        deviation = most_recent.get("deviation_from_seasonal_baseline")
+        deviation = most_recent.get("deviation_from_rolling_avg")
         if deviation is not None:
             trend_slope = float(deviation)
 
@@ -196,12 +287,35 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
     score_components = supporting_json.get("score_components", {})
     score_breakdown = None
     if score_components:
+        # Load weights from config
+        config = _load_scoring_config()
+        weights = config.get("formula_weights", {
+            "severity": 0.30,
+            "persistence": 0.25,
+            "peer_gap": 0.20,
+            "commercial": 0.15,
+            "evidence": 0.10
+        })
+
+        # Extract raw component scores (0-1 range)
+        severity_score = float(score_components.get("severity", 0))
+        persistence_score = float(score_components.get("persistence", 0))
+        peer_gap_score = float(score_components.get("peer_gap", 0))
+        commercial_score = float(score_components.get("commercial_weight", 0))
+        evidence_score = float(score_components.get("supporting_evidence", 0))
+
+        # Compute weighted contributions
         score_breakdown = {
-            "severity": float(score_components.get("severity", 0)),
-            "persistence": float(score_components.get("persistence", 0)),
-            "peer_gap": float(score_components.get("peer_gap", 0)),
-            "commercial": float(score_components.get("commercial_weight", 0)),
-            "evidence": float(score_components.get("supporting_evidence", 0))
+            "severity": severity_score,
+            "persistence": persistence_score,
+            "peer_gap": peer_gap_score,
+            "commercial": commercial_score,
+            "evidence": evidence_score,
+            "severity_contribution": round(severity_score * weights["severity"], 4),
+            "persistence_contribution": round(persistence_score * weights["persistence"], 4),
+            "peer_gap_contribution": round(peer_gap_score * weights["peer_gap"], 4),
+            "commercial_contribution": round(commercial_score * weights["commercial"], 4),
+            "evidence_contribution": round(evidence_score * weights["evidence"], 4)
         }
 
     # Get peer values and stats
@@ -211,9 +325,22 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
     if peer_data:
         peer_median = float(peer_data.get("peer_median", 0)) if peer_data.get("peer_median") else None
         peer_leader_value = float(peer_data.get("peer_leader_value", 0)) if peer_data.get("peer_leader_value") else None
-        peer_values = _get_all_clubs_for_metric(asset_name, metric_name, month)
+        peer_values = _get_all_clubs_for_metric(
+            asset_name,
+            metric_name,
+            month,
+            all_peer=all_peer,
+            peer_index=peer_index,
+        )
         if peer_values:
-            peer_values = [{"club": p["club"], "value": p["value"]} for p in peer_values]
+            peer_values = [
+                {
+                    "club": p["club"],
+                    "value": p["value"],
+                    "is_estimated": bool(p.get("is_estimated", False)),
+                }
+                for p in peer_values
+            ]
 
     # Build data-driven why_it_matters
     why_it_matters = _build_data_driven_why_it_matters(
@@ -229,7 +356,7 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
         health_status = "stable"
         if health_data:
             most_recent = health_data[0]
-            deviation_value = most_recent.get("deviation_from_seasonal_baseline")
+            deviation_value = most_recent.get("deviation_from_rolling_avg")
             health_status = str(most_recent.get("health_status", "stable"))
 
         anomaly_context = anomaly_context_service.classify_metric_movement(
@@ -244,7 +371,7 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
                 event_suppressed = True
     except Exception as e:
         # Fail gracefully - don't break priority response if event context fails
-        print(f"Warning: Could not classify anomaly context for {row['priority_id']}: {e}")
+        logger.warning("Could not classify anomaly context for %s: %s", row["priority_id"], e)
         anomaly_context = {"context_type": "unexplained", "suppress_from_priority_board": False}
 
     # Get seasonal baseline intelligence (V1.5.3)
@@ -255,7 +382,7 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
         )
     except Exception as e:
         # Fail gracefully - don't break priority response if seasonal context fails
-        print(f"Warning: Could not get seasonal context for {row['priority_id']}: {e}")
+        logger.warning("Could not get seasonal context for %s: %s", row["priority_id"], e)
 
     # Get conversion rate volume pairing context (V1.5.4)
     conversion_context = None
@@ -266,7 +393,7 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
             )
         except Exception as e:
             # Fail gracefully - don't break priority response if conversion context fails
-            print(f"Warning: Could not get conversion context for {row['priority_id']}: {e}")
+            logger.warning("Could not get conversion context for %s: %s", row["priority_id"], e)
 
     # Base normalized data
     result = {
@@ -307,21 +434,50 @@ def _enrich_priority_row(row: dict[str, Any], include_detail: bool = False) -> d
 
 
 def get_latest_priorities() -> dict[str, Any]:
-    rows = _client().read_gold_table("gold_priority_board")
+    client = _client()
+    rows = client.read_gold_table("gold_priority_board")
     if not rows:
         return {"latest_month": "", "items": []}
 
+    all_health = client.read_gold_table("gold_kpi_health")
+    all_peer = client.read_gold_table("gold_peer_benchmark")
+    health_index = _build_health_index(all_health)
+    peer_index = _build_peer_index(all_peer)
+
     latest_month = max(_month_str(r) for r in rows)
-    month_rows = [_enrich_priority_row(r, include_detail=False) for r in rows if _month_str(r) == latest_month]
+    month_rows = [
+        _enrich_priority_row(
+            r,
+            include_detail=False,
+            all_health=all_health,
+            all_peer=all_peer,
+            health_index=health_index,
+            peer_index=peer_index,
+        )
+        for r in rows
+        if _month_str(r) == latest_month
+    ]
     month_rows = sorted(month_rows, key=lambda x: x["rank"])
     return {"latest_month": latest_month, "items": month_rows}
 
 
 def get_priority_detail(priority_id: str) -> dict[str, Any]:
-    rows = _client().read_gold_table("gold_priority_board")
+    client = _client()
+    rows = client.read_gold_table("gold_priority_board")
     match = next((r for r in rows if str(r.get("priority_id")) == priority_id), None)
     if not match:
         raise KeyError(f"Priority '{priority_id}' not found.")
 
-    detail = _enrich_priority_row(match, include_detail=True)
+    all_health = client.read_gold_table("gold_kpi_health")
+    all_peer = client.read_gold_table("gold_peer_benchmark")
+    health_index = _build_health_index(all_health)
+    peer_index = _build_peer_index(all_peer)
+    detail = _enrich_priority_row(
+        match,
+        include_detail=True,
+        all_health=all_health,
+        all_peer=all_peer,
+        health_index=health_index,
+        peer_index=peer_index,
+    )
     return detail

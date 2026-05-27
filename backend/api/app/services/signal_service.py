@@ -1,8 +1,11 @@
+import logging
 from typing import Any, Optional
 
 from app.clients.databricks import DatabricksClient
 from app.config.settings import settings
 from app.services.social_signal_service import compute_social_signals
+
+logger = logging.getLogger(__name__)
 
 
 def _client() -> DatabricksClient:
@@ -27,7 +30,8 @@ def _get_source_metric_health(asset_name: str, metric_name: str, month: str) -> 
             None
         )
         return match
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed loading source metric health for signal enrichment: %s", exc)
         return None
 
 
@@ -153,7 +157,8 @@ def _get_priority_board_connection(
             ),
             "border_color": "neutral"
         }
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed computing priority-board connection for signal: %s", exc)
         return None
 
 
@@ -317,7 +322,7 @@ def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
 
         if source_health:
             source_trend_direction = str(source_health.get("trend_direction", "stable"))
-            source_current_trend = source_health.get("deviation_from_seasonal_baseline")
+            source_current_trend = source_health.get("deviation_from_rolling_avg")
             if source_current_trend is not None:
                 source_current_trend = float(source_current_trend)
 
@@ -456,9 +461,9 @@ def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
             if latest_validated_month is None or social_latest > latest_validated_month:
                 latest_validated_month = social_latest
 
-    except Exception as e:
+    except Exception as exc:
         # If social signal computation fails, just continue with internal signals
-        pass
+        logger.warning("Social-to-commercial signal computation failed: %s", exc)
 
     # Apply signal_type filter if specified
     if signal_type_filter:

@@ -96,6 +96,7 @@ def test_benchmark_contract() -> None:
         assert "peer_leader_value" in point
         assert "rm_rank" in point
         assert "club_count" in point
+        assert "raw_gap_to_peer_median" in point
         assert "gap_to_peer_median" in point
         assert "gap_to_leader" in point
         assert isinstance(point["rm_rank"], int)
@@ -153,7 +154,7 @@ def test_briefing_latest_contract() -> None:
         assert "asset_name" in anomaly
         assert "metric_name" in anomaly
         assert "metric_value" in anomaly
-        assert "deviation_from_seasonal_baseline" in anomaly
+        assert "deviation_from_rolling_avg" in anomaly
 
 
 def test_refresh_status_contract() -> None:

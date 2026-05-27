@@ -15,7 +15,7 @@ class BriefingAnomaly(BaseModel):
     asset_name: str
     metric_name: str
     metric_value: float
-    deviation_from_seasonal_baseline: float
+    deviation_from_rolling_avg: float
 
 
 class BriefingSignal(BaseModel):

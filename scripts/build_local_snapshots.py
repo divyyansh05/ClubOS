@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -27,6 +28,44 @@ import pandas as pd
 
 INTERNAL_FILE = "Tema5.internal_metrics.dataset.xlsx"
 BENCHMARK_FILE = "Tema5.benchmark.dataset.xlsx"
+
+
+def load_scoring_config():
+    """Load scoring configuration from scoring_config.json"""
+    config_path = os.path.join(
+        os.path.dirname(__file__),
+        "..", "backend", "api", "app", "config", "scoring_config.json"
+    )
+    if not os.path.exists(config_path):
+        # fallback: try relative path from project root
+        config_path = "backend/api/app/config/scoring_config.json"
+    with open(config_path, "r") as f:
+        return json.load(f)
+
+
+SCORING_CONFIG = load_scoring_config()
+WEIGHTS = SCORING_CONFIG["formula_weights"]
+
+
+def load_metric_dictionary():
+    """Load metric dictionary for commercial weights"""
+    dict_path = os.path.join(
+        os.path.dirname(__file__),
+        "..", "databricks", "seeds", "metric_dictionary.json"
+    )
+    if not os.path.exists(dict_path):
+        # fallback: try relative path from project root
+        dict_path = "databricks/seeds/metric_dictionary.json"
+    with open(dict_path, "r") as f:
+        return json.load(f)
+
+
+METRIC_DICT = load_metric_dictionary()
+# Build commercial weight lookup: {metric_name: commercial_weight}
+COMMERCIAL_WEIGHTS = {
+    metric_name: float(props.get("commercial_weight", 0.4))
+    for metric_name, props in METRIC_DICT.items()
+}
 
 INTERNAL_SHEETS = {
     "Main_Website": ("main_website", "web"),
@@ -82,6 +121,8 @@ BENCHMARK_POLARITY = {
 
 METRIC_POLARITY = {
     "bounce_rate": -1,
+    "pct_android": 0,
+    "total_posts": 0,
 }
 
 
@@ -136,12 +177,55 @@ def _read_excel_long(
     return pd.concat(frames, ignore_index=True)
 
 
+def compute_seasonal_z_score(df: pd.DataFrame) -> pd.Series:
+    """
+    Compute seasonal Z-score: how many standard deviations is this month's value
+    from the historical mean for the SAME calendar month.
+
+    Returns a Series of Z-scores with the same index as df.
+    """
+    df = df.copy()
+    df["calendar_month"] = pd.to_datetime(df["month"]).dt.month
+
+    z_scores = []
+    for idx, row in df.iterrows():
+        asset = row["asset_name"]
+        metric = row["metric_name"]
+        cal_month = row["calendar_month"]
+        current_value = row["metric_value"]
+        current_month = row["month"]
+
+        # Get all historical values for this metric in the SAME calendar month
+        # (excluding the current month itself to avoid self-comparison)
+        same_month_hist = df[
+            (df["asset_name"] == asset) &
+            (df["metric_name"] == metric) &
+            (df["calendar_month"] == cal_month) &
+            (df["month"] < current_month)
+        ]["metric_value"]
+
+        if len(same_month_hist) < 2:  # Need at least 2 historical points
+            z_scores.append(0.0)
+            continue
+
+        hist_mean = same_month_hist.mean()
+        hist_std = same_month_hist.std()
+
+        if hist_std == 0 or pd.isna(hist_std):
+            z_scores.append(0.0)
+        else:
+            z_score = (current_value - hist_mean) / hist_std
+            z_scores.append(z_score)
+
+    return pd.Series(z_scores, index=df.index)
+
+
 def build_kpi_health(internal_df: pd.DataFrame) -> pd.DataFrame:
     if internal_df.empty:
         return pd.DataFrame(columns=[
             "month", "asset_name", "metric_name", "metric_value", "prior_month_value",
-            "prior_season_same_month_value", "rolling_12m_avg", "seasonal_baseline",
-            "deviation_from_seasonal_baseline", "trend_direction", "health_status",
+            "prior_season_same_month_value", "rolling_12m_avg",
+            "deviation_from_rolling_avg", "seasonal_z_score", "trend_direction", "health_status",
         ])
     df = internal_df.copy()
     df = df.sort_values(["asset_name", "metric_name", "month"])
@@ -149,12 +233,14 @@ def build_kpi_health(internal_df: pd.DataFrame) -> pd.DataFrame:
     df["prior_month_value"] = grp["metric_value"].shift(1)
     df["prior_season_same_month_value"] = grp["metric_value"].shift(12)
     df["rolling_12m_avg"] = grp["metric_value"].transform(lambda s: s.rolling(12, min_periods=1).mean())
-    df["seasonal_baseline"] = df["rolling_12m_avg"]
-    df["deviation_from_seasonal_baseline"] = np.where(
-        df["seasonal_baseline"] != 0,
-        (df["metric_value"] - df["seasonal_baseline"]) / df["seasonal_baseline"],
+    df["deviation_from_rolling_avg"] = np.where(
+        df["rolling_12m_avg"] != 0,
+        (df["metric_value"] - df["rolling_12m_avg"]) / df["rolling_12m_avg"],
         np.nan,
     )
+
+    # NEW: Compute seasonal Z-score (comparing to same calendar month historically)
+    df["seasonal_z_score"] = compute_seasonal_z_score(df)
     df["trend_direction"] = np.where(
         df["prior_month_value"].isna(),
         "flat",
@@ -165,23 +251,26 @@ def build_kpi_health(internal_df: pd.DataFrame) -> pd.DataFrame:
     def _health_row(dev: float, pol: int) -> str:
         if pd.isna(dev):
             return "stable"
+        if pol == 0:
+            return "stable"  # Neutral metrics never penalised or rewarded
         if pol == 1:
             if dev > 0.05:
                 return "good"
             if dev < -0.05:
                 return "review"
             return "stable"
+        # pol == -1 (negative polarity: lower is better)
         if dev < -0.05:
             return "good"
         if dev > 0.05:
             return "review"
         return "stable"
 
-    df["health_status"] = [ _health_row(float(dev) if pd.notna(dev) else np.nan, int(pol)) for dev, pol in zip(df["deviation_from_seasonal_baseline"], polarity) ]
+    df["health_status"] = [ _health_row(float(dev) if pd.notna(dev) else np.nan, int(pol)) for dev, pol in zip(df["deviation_from_rolling_avg"], polarity) ]
     return df[[
         "month", "asset_name", "metric_name", "metric_value", "prior_month_value",
-        "prior_season_same_month_value", "rolling_12m_avg", "seasonal_baseline",
-        "deviation_from_seasonal_baseline", "trend_direction", "health_status",
+        "prior_season_same_month_value", "rolling_12m_avg",
+        "deviation_from_rolling_avg", "seasonal_z_score", "trend_direction", "health_status",
     ]]
 
 
@@ -189,7 +278,7 @@ def build_peer_benchmark(internal_df: pd.DataFrame, benchmark_df: pd.DataFrame) 
     if internal_df.empty or benchmark_df.empty:
         return pd.DataFrame(columns=[
             "month", "asset_name", "metric_name", "rm_value", "peer_median", "peer_mean",
-            "peer_leader_value", "rm_rank", "club_count", "gap_to_peer_median", "gap_to_leader",
+            "peer_leader_value", "rm_rank", "club_count", "raw_gap_to_peer_median", "gap_to_peer_median", "gap_to_leader",
             "rank_change_12m", "gap_change_12m",
         ])
 
@@ -202,10 +291,11 @@ def build_peer_benchmark(internal_df: pd.DataFrame, benchmark_df: pd.DataFrame) 
         peer_min_value=("peer_value", "min"),
         club_count=("club", "nunique"),
     )
-    stats = stats[stats["club_count"] == 5].copy()
+    stats = stats[stats["club_count"] >= 5].copy()
     aligned = rm.merge(stats, on=["month", "asset_name", "metric_name"], how="inner")
     aligned["polarity"] = aligned["metric_name"].map(BENCHMARK_POLARITY).fillna(1).astype(int)
     aligned["peer_leader_value"] = np.where(aligned["polarity"] == -1, aligned["peer_min_value"], aligned["peer_max_value"])
+    aligned["raw_gap_to_peer_median"] = aligned["rm_value"] - aligned["peer_median"]
     aligned["gap_to_peer_median"] = aligned["polarity"] * (aligned["rm_value"] - aligned["peer_median"])
     aligned["gap_to_leader"] = aligned["polarity"] * (aligned["rm_value"] - aligned["peer_leader_value"])
 
@@ -228,7 +318,7 @@ def build_peer_benchmark(internal_df: pd.DataFrame, benchmark_df: pd.DataFrame) 
     aligned["gap_change_12m"] = aligned["gap_to_peer_median"] - aligned["gap_12m_ago"]
     return aligned[[
         "month", "asset_name", "metric_name", "rm_value", "peer_median", "peer_mean",
-        "peer_leader_value", "rm_rank", "club_count", "gap_to_peer_median", "gap_to_leader",
+        "peer_leader_value", "rm_rank", "club_count", "raw_gap_to_peer_median", "gap_to_peer_median", "gap_to_leader",
         "rank_change_12m", "gap_change_12m",
     ]]
 
@@ -237,57 +327,94 @@ def build_signals(internal_df: pd.DataFrame) -> pd.DataFrame:
     cols = [
         "source_asset", "source_metric", "target_asset", "target_metric", "lag_months",
         "relationship_direction", "strength_score", "validation_status",
-        "business_interpretation", "last_validated_month",
+        "business_interpretation", "last_validated_month", "provisional",
     ]
     if internal_df.empty:
         return pd.DataFrame(columns=cols)
+
+    # Load config
+    valid_directions = SCORING_CONFIG.get("signal_valid_directions", [])
+    threshold_internal = SCORING_CONFIG.get("signal_correlation_threshold_internal", 0.60)
+    provisional_threshold_months = SCORING_CONFIG.get("signal_provisional_sample_size_months", 60)
+
+    # Build wide format
     wide = internal_df.assign(feature_key=internal_df["asset_name"] + "_" + internal_df["metric_name"]).pivot_table(
         index="month", columns="feature_key", values="metric_value", aggfunc="max"
     ).sort_index()
 
-    targets = [
-        ("ecommerce", "net_sales"),
-        ("ecommerce", "conversion_rate"),
-        ("streaming", "subscriptions"),
-    ]
-    candidates = [
-        ("fan_app", "heavy_users", "Rising app engagement from heavy users predicts increased {} in the following months."),
-        ("main_website", "bounce_rate", "Increased friction (bounce rate) on the main site tends to degrade {} over a lag window."),
-        ("main_website", "unique_visitors", "Top-of-funnel traffic volume strongly leads {} shortly after."),
-    ]
+    # Extract all available asset_metric pairs from column names
+    # Known asset names (order matters - check longest first to avoid partial matches)
+    known_assets = ["main_website", "ecommerce", "streaming", "fan_app", "social_media"]
+    available_pairs = []
+    for col in wide.columns:
+        for asset in known_assets:
+            if col.startswith(asset + "_"):
+                metric = col[len(asset) + 1:]  # +1 for the underscore
+                available_pairs.append((asset, metric))
+                break
+
     rows: List[Dict[str, Any]] = []
-    for c_asset, c_metric, interp in candidates:
-        source_col = f"{c_asset}_{c_metric}"
-        if source_col not in wide.columns:
-            continue
-        for t_asset, t_metric in targets:
-            target_col = f"{t_asset}_{t_metric}"
-            if target_col not in wide.columns:
+
+    # Test all valid cross-platform pairs
+    for direction in valid_directions:
+        source_asset = direction["source_asset"]
+        target_asset = direction["target_asset"]
+
+        # Find all metrics for this source asset
+        source_metrics = [metric for asset, metric in available_pairs if asset == source_asset]
+        # Find all metrics for this target asset
+        target_metrics = [metric for asset, metric in available_pairs if asset == target_asset]
+
+        for source_metric in source_metrics:
+            source_col = f"{source_asset}_{source_metric}"
+            if source_col not in wide.columns:
                 continue
-            for lag in (1, 2, 3):
-                paired = pd.DataFrame({
-                    "source": wide[source_col],
-                    "target": wide[target_col].shift(-lag),
-                }).dropna()
-                if len(paired) <= 12:
+
+            for target_metric in target_metrics:
+                target_col = f"{target_asset}_{target_metric}"
+                if target_col not in wide.columns:
                     continue
-                corr = paired["source"].corr(paired["target"])
-                if pd.isna(corr) or abs(float(corr)) <= 0.65:
-                    continue
-                rows.append({
-                    "source_asset": c_asset,
-                    "source_metric": c_metric,
-                    "target_asset": t_asset,
-                    "target_metric": t_metric,
-                    "lag_months": lag,
-                    "relationship_direction": "positive" if corr > 0 else "negative",
-                    "strength_score": float(corr),
-                    "validation_status": "active",
-                    "business_interpretation": interp.format(f"{t_asset} {t_metric}"),
-                })
-    rows = sorted(rows, key=lambda r: abs(float(r["strength_score"])), reverse=True)[:3]
+
+                # Test lags 1, 2, 3
+                for lag in (1, 2, 3):
+                    paired = pd.DataFrame({
+                        "source": wide[source_col],
+                        "target": wide[target_col].shift(-lag),
+                    }).dropna()
+
+                    if len(paired) <= 12:
+                        continue
+
+                    corr = paired["source"].corr(paired["target"])
+                    if pd.isna(corr) or abs(float(corr)) < threshold_internal:
+                        continue
+
+                    # Provisional if sample size < threshold
+                    is_provisional = len(paired) < provisional_threshold_months
+
+                    # Generate business interpretation
+                    direction_word = "positive" if corr > 0 else "negative"
+                    interp = f"{source_asset.replace('_', ' ').title()} {source_metric.replace('_', ' ')} shows a {direction_word} relationship with {target_asset.replace('_', ' ').title()} {target_metric.replace('_', ' ')} at {lag}-month lag."
+
+                    rows.append({
+                        "source_asset": source_asset,
+                        "source_metric": source_metric,
+                        "target_asset": target_asset,
+                        "target_metric": target_metric,
+                        "lag_months": lag,
+                        "relationship_direction": "positive" if corr > 0 else "negative",
+                        "strength_score": float(corr),
+                        "validation_status": "active",
+                        "business_interpretation": interp,
+                        "provisional": is_provisional,
+                    })
+
+    # Sort by strength and keep top signals
+    rows = sorted(rows, key=lambda r: abs(float(r["strength_score"])), reverse=True)
+
     if not rows:
         return pd.DataFrame(columns=cols)
+
     latest_month = internal_df["month"].max()
     out = pd.DataFrame(rows)
     out["last_validated_month"] = latest_month
@@ -303,16 +430,22 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
         ])
 
     df = kpi.merge(
-        peer[["month", "asset_name", "metric_name", "rm_rank", "club_count", "peer_median", "peer_leader_value", "gap_to_peer_median", "gap_to_leader"]],
+        peer[["month", "asset_name", "metric_name", "rm_rank", "club_count", "peer_median", "peer_leader_value", "raw_gap_to_peer_median", "gap_to_peer_median", "gap_to_leader"]],
         on=["month", "asset_name", "metric_name"],
         how="left",
     ).rename(columns={"rm_rank": "peer_rank", "club_count": "peer_club_count"})
 
     df["metric_key"] = df["asset_name"] + "_" + df["metric_name"]
     df["is_active"] = (df["health_status"] != "stable").astype(int)
+
+    # NEW SEVERITY CALCULATION: Use seasonal Z-score instead of rolling avg deviation
+    # Formula: severity = min(1.0, abs(z_score) / 2.0)
+    # Z-score of 0 = no deviation = severity 0.0
+    # Z-score of 1.0 = 1 std dev = severity 0.5
+    # Z-score of 2.0+ = 2+ std devs = severity 1.0 (maximum)
     df["severity_score"] = np.where(
         df["health_status"] != "stable",
-        np.minimum(1.0, np.abs(df["deviation_from_seasonal_baseline"].fillna(0.0)) / 0.20),
+        np.minimum(1.0, np.abs(df["seasonal_z_score"].fillna(0.0)) / 2.0),
         0.0,
     )
     df = df.sort_values(["asset_name", "metric_name", "month"])
@@ -325,33 +458,9 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
         0.0,
         np.where(peer_rank_safe >= 5, 1.0, np.where(peer_rank_safe == 4, 0.8, np.where(peer_rank_safe == 3, 0.4, 0.0))),
     )
-    signal_keys = set()
-    if not signals.empty:
-        signal_keys = set((signals["source_asset"] + "_" + signals["source_metric"]).tolist())
-    target_keys = {"ecommerce_net_sales", "ecommerce_conversion_rate", "streaming_subscriptions"}
-
-    # V1.7 — Social metrics with specific commercial weights
-    social_high_commercial = {"social_media_engagement_rate"}  # 0.9
-    social_medium_commercial = {"social_media_avg_engagement_per_post"}  # 0.8
-    social_low_commercial = {"social_media_international_engagement_ratio"}  # 0.6
-
-    df["commercial_weight_score"] = np.where(
-        df["metric_key"].isin(target_keys),
-        1.0,
-        np.where(
-            df["metric_key"].isin(social_high_commercial),
-            0.9,
-            np.where(
-                df["metric_key"].isin(social_medium_commercial),
-                0.8,
-                np.where(
-                    df["metric_key"].isin(social_low_commercial),
-                    0.6,
-                    np.where(df["metric_key"].isin(signal_keys), 0.8, 0.4)
-                )
-            )
-        )
-    )
+    # Load commercial weights from metric_dictionary.json
+    # metric_key is "asset_metric", metric_name is just "metric"
+    df["commercial_weight_score"] = df["metric_name"].map(COMMERCIAL_WEIGHTS).fillna(0.4)
     df = df[df["is_active"] == 1].copy()
     if df.empty:
         return pd.DataFrame(columns=[
@@ -360,6 +469,7 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
             "supporting_metrics_json",
         ])
 
+    # V1.8.5 — Enhanced category assignment with social media granularity
     df["category"] = np.where(
         (df["health_status"] == "review") & (df["asset_name"] == "ecommerce"),
         "conversion weakness",
@@ -373,15 +483,23 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
                     (df["health_status"] == "good") & (df["metric_name"].str.contains("recurrence|heavy_users", regex=True)),
                     "engagement opportunity",
                     np.where(
-                        (df["asset_name"] == "social_media") & (df["health_status"] == "review"),
-                        "social engagement",
-                        np.where(df["health_status"] == "review", "resilience concern", "engagement opportunity"),
+                        (df["asset_name"] == "social_media") & (df["trend_direction"] == "down") & (df["persistence_months"] >= 2),
+                        "social engagement decline",
+                        np.where(
+                            (df["asset_name"] == "social_media") & (df["peer_gap_score"] > 0.5),
+                            "social benchmark gap",
+                            np.where(
+                                df["asset_name"] == "social_media",
+                                "social engagement",
+                                np.where(df["health_status"] == "review", "resilience concern", "engagement opportunity"),
+                            ),
+                        ),
                     ),
                 ),
             ),
         ),
     )
-    pool = df[["month", "asset_name", "metric_name", "metric_value", "health_status", "trend_direction", "deviation_from_seasonal_baseline", "severity_score"]]
+    pool = df[["month", "asset_name", "metric_name", "metric_value", "health_status", "trend_direction", "deviation_from_rolling_avg", "seasonal_z_score", "severity_score"]]
     support_map: Dict[Tuple[pd.Timestamp, str], List[Dict[str, Any]]] = {}
     for (month, asset), g in pool.groupby(["month", "asset_name"]):
         support_map[(month, asset)] = g.drop(columns=["month", "asset_name"]).to_dict(orient="records")
@@ -418,6 +536,7 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
                 "peer_club_count": int(row["peer_club_count"]),
                 "peer_median": float(row["peer_median"]),
                 "peer_leader_value": float(row["peer_leader_value"]),
+                "raw_gap_to_peer_median": float(row["raw_gap_to_peer_median"]),
                 "gap_to_peer_median": float(row["gap_to_peer_median"]),
                 "gap_to_leader": float(row["gap_to_leader"]),
             }
@@ -433,7 +552,8 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
                 "metric_value": float(row["metric_value"]),
                 "health_status": row["health_status"],
                 "trend_direction": row["trend_direction"],
-                "deviation_from_seasonal_baseline": float(row["deviation_from_seasonal_baseline"]) if pd.notna(row["deviation_from_seasonal_baseline"]) else None,
+                "deviation_from_rolling_avg": float(row["deviation_from_rolling_avg"]) if pd.notna(row["deviation_from_rolling_avg"]) else None,
+                "seasonal_z_score": float(row["seasonal_z_score"]) if pd.notna(row["seasonal_z_score"]) else None,
             },
             "persistence_inputs": {
                 "active_months_in_last_3": int(row["persistence_months"]),
@@ -445,17 +565,19 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
         }
         return json.dumps(payload)
 
-    df["supporting_evidence_score"] = np.where(
-        df.apply(lambda r: len([x for x in support_map.get((r["month"], r["asset_name"]), []) if x["metric_name"] != r["metric_name"]]) > 0, axis=1),
-        1.0,
-        0.0,
+    # NEW EVIDENCE SCORING: Scale with count instead of binary
+    # 0 metrics = 0.0, 1 metric = 0.2, 5+ metrics = 1.0
+    EVIDENCE_MAX_COUNT = 5
+    df["supporting_evidence_score"] = df.apply(
+        lambda r: min(1.0, len([x for x in support_map.get((r["month"], r["asset_name"]), []) if x["metric_name"] != r["metric_name"]]) / EVIDENCE_MAX_COUNT),
+        axis=1
     )
     df["priority_score"] = (
-        0.30 * df["severity_score"]
-        + 0.20 * df["persistence_score"]
-        + 0.20 * df["peer_gap_score"]
-        + 0.20 * df["commercial_weight_score"]
-        + 0.10 * df["supporting_evidence_score"]
+        WEIGHTS["severity"] * df["severity_score"]
+        + WEIGHTS["persistence"] * df["persistence_score"]
+        + WEIGHTS["peer_gap"] * df["peer_gap_score"]
+        + WEIGHTS["commercial"] * df["commercial_weight_score"]
+        + WEIGHTS["evidence"] * df["supporting_evidence_score"]
     )
     df["priority_candidate_id"] = df["month"].dt.strftime("%Y-%m-%d") + "_" + df["asset_name"] + "_" + df["metric_name"]
     df = df.sort_values(["month", "priority_score", "asset_name", "metric_name"], ascending=[True, False, True, True])
@@ -466,8 +588,8 @@ def build_priority_board(kpi: pd.DataFrame, peer: pd.DataFrame, signals: pd.Data
     df["primary_metric"] = df["metric_name"]
     df["priority_category"] = df["category"]
     df["summary_text"] = (
-        df["primary_metric"] + " is " + df["trend_direction"] + " versus prior month with seasonal deviation "
-        + df["deviation_from_seasonal_baseline"].fillna(0.0).map(lambda x: f"{x:.4f}") + "."
+        df["primary_metric"] + " is " + df["trend_direction"] + " versus prior month with trend deviation "
+        + df["deviation_from_rolling_avg"].fillna(0.0).map(lambda x: f"{x:.4f}") + "."
     )
     df["why_it_matters"] = np.where(
         df["metric_key"].isin(signal_refs.keys()),
@@ -518,14 +640,14 @@ def build_monthly_brief(priority: pd.DataFrame, kpi: pd.DataFrame, peer: pd.Data
         } for _, r in p_month.iterrows()]
 
         anom = kpi[(kpi["month"] == month) & (kpi["health_status"] == "review")].copy()
-        anom["abs_dev"] = anom["deviation_from_seasonal_baseline"].abs()
+        anom["abs_dev"] = anom["deviation_from_rolling_avg"].abs()
         anom = anom.sort_values(["abs_dev", "asset_name", "metric_name"], ascending=[False, True, True]).head(3)
         top_anom = [{
             "anomaly_rank": idx + 1,
             "asset_name": str(r["asset_name"]),
             "metric_name": str(r["metric_name"]),
             "metric_value": round(float(r["metric_value"]), 4),
-            "deviation_from_seasonal_baseline": round(float(r["deviation_from_seasonal_baseline"]), 4) if pd.notna(r["deviation_from_seasonal_baseline"]) else None,
+            "deviation_from_rolling_avg": round(float(r["deviation_from_rolling_avg"]), 4) if pd.notna(r["deviation_from_rolling_avg"]) else None,
         } for idx, (_, r) in enumerate(anom.iterrows())]
 
         sig_items: List[Dict[str, Any]] = []
@@ -561,7 +683,7 @@ def build_monthly_brief(priority: pd.DataFrame, kpi: pd.DataFrame, peer: pd.Data
             "good_count": int((h_month["health_status"] == "good").sum()),
             "review_count": int((h_month["health_status"] == "review").sum()),
             "stable_count": int((h_month["health_status"] == "stable").sum()),
-            "avg_abs_deviation": round(float(h_month["deviation_from_seasonal_baseline"].abs().mean()), 4) if not h_month.empty else None,
+            "avg_abs_deviation": round(float(h_month["deviation_from_rolling_avg"].abs().mean()), 4) if not h_month.empty else None,
         }
 
         out_rows.append({
@@ -644,6 +766,83 @@ def main() -> None:
     benchmark_df = _read_excel_long(benchmark_path, BENCHMARK_SHEETS, BENCHMARK_ALLOWLIST, "benchmark")
 
     kpi_health = build_kpi_health(internal_df)
+
+    # V1.8.5 — Add social metrics to KPI health
+    social_csv_path = output_dir / "gold_social_metrics.csv"
+    if social_csv_path.exists():
+        social_df = pd.read_csv(social_csv_path)
+        social_df["month"] = pd.to_datetime(social_df["month"])
+
+        # Eligible social metrics for KPI health scoring
+        eligible_social_metrics = [
+            "total_engagement",
+            "avg_engagement_per_post",
+            "engagement_rate",
+            "international_engagement_ratio",
+            "total_estimated_views"
+        ]
+
+        # Build KPI health rows for each eligible metric
+        social_kpi_rows = []
+        for metric_name in eligible_social_metrics:
+            if metric_name not in social_df.columns:
+                continue
+
+            for _, row in social_df.iterrows():
+                social_kpi_rows.append({
+                    "month": row["month"],
+                    "asset_name": "social_media",
+                    "metric_name": metric_name,
+                    "metric_value": float(row[metric_name])
+                })
+
+        if social_kpi_rows:
+            social_kpi_df = pd.DataFrame(social_kpi_rows)
+            # Add source_type column to match internal_df schema
+            social_kpi_df["source_type"] = "social"
+
+            # Run through build_kpi_health to compute health status
+            social_health = build_kpi_health(social_kpi_df)
+
+            # Append to main kpi_health
+            kpi_health = pd.concat([kpi_health, social_health], ignore_index=True)
+
+            social_count = len(social_health)
+            print(f"Added {social_count} social metrics rows to kpi_health")
+    else:
+        print(f"Warning: gold_social_metrics.csv not found at {social_csv_path}, skipping social metrics integration")
+
+    # Wire social peer benchmarks into the peer gap scoring pipeline
+    social_benchmark_csv = output_dir / "gold_peer_social_benchmark.csv"
+    if social_benchmark_csv.exists():
+        social_bench = pd.read_csv(social_benchmark_csv)
+        social_bench["month"] = pd.to_datetime(social_bench["month"])
+        
+        # Eligible social metrics (must match BENCHMARK_POLARITY keys ideally, default polarity is 1)
+        social_bench_metrics = ["avg_engagement_per_post", "total_engagement", "instagram_engagement_rate", "posting_frequency_per_day"]
+        
+        melted_social = social_bench.melt(
+            id_vars=["month", "club_name"],
+            value_vars=[c for c in social_bench_metrics if c in social_bench.columns],
+            var_name="metric_name",
+            value_name="metric_value"
+        )
+        melted_social["asset_name"] = "social_media"
+        
+        # Separate Real Madrid (internal) and Peers (benchmark)
+        rm_social = melted_social[melted_social["club_name"] == "real_madrid"].copy()
+        peer_social = melted_social[melted_social["club_name"] != "real_madrid"].rename(columns={"club_name": "club"}).copy()
+        
+        # Append to internal_df
+        if not rm_social.empty:
+            internal_df = pd.concat([internal_df, rm_social[["month", "asset_name", "metric_name", "metric_value"]]], ignore_index=True)
+            print(f"Added {len(rm_social)} social benchmark internal rows")
+            
+        # Append to benchmark_df
+        if not peer_social.empty:
+            benchmark_df = pd.concat([benchmark_df, peer_social[["month", "asset_name", "metric_name", "club", "metric_value"]]], ignore_index=True)
+            print(f"Added {len(peer_social)} social benchmark peer rows")
+
     peer = build_peer_benchmark(internal_df[["month", "asset_name", "metric_name", "metric_value"]], benchmark_df[["month", "asset_name", "metric_name", "club", "metric_value"]])
     signals = build_signals(internal_df[["month", "asset_name", "metric_name", "metric_value"]])
     priority = build_priority_board(kpi_health, peer, signals)

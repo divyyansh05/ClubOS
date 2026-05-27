@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   fetchSocialSummary,
   fetchSocialMonthly,
@@ -31,11 +31,183 @@ import type {
   MatchMomentAnalysisResponse,
   FormatPerformanceResponse,
   HashtagPerformanceResponse,
-  InsightCard,
 } from "../../types/clubos";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { ScreenGuide } from "../../components/ui/ScreenGuide";
+
+// ─── Tab definitions ─────────────────────────────────────────────────────────
+//
+// Four tabs, each answering a distinct business question:
+//
+//  OVERVIEW     → "What's our headline number this month?"
+//                 KPI stat cards + month selector + top-level summary
+//
+//  PERFORMANCE  → "How did each platform trend over time?"
+//                 12-month multi-platform trend chart + platform breakdown
+//
+//  STRATEGY     → "When, what, and how should we post?"
+//                 Timing (day-of-week heatmap, match moments, format table)
+//                 + Content type performance + Content intelligence correlations
+//                 + Hashtag leaderboard and recommendations
+//                 All grouped because they share a single answer: "how to optimise
+//                 content production decisions."
+//
+//  INTELLIGENCE → "What does this tell us commercially?"
+//                 Dynamic insights + Ranked recommendations for the content team
+//                 + International audience intelligence + Commercial correlations
+//                 These are all about "so what does this mean for the business?"
+
+type SocialTab = "overview" | "performance" | "strategy" | "intelligence";
+
+const SOCIAL_TABS: { id: SocialTab; label: string; subtitle: string }[] = [
+  { id: "overview",     label: "Overview",     subtitle: "What's our headline number?" },
+  { id: "performance",  label: "Performance",  subtitle: "How did each platform trend?" },
+  { id: "strategy",     label: "Strategy",     subtitle: "When, what & how to post?" },
+  { id: "intelligence", label: "Intelligence", subtitle: "What does this mean commercially?" },
+];
+
+// ─── Platform brand colors (for chart Cell overrides) ─────────────────────
+
+const PLATFORM_COLORS: Record<string, string> = {
+  instagram: "#E1306C",
+  tiktok:    "#69C9D0",
+  x:         "#1DA1F2",
+  facebook:  "#4267B2",
+  youtube:   "#FF0000",
+};
+
+// ─── Content type colors (design-system aligned) ──────────────────────────
+
+const CONTENT_TYPE_COLORS: Record<string, string> = {
+  score_graphic:    "#2563EB",  // info-600
+  goal_celebration: "#16A34A",  // good-600
+  lineup_graphic:   "#EA580C",  // warning-600
+  player_arrival:   "#DC2626",  // critical-600
+  game_preview:     "#9333EA",  // accent-600
+  training:         "#0D9488",  // teal
+  birthday:         "#CA8A04",  // sport-gold-600
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatEngagement(val: number): string {
+  if (val >= 1e9) return `${(val / 1e9).toFixed(1)}B`;
+  if (val >= 1e6) return `${(val / 1e6).toFixed(0)}M`;
+  if (val >= 1e3) return `${(val / 1e3).toFixed(0)}K`;
+  return val.toString();
+}
+
+function formatPercentage(num: number): string {
+  return `${(num * 100).toFixed(1)}%`;
+}
+
+function formatMoMChange(change: number | null): string | null {
+  if (change === null) return null;
+  const sign = change > 0 ? "+" : "";
+  return `${sign}${change.toFixed(1)}%`;
+}
+
+function getContentTypeColor(contentType: string): string {
+  const key = contentType.toLowerCase().replace(/ /g, "_");
+  return CONTENT_TYPE_COLORS[key] || "#2563EB";
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+interface StatCardProps {
+  cardId: string;
+  title: string;
+  value: string;
+  change: string | null;
+  contextLine?: string;
+  onNavigate?: () => void;
+}
+
+function StatCard({ cardId, title, value, change, contextLine, onNavigate }: StatCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isPositive = change !== null && (change.startsWith("+") || parseFloat(change) > 0);
+
+  return (
+    <div>
+      <div
+        className="bg-paper dark:bg-stone-800 p-6 border-2 border-ink dark:border-stone-700 cursor-pointer hover:shadow-sport transition-all duration-200"
+        onClick={() => setIsExpanded((e) => !e)}
+        id={`stat-card-${cardId}`}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+            {title}
+          </h3>
+          <span className="font-mono text-xs text-stone-400 dark:text-stone-500">
+            {isExpanded ? "▲" : "▼"}
+          </span>
+        </div>
+        <div className="font-mono text-3xl font-semibold text-ink dark:text-stone-100 mb-1">
+          {value}
+        </div>
+        {change && (
+          <div
+            className={`font-mono text-xs font-semibold ${
+              isPositive
+                ? "text-good-light dark:text-good-dark"
+                : "text-critical-light dark:text-critical-dark"
+            }`}
+          >
+            {isPositive ? "↑" : "↓"} {change} MoM
+          </div>
+        )}
+        {contextLine && (
+          <p className="font-body text-xs text-stone-500 dark:text-stone-400 mt-2 leading-relaxed">
+            {contextLine}
+          </p>
+        )}
+      </div>
+
+      {isExpanded && (
+        <div className="border-2 border-t-0 border-ink dark:border-stone-700 p-4 bg-stone-50 dark:bg-stone-900 animate-fade-in flex flex-col gap-3">
+          <p className="font-body text-sm text-stone-700 dark:text-stone-300">
+            {cardId === "total-engagement" &&
+              "Platform breakdown: Instagram leads with highest engagement share."}
+            {cardId === "avg-per-post" &&
+              "Year average across all platforms. Individual platform performance varies."}
+            {cardId === "instagram-share" &&
+              "Instagram's contribution to total social engagement. Dominates Real Madrid's social reach."}
+            {cardId === "international" &&
+              "High international reach supports global eCommerce and streaming growth."}
+          </p>
+          {onNavigate && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate();
+              }}
+              className="self-start font-mono text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 hover:text-ink dark:hover:text-stone-200 hover:underline flex items-center gap-1 transition-all"
+            >
+              Go deeper &rarr;
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SocialIntelligencePage() {
+  // ── Data state ──────────────────────────────────────────────────────────
   const [summary, setSummary] = useState<SocialSummary | null>(null);
   const [monthlyTrend, setMonthlyTrend] = useState<SocialMonthlyTrend | null>(null);
   const [platformData, setPlatformData] = useState<SocialPlatformData[]>([]);
@@ -45,39 +217,69 @@ export default function SocialIntelligencePage() {
   const [internationalData, setInternationalData] = useState<InternationalBreakdownResponse | null>(null);
   const [marketGrowth, setMarketGrowth] = useState<MarketGrowthRankingResponse | null>(null);
   const [internationalCorrelation, setInternationalCorrelation] = useState<InternationalCommercialCorrelationResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [guideExpanded, setGuideExpanded] = useState(false);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["all"]);
-  const [expandedStatCard, setExpandedStatCard] = useState<string | null>(null);
-  const [platformMetricView, setPlatformMetricView] = useState<"avg" | "total">("avg");
-  const [selectedMonth, setSelectedMonth] = useState<string | null>(null); // YYYY-MM format
-  const [selectedContentType, setSelectedContentType] = useState<string | null>(null);
-  const [marketCompareMode, setMarketCompareMode] = useState<"mom" | "yoy" | "custom">("mom");
-  const [marketCompareMonth, setMarketCompareMonth] = useState<string | null>(null);
-
-  // V1.7 — Analytics data state
   const [insights, setInsights] = useState<DynamicInsightsResponse | null>(null);
   const [recommendations, setRecommendations] = useState<ContentRecommendationsResponse | null>(null);
   const [dayOfWeekData, setDayOfWeekData] = useState<DayOfWeekAnalysisResponse | null>(null);
   const [matchMomentData, setMatchMomentData] = useState<MatchMomentAnalysisResponse | null>(null);
   const [formatData, setFormatData] = useState<FormatPerformanceResponse | null>(null);
   const [hashtagData, setHashtagData] = useState<HashtagPerformanceResponse | null>(null);
+
+  // ── UI state ────────────────────────────────────────────────────────────
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<SocialTab>("overview");
+  const [strategySubSection, setStrategySubSection] = useState<"timing" | "content" | "hashtags">("timing");
+  const [intelligenceSubSection, setIntelligenceSubSection] = useState<"insights" | "international">("insights");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["all"]);
+  const [expandedStatCard, setExpandedStatCard] = useState<string | null>(null);
+  const [platformMetricView, setPlatformMetricView] = useState<"avg" | "total">("avg");
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [selectedContentType, setSelectedContentType] = useState<string | null>(null);
+  const [marketCompareMode, setMarketCompareMode] = useState<"mom" | "yoy" | "custom">("mom");
+  const [marketCompareMonth, setMarketCompareMonth] = useState<string | null>(null);
   const [insightFilter, setInsightFilter] = useState<string>("all");
   const [hashtagFilter, setHashtagFilter] = useState<string>("all");
   const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
-  const [expandedHashtag, setExpandedHashtag] = useState<string | null>(null);
 
-  // Dark mode detection and chart colors
-  const isDark = document.documentElement.classList.contains('dark');
-  const chartColors = {
-    axis: isDark ? '#A0A0A0' : '#666666',
-    grid: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-    text: isDark ? '#D0D0D0' : '#333333',
-    tooltipBg: isDark ? '#2A2A2A' : '#FFFFFF',
-    tooltipBorder: isDark ? '#444444' : '#CCCCCC',
-    tooltipText: isDark ? '#FFFFFF' : '#000000',
-  };
+  // ── Reactive dark mode for charts ──────────────────────────────────────
+  const [isDark, setIsDark] = useState(() =>
+    typeof window !== "undefined"
+      ? document.documentElement.classList.contains("dark")
+      : false
+  );
 
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const chartColors = useMemo(
+    () => ({
+      axis:         isDark ? "#A3A39E" : "#5C5C56",     // stone-400 / stone-600
+      grid:         isDark ? "#434340" : "#E8E8E5",     // stone-700 / stone-200
+      text:         isDark ? "#D1D1CC" : "#1A1A1A",     // stone-300 / ink
+      tooltipBg:    isDark ? "#2B2B28" : "#FAFAF8",     // stone-800 / paper
+      tooltipBorder:isDark ? "#434340" : "#1A1A1A",     // stone-700 / ink
+      tooltipText:  isDark ? "#F5F5F3" : "#1A1A1A",     // stone-100 / ink
+    }),
+    [isDark]
+  );
+
+  const tooltipStyle = useMemo(
+    () => ({
+      backgroundColor: chartColors.tooltipBg,
+      border: `2px solid ${chartColors.tooltipBorder}`,
+      borderRadius: 0,
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: "11px",
+      color: chartColors.tooltipText,
+    }),
+    [chartColors]
+  );
+
+  // ── Data loading ────────────────────────────────────────────────────────
   useEffect(() => {
     async function loadData() {
       try {
@@ -122,15 +324,13 @@ export default function SocialIntelligencePage() {
         setFormatData(formatPerformance);
         setHashtagData(hashtagPerformance);
 
-        // Set initial selected signal (strongest)
         if (intelligenceData.signals.length > 0) {
           setSelectedSignal(intelligenceData.signals[0]);
         }
 
-        // Load platform and content data for latest month
         if (summaryData.latest_month) {
-          const monthStr = summaryData.latest_month.substring(0, 7); // YYYY-MM
-          setSelectedMonth(monthStr); // Set initial selected month
+          const monthStr = summaryData.latest_month.substring(0, 7);
+          setSelectedMonth(monthStr);
           const [platforms, content] = await Promise.all([
             fetchSocialPlatforms(monthStr),
             fetchSocialContent(monthStr),
@@ -144,384 +344,452 @@ export default function SocialIntelligencePage() {
         setLoading(false);
       }
     }
-
     loadData();
   }, []);
 
-  // Reload platform and content data when selected month changes
   useEffect(() => {
     if (!selectedMonth) return;
-
     async function loadMonthData() {
       try {
-        const [platforms, content] = await Promise.all([
-          fetchSocialPlatforms(selectedMonth),
-          fetchSocialContent(selectedMonth),
+        const [platforms, content, summaryData] = await Promise.all([
+          fetchSocialPlatforms(selectedMonth!),
+          fetchSocialContent(selectedMonth!),
+          fetchSocialSummary(selectedMonth!),
         ]);
         setPlatformData(platforms.platforms);
         setContentData(content.content_types);
+        setSummary(summaryData);
       } catch (error) {
         console.error("Failed to load month data:", error);
       }
     }
-
     loadMonthData();
   }, [selectedMonth]);
 
-  // Reload market growth data when compare mode/month changes
   useEffect(() => {
     if (!summary) return;
-
     async function loadMarketGrowth() {
       try {
-        let compareMonth: string | undefined = undefined;
-
+        let compareMonth: string | undefined;
         if (marketCompareMode === "yoy") {
-          // Year-over-year: same month last year
-          const latestMonth = summary.latest_month.substring(0, 7); // YYYY-MM
+          const latestMonth = summary!.latest_month.substring(0, 7);
           const year = parseInt(latestMonth.split("-")[0]);
           const month = latestMonth.split("-")[1];
           compareMonth = `${year - 1}-${month}`;
         } else if (marketCompareMode === "custom" && marketCompareMonth) {
           compareMonth = marketCompareMonth;
         }
-        // MoM: leave undefined (backend default)
-
         const growthData = await fetchMarketGrowthRanking(compareMonth);
         setMarketGrowth(growthData);
       } catch (error) {
         console.error("Failed to load market growth:", error);
       }
     }
-
     loadMarketGrowth();
   }, [marketCompareMode, marketCompareMonth, summary]);
 
+  // ── Chart data ───────────────────────────────────────────────────────────
+  const trendChartData = useMemo(
+    () =>
+      monthlyTrend
+        ? monthlyTrend.months.map((month, idx) => ({
+            month: new Date(month).toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+            monthShort: new Date(month).toLocaleDateString("en-US", { month: "short" }),
+            total_engagement:    monthlyTrend.total_engagement[idx],
+            instagram:           monthlyTrend.instagram_engagement[idx],
+            tiktok:              monthlyTrend.tiktok_engagement[idx],
+            x:                   monthlyTrend.x_engagement[idx],
+            facebook:            monthlyTrend.facebook_engagement[idx],
+            youtube:             monthlyTrend.youtube_engagement[idx],
+            posts:               monthlyTrend.total_posts[idx],
+          }))
+        : [],
+    [monthlyTrend]
+  );
+
+  const platformChartData = useMemo(
+    () =>
+      [...platformData]
+        .map((p) => ({
+          name:             p.platform.charAt(0).toUpperCase() + p.platform.slice(1),
+          platformKey:      p.platform.toLowerCase(),
+          avg_engagement:   p.avg_engagement,
+          total_engagement: p.engagement,
+          posts:            p.posts,
+        }))
+        .sort((a, b) => {
+          const aVal = platformMetricView === "avg" ? a.avg_engagement : a.total_engagement;
+          const bVal = platformMetricView === "avg" ? b.avg_engagement : b.total_engagement;
+          return bVal - aVal;
+        }),
+    [platformData, platformMetricView]
+  );
+
+  const contentChartData = useMemo(
+    () => contentData.map((c) => ({ name: c.content_type, avg_engagement: c.avg_engagement })),
+    [contentData]
+  );
+
+  const availableMonths = useMemo(
+    () =>
+      monthlyTrend
+        ? monthlyTrend.months.map((m, idx) => ({
+            label:    new Date(m).toLocaleDateString("en-US", { month: "short" }),
+            value:    m.substring(0, 7),
+            isLatest: idx === monthlyTrend.months.length - 1,
+          }))
+        : [],
+    [monthlyTrend]
+  );
+
+  // ── Platform filter handlers ──────────────────────────────────────────────
+  const handlePlatformFilterClick = (platform: string, event: React.MouseEvent) => {
+    if (platform === "all") { setSelectedPlatforms(["all"]); return; }
+    if (event.shiftKey) {
+      setSelectedPlatforms((prev) => {
+        const filtered = prev.filter((p) => p !== "all");
+        if (filtered.includes(platform)) {
+          const updated = filtered.filter((p) => p !== platform);
+          return updated.length === 0 ? ["all"] : updated;
+        }
+        return [...filtered, platform];
+      });
+    } else {
+      setSelectedPlatforms([platform]);
+    }
+  };
+
+  const getPlatformOpacity = (platform: string) => {
+    if (selectedPlatforms.includes("all")) return 1;
+    return selectedPlatforms.includes(platform) ? 1 : 0.15;
+  };
+
+  // ── Shared styles ─────────────────────────────────────────────────────────
+  const sectionCard = "bg-paper dark:bg-stone-800 border-2 border-ink dark:border-stone-700 p-6 mb-8";
+  const sectionTitle = "font-headline text-2xl text-ink dark:text-stone-100 mb-2";
+  const sectionSubtitle = "font-body text-sm text-stone-600 dark:text-stone-400 mb-6";
+  const subSectionTitle = "font-body text-lg font-semibold text-ink dark:text-stone-100 mb-4";
+  const pillBase = "font-mono text-xs uppercase tracking-wider border-2 transition-colors px-3 py-1";
+  const pillActive = "border-ink bg-ink text-paper dark:border-stone-300 dark:bg-stone-300 dark:text-stone-900";
+  const pillInactive = "border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:border-stone-500 dark:hover:border-stone-400";
+  const tableHeader = "border border-stone-300 dark:border-stone-700 p-3 text-left font-mono text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-900";
+  const tableCell = "border border-stone-300 dark:border-stone-700 p-3 font-body text-sm text-ink dark:text-stone-200";
+  const tableCellMono = "border border-stone-300 dark:border-stone-700 p-3 font-mono text-sm text-ink dark:text-stone-200";
+
+  // ── Loading / error ───────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-gray-600 dark:text-gray-400">Loading social intelligence...</div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="font-mono text-sm uppercase tracking-widest text-stone-500 dark:text-stone-400">
+          Loading social intelligence…
+        </div>
       </div>
     );
   }
 
   if (!summary || !monthlyTrend) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-red-600 dark:text-red-400">Failed to load social data</div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="font-mono text-sm text-critical-600 dark:text-critical-dark">
+          Failed to load social data
+        </div>
       </div>
     );
   }
 
-  // Format engagement numbers
-  const formatEngagement = (val: number) => {
-    if (val >= 1e9) return `${(val / 1e9).toFixed(1)}B`;
-    if (val >= 1e6) return `${(val / 1e6).toFixed(0)}M`;
-    if (val >= 1e3) return `${(val / 1e3).toFixed(0)}K`;
-    return val.toString();
-  };
+  // ── Tab content renderers ─────────────────────────────────────────────────
 
-  const formatPercentage = (num: number) => `${(num * 100).toFixed(1)}%`;
-  const formatMoMChange = (change: number | null) => {
-    if (change === null) return null;
-    const sign = change > 0 ? "+" : "";
-    return `${sign}${change.toFixed(1)}%`;
-  };
+  // ── OVERVIEW ─────────────────────────────────────────────────────────────
+  const renderOverview = () => {
+    const activePlatform = selectedPlatforms[0] || "all";
+    const isAll = activePlatform === "all";
 
-  // Prepare chart data
-  const trendChartData = monthlyTrend.months.map((month, idx) => ({
-    month: new Date(month).toLocaleDateString("en-US", { month: "short", year: "numeric" }),
-    monthShort: new Date(month).toLocaleDateString("en-US", { month: "short" }),
-    total_engagement: monthlyTrend.total_engagement[idx],
-    instagram: monthlyTrend.instagram_engagement[idx],
-    tiktok: monthlyTrend.tiktok_engagement[idx],
-    x: monthlyTrend.x_engagement[idx],
-    facebook: monthlyTrend.facebook_engagement[idx],
-    youtube: monthlyTrend.youtube_engagement[idx],
-    posts: monthlyTrend.total_posts[idx],
-  }));
+    // Find the selected platform data for the month
+    const p = platformData.find((d) => d.platform.toLowerCase() === activePlatform.toLowerCase());
 
-  const platformChartData = platformData
-    .map((p) => ({
-      name: p.platform.charAt(0).toUpperCase() + p.platform.slice(1),
-      avg_engagement: p.avg_engagement,
-      total_engagement: p.engagement,
-      posts: p.posts,
-    }))
-    .sort((a, b) => {
-      const aVal = platformMetricView === "avg" ? a.avg_engagement : a.total_engagement;
-      const bVal = platformMetricView === "avg" ? b.avg_engagement : b.total_engagement;
-      return bVal - aVal; // Descending order
-    });
+    const totalEngagement = isAll ? summary.total_engagement : (p ? p.engagement : 0);
+    const avgEngagement = isAll ? summary.avg_engagement_per_post : (p ? p.avg_engagement : 0);
 
-  const contentChartData = contentData.map((c) => ({
-    name: c.content_type,
-    avg_engagement: c.avg_engagement,
-  }));
+    // Platform share of total engagement
+    const platformShare = isAll
+      ? summary.instagram_engagement_rate
+      : (summary.total_engagement > 0 && p ? (p.engagement / summary.total_engagement) : 0);
 
-  // Platform filter handlers
-  const handlePlatformFilterClick = (platform: string, event: React.MouseEvent) => {
-    if (platform === "all") {
-      setSelectedPlatforms(["all"]);
-      return;
-    }
+    // Compute platform-specific MoM Change
+    let engagementChange = isAll ? summary.total_engagement_mom_change : null;
+    let avgChange = isAll ? summary.avg_engagement_per_post_mom_change : null;
+    let shareChange = isAll ? summary.instagram_engagement_rate_mom_change : null;
 
-    // Shift+click for multi-select
-    if (event.shiftKey) {
-      setSelectedPlatforms(prev => {
-        const filtered = prev.filter(p => p !== "all");
-        if (filtered.includes(platform)) {
-          // Remove platform
-          const updated = filtered.filter(p => p !== platform);
-          return updated.length === 0 ? ["all"] : updated;
-        } else {
-          // Add platform
-          return [...filtered, platform];
+    if (!isAll && selectedMonth && monthlyTrend) {
+      const monthIdx = monthlyTrend.months.findIndex((m) => m.startsWith(selectedMonth));
+      if (monthIdx > 0) {
+        let currentEngagementFromTrend = 0;
+        let priorEngagement = 0;
+
+        const platformKey = activePlatform.toLowerCase();
+        if (platformKey === "instagram") {
+          currentEngagementFromTrend = monthlyTrend.instagram_engagement[monthIdx];
+          priorEngagement = monthlyTrend.instagram_engagement[monthIdx - 1];
+        } else if (platformKey === "tiktok") {
+          currentEngagementFromTrend = monthlyTrend.tiktok_engagement[monthIdx];
+          priorEngagement = monthlyTrend.tiktok_engagement[monthIdx - 1];
+        } else if (platformKey === "x") {
+          currentEngagementFromTrend = monthlyTrend.x_engagement[monthIdx];
+          priorEngagement = monthlyTrend.x_engagement[monthIdx - 1];
+        } else if (platformKey === "facebook") {
+          currentEngagementFromTrend = monthlyTrend.facebook_engagement[monthIdx];
+          priorEngagement = monthlyTrend.facebook_engagement[monthIdx - 1];
+        } else if (platformKey === "youtube") {
+          currentEngagementFromTrend = monthlyTrend.youtube_engagement[monthIdx];
+          priorEngagement = monthlyTrend.youtube_engagement[monthIdx - 1];
         }
-      });
-    } else {
-      // Single select
-      setSelectedPlatforms([platform]);
+
+        if (priorEngagement > 0) {
+          engagementChange = ((currentEngagementFromTrend - priorEngagement) / priorEngagement) * 100;
+        }
+      }
     }
-  };
 
-  // Platform opacity based on filter
-  const getPlatformOpacity = (platform: string) => {
-    if (selectedPlatforms.includes("all")) return 1;
-    return selectedPlatforms.includes(platform) ? 1 : 0.2;
-  };
-
-  // Content type colors (consistent assignment)
-  const getContentTypeColor = (contentType: string) => {
-    const normalized = contentType.toLowerCase().replace(/ /g, "_");
-    const colorMap: Record<string, string> = {
-      score_graphic: isDark ? "#60A5FA" : "#2563EB",      // info blue
-      goal_celebration: isDark ? "#22C55E" : "#16A34A",   // success green
-      lineup_graphic: isDark ? "#F97316" : "#EA580C",      // warning orange
-      player_arrival: isDark ? "#EF4444" : "#DC2626",      // danger red
-      game_preview: "#9B59B6",                             // purple
-      training: "#1ABC9C",                                 // teal
-      birthday: "#F39C12",                                 // amber
-    };
-    return colorMap[normalized] || "#3B82F6";
-  };
-
-  // Stat card component with context and click behavior
-  const StatCard = ({
-    cardId,
-    title,
-    value,
-    change,
-    contextLine,
-  }: {
-    cardId: string;
-    title: string;
-    value: string;
-    change: string | null;
-    contextLine?: string;
-  }) => {
-    const isExpanded = expandedStatCard === cardId;
+    const platformLabel = isAll ? "All Platforms" : activePlatform.charAt(0).toUpperCase() + activePlatform.slice(1);
 
     return (
       <div>
-        <div
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-[0.5px] border-gray-300 dark:border-gray-600 cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => setExpandedStatCard(isExpanded ? null : cardId)}
-          style={{ borderColor: 'var(--color-border-tertiary, #d1d5db)' }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</h3>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{value}</div>
-          {change && (
-            <div
-              className={`text-sm font-semibold ${
-                change.startsWith("+") || parseFloat(change) > 0
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-red-600 dark:text-red-400"
-              }`}
-            >
-              {change.startsWith("+") || parseFloat(change) > 0 ? "↑" : "↓"} {change} MoM
+        {/* Filters Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Month selector */}
+          {availableMonths.length > 0 && (
+            <div className="border-2 border-ink dark:border-stone-700 p-4 bg-stone-50 dark:bg-stone-900">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                  Select Month — Filter Metrics &amp; Details
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableMonths.map((month) => (
+                  <button
+                    key={month.value}
+                    id={`month-${month.value}`}
+                    onClick={() => setSelectedMonth(month.value)}
+                    className={`${pillBase} ${selectedMonth === month.value ? pillActive : pillInactive}`}
+                  >
+                    {month.label}
+                    {month.isLatest && (
+                      <span className="ml-1 font-mono text-[9px] text-stone-400 dark:text-stone-500">LATEST</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {selectedMonth && (
+                <p className="font-mono text-xs text-stone-400 dark:text-stone-500 mt-2">
+                  Selected:{" "}
+                  {new Date(selectedMonth + "-01").toLocaleDateString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              )}
             </div>
           )}
-          {contextLine && (
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">{contextLine}</p>
-          )}
-        </div>
 
-        {isExpanded && (
-          <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded transition-all duration-200 ease-in-out">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              {cardId === "total-engagement" && "Platform breakdown: Instagram leads with highest engagement share. Click-through analysis coming soon."}
-              {cardId === "avg-per-post" && `Year average across all platforms. Individual platform performance varies.`}
-              {cardId === "instagram-rate" && "Instagram's contribution to total social engagement. Dominates Real Madrid's social reach."}
-              {cardId === "international" && `86.7% means ${(0.867 * 100).toFixed(0)}% of Real Madrid's audience is international. High international reach supports global eCommerce and streaming growth.`}
+          {/* Platform selector */}
+          <div className="border-2 border-ink dark:border-stone-700 p-4 bg-stone-50 dark:bg-stone-900">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                Select Platform — Filter Overview Metrics
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "all",       label: "All Platforms",  color: null },
+                { key: "instagram", label: "Instagram",      color: "#E1306C" },
+                { key: "tiktok",    label: "TikTok",         color: "#69C9D0" },
+                { key: "x",         label: "X",              color: "#1DA1F2" },
+                { key: "facebook",  label: "Facebook",       color: "#4267B2" },
+                { key: "youtube",   label: "YouTube",        color: "#FF0000" },
+              ].map(({ key, label, color }) => {
+                const isActive = selectedPlatforms.includes(key);
+                const hasBrandColor = isActive && color !== null;
+                return (
+                  <button
+                    key={key}
+                    id={`overview-platform-${key}`}
+                    onClick={() => {
+                      if (key === "all") {
+                        setSelectedPlatforms(["all"]);
+                      } else {
+                        setSelectedPlatforms([key]);
+                      }
+                    }}
+                    className={`${pillBase} transition-all ${
+                      hasBrandColor ? "" : isActive ? pillActive : pillInactive
+                    }`}
+                    style={hasBrandColor ? { backgroundColor: color!, borderColor: color!, color: "#fff" } : undefined}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="font-mono text-xs text-stone-400 dark:text-stone-500 mt-2">
+              Selected: {isAll ? "All Platforms" : platformLabel}
             </p>
           </div>
-        )}
+        </div>
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            cardId="total-engagement"
+            title={isAll ? "Total Engagement" : `${platformLabel} Engagement`}
+            value={formatEngagement(totalEngagement)}
+            change={formatMoMChange(engagementChange)}
+            contextLine={isAll ? `Across all platforms. Peak: ${formatEngagement(Math.max(...monthlyTrend.total_engagement))}` : `Total engagement for ${platformLabel} in selected month.`}
+            onNavigate={() => setActiveTab("performance")}
+          />
+          <StatCard
+            cardId="avg-per-post"
+            title={isAll ? "Avg Engagement Per Post" : `${platformLabel} Avg Engagement`}
+            value={formatEngagement(avgEngagement)}
+            change={formatMoMChange(avgChange)}
+            contextLine={isAll ? `Year average: ${formatEngagement(monthlyTrend.avg_engagement_per_post.reduce((a, b) => a + b, 0) / monthlyTrend.avg_engagement_per_post.length)}` : `Average engagement per post on ${platformLabel}.`}
+            onNavigate={() => setActiveTab("performance")}
+          />
+          <StatCard
+            cardId="instagram-share"
+            title={isAll ? "Instagram Share of Engagement" : `${platformLabel} Share of Engagement`}
+            value={formatPercentage(platformShare)}
+            change={formatMoMChange(shareChange)}
+            contextLine={isAll ? "Instagram's contribution to total social engagement." : `${platformLabel}'s contribution to total social engagement.`}
+            onNavigate={() => setActiveTab("performance")}
+          />
+          <StatCard
+            cardId="international"
+            title="International Engagement"
+            value={formatPercentage(summary.international_engagement_ratio)}
+            change={formatMoMChange(summary.international_engagement_ratio_mom_change)}
+            contextLine={`${(summary.international_engagement_ratio * 100).toFixed(1)}% of Real Madrid's audience is international.`}
+            onNavigate={() => {
+              setActiveTab("intelligence");
+              setIntelligenceSubSection("international");
+            }}
+          />
+        </div>
+
+        {/* Quick summary metrics */}
+        <div className={sectionCard}>
+          <h2 className={sectionTitle}>Performance Summary</h2>
+          <p className={sectionSubtitle}>
+            55,598 posts analyzed · 4.08B total engagement in 2025
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Top Platform", value: summary.top_performing_platform },
+              { label: "Top Content Type", value: summary.top_performing_content_type?.replace(/_/g, " ") },
+              { label: "Latest Month", value: summary.latest_month?.substring(0, 7) },
+              { label: "Platforms Tracked", value: "5" },
+            ].map((stat) => (
+              <div key={stat.label} className="border border-stone-200 dark:border-stone-700 p-4 bg-stone-50 dark:bg-stone-900">
+                <div className="font-mono text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">
+                  {stat.label}
+                </div>
+                <div className="font-mono text-base font-semibold text-ink dark:text-stone-100 uppercase">
+                  {stat.value || "—"}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   };
 
-  // Generate month pills data
-  const availableMonths = monthlyTrend
-    ? monthlyTrend.months.map((m, idx) => ({
-        label: new Date(m).toLocaleDateString("en-US", { month: "short" }),
-        value: m.substring(0, 7), // YYYY-MM
-        isLatest: idx === monthlyTrend.months.length - 1,
-      }))
-    : [];
-
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Section 1: Header */}
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Social Intelligence</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
-          Real Madrid's social media performance across five platforms — the fifth digital pillar of ClubOS.
-          55,598 posts analyzed, 4.08B total engagement in 2025.
-        </p>
-      </div>
-
-      {/* Month Selector */}
-      {availableMonths.length > 0 && (
-        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">2025</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {availableMonths.map((month) => (
-              <button
-                key={month.value}
-                onClick={() => setSelectedMonth(month.value)}
-                className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-                  selectedMonth === month.value
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                }`}
-              >
-                {month.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-            Selected: {selectedMonth ? new Date(selectedMonth + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "None"} — Updates platform and content sections below
-          </p>
-        </div>
-      )}
-
-      {/* V1.7 Section: Dynamic Insights Panel — FIRST section for maximum visibility */}
+  // ── INSIGHTS ──────────────────────────────────────────────────────────────
+  const renderInsights = () => (
+    <div>
       {insights && insights.insights.length > 0 && (
         <div className="mb-12">
           <div className="mb-6">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              INSIGHTS — What the data is telling you
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Auto-generated from {insights.total_count} insights across 55,598 posts. Updates when new data is uploaded.
+            <h2 className={sectionTitle}>INSIGHTS — What the data is telling you</h2>
+            <p className={sectionSubtitle}>
+              Auto-generated from {insights.total_count} insights across 55,598 posts.
             </p>
           </div>
 
-          {/* Filter pills */}
           <div className="flex flex-wrap gap-2 mb-6">
             {["all", "timing", "format", "content", "hashtag", "peer"].map((filter) => (
               <button
                 key={filter}
+                id={`insight-filter-${filter}`}
                 onClick={() => setInsightFilter(filter)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  insightFilter === filter
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                }`}
+                className={`${pillBase} ${insightFilter === filter ? pillActive : pillInactive}`}
               >
-                {filter === "all" ? "All Insights" : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                {filter === "all" ? "All Insights" : filter}
               </button>
             ))}
           </div>
 
-          {/* Insight cards grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {insights.insights
-              .filter((insight) => insightFilter === "all" || insight.category === insightFilter)
+              .filter((i) => insightFilter === "all" || i.category === insightFilter)
               .map((insight) => (
                 <div
                   key={insight.insight_id}
-                  className="border border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                  className="border-2 border-ink dark:border-stone-700 p-6 bg-paper dark:bg-stone-800"
                 >
-                  {/* Header row */}
                   <div className="flex items-center justify-between mb-4">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                      className={`font-mono text-xs uppercase tracking-wider px-3 py-1 border ${
                         insight.priority === "critical"
-                          ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
+                          ? "border-critical-600 bg-critical-50 dark:bg-stone-900 text-critical-700 dark:text-critical-dark"
                           : insight.priority === "high"
-                          ? "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
-                          : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                          ? "border-warning-600 bg-warning-50 dark:bg-stone-900 text-warning-700 dark:text-warning-dark"
+                          : "border-info-600 bg-info-50 dark:bg-stone-900 text-info-700 dark:text-info-dark"
                       }`}
                     >
                       {insight.priority}
                     </span>
-                    <span className="text-2xl">
-                      {insight.category === "timing"
-                        ? "⏰"
-                        : insight.category === "format"
-                        ? "🖼️"
-                        : insight.category === "content"
-                        ? "📊"
-                        : insight.category === "hashtag"
-                        ? "#"
-                        : "👥"}
+                    <span className="font-mono text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">
+                      {insight.category}
                     </span>
                   </div>
 
-                  {/* Headline */}
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                  <h3 className="font-headline text-xl text-ink dark:text-stone-100 mb-3">
                     {insight.headline}
                   </h3>
 
-                  {/* Finding */}
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                  <p className="font-body text-sm text-stone-700 dark:text-stone-300 mb-4 leading-relaxed">
                     {insight.finding}
                   </p>
 
-                  {/* Evidence strip */}
-                  <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded mb-4 font-mono text-xs text-gray-800 dark:text-gray-200">
-                    <strong>Evidence:</strong> {insight.evidence}
+                  <div className="p-3 border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 font-mono text-xs text-stone-700 dark:text-stone-300 mb-4">
+                    <strong className="text-stone-900 dark:text-stone-100">Evidence:</strong>{" "}
+                    {insight.evidence}
                   </div>
 
-                  {/* Recommendation button */}
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded mb-3">
-                    <div className="flex items-start gap-2">
-                      <span className="text-lg">💡</span>
-                      <div>
-                        <div className="font-semibold text-amber-900 dark:text-amber-300 text-sm mb-1">
-                          Recommendation
-                        </div>
-                        <div className="text-sm text-amber-800 dark:text-amber-400">
-                          {insight.recommendation}
-                        </div>
-                      </div>
+                  <div className="p-4 border-l-4 border-warning-600 dark:border-warning-dark bg-warning-50 dark:bg-stone-900 mb-3">
+                    <div className="font-mono text-xs uppercase tracking-wider text-warning-700 dark:text-warning-dark mb-1">
+                      Recommendation
+                    </div>
+                    <div className="font-body text-sm text-stone-700 dark:text-stone-300">
+                      {insight.recommendation}
                     </div>
                   </div>
 
-                  {/* Impact estimate */}
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                  <p className="font-mono text-xs text-stone-500 dark:text-stone-500">
                     <strong>Impact:</strong> {insight.impact_estimate}
                   </p>
 
-                  {/* Data source tag */}
-                  <p className="text-xs text-gray-500 dark:text-gray-500 italic">
-                    {insight.data_source}
-                  </p>
-
-                  {/* Expandable detail (optional for future) */}
                   <button
                     onClick={() =>
-                      setExpandedInsight(expandedInsight === insight.insight_id ? null : insight.insight_id)
+                      setExpandedInsight(
+                        expandedInsight === insight.insight_id ? null : insight.insight_id
+                      )
                     }
-                    className="mt-3 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="mt-3 font-mono text-xs uppercase tracking-wider text-info-600 dark:text-info-dark hover:underline"
                   >
-                    {expandedInsight === insight.insight_id ? "Hide details ↑" : "View detailed analysis →"}
+                    {expandedInsight === insight.insight_id
+                      ? "Hide details ▲"
+                      : "View analysis →"}
                   </button>
                 </div>
               ))}
@@ -529,88 +797,61 @@ export default function SocialIntelligencePage() {
         </div>
       )}
 
-      {/* V1.7 Section: Content Team Recommendations */}
       {recommendations && recommendations.recommendations.length > 0 && (
-        <div className="mb-12">
-          <div className="mb-6">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              RECOMMENDATIONS — For the content team
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Priority-ranked actions based on 2025 performance data. Updated automatically when new data is available.
-            </p>
-          </div>
-
-          {/* Recommendations list */}
+        <div>
+          <h2 className={sectionTitle}>RECOMMENDATIONS — For the content team</h2>
+          <p className={sectionSubtitle}>
+            Priority-ranked actions based on 2025 performance data.
+          </p>
           <div className="space-y-4">
             {recommendations.recommendations.map((rec) => (
               <div
                 key={rec.rank}
-                className="border border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                className="border-2 border-ink dark:border-stone-700 p-6 bg-paper dark:bg-stone-800"
               >
                 <div className="flex items-start gap-4">
-                  {/* Rank badge */}
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold">
-                      {rec.rank}
-                    </div>
+                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-sport flex items-center justify-center font-mono text-lg font-semibold text-white">
+                    {rec.rank}
                   </div>
-
                   <div className="flex-1">
-                    {/* Action label */}
-                    <div className="mb-2">
+                    <div className="flex flex-wrap gap-2 mb-3">
                       <span
-                        className={`px-3 py-1 rounded font-mono text-xs font-bold uppercase tracking-wider ${
+                        className={`font-mono text-xs uppercase tracking-wider px-3 py-1 border ${
                           rec.action === "CONVERT"
-                            ? "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
+                            ? "border-accent-600 bg-accent-50 dark:bg-stone-900 text-accent-700 dark:text-accent-dark"
                             : rec.action === "SCHEDULE"
-                            ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                            ? "border-info-600 bg-info-50 dark:bg-stone-900 text-info-700 dark:text-info-dark"
                             : rec.action === "INCREASE"
-                            ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
-                            : "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
+                            ? "border-good-600 bg-good-50 dark:bg-stone-900 text-good-700 dark:text-good-dark"
+                            : "border-critical-600 bg-critical-50 dark:bg-stone-900 text-critical-700 dark:text-critical-dark"
                         }`}
                       >
                         {rec.action}
                       </span>
                       <span
-                        className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
+                        className={`font-mono text-xs uppercase tracking-wider px-3 py-1 border ${
                           rec.effort_estimate === "low"
-                            ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                            ? "border-good-600 text-good-700 dark:text-good-dark"
                             : rec.effort_estimate === "medium"
-                            ? "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
-                            : "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
+                            ? "border-warning-600 text-warning-700 dark:text-warning-dark"
+                            : "border-critical-600 text-critical-700 dark:text-critical-dark"
                         }`}
                       >
-                        {rec.effort_estimate.toUpperCase()} EFFORT
+                        {rec.effort_estimate} effort
                       </span>
                     </div>
-
-                    {/* Title */}
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    <h3 className="font-headline text-xl text-ink dark:text-stone-100 mb-2">
                       {rec.title}
                     </h3>
-
-                    {/* Rationale */}
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                    <p className="font-body text-sm text-stone-700 dark:text-stone-300 mb-3">
                       {rec.rationale}
                     </p>
-
-                    {/* Impact estimate box */}
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded mb-3">
-                      <div className="text-sm text-blue-900 dark:text-blue-300">
-                        <strong>Expected Impact:</strong> {rec.expected_impact}
+                    <div className="p-3 border-l-4 border-info-600 dark:border-info-dark bg-info-50 dark:bg-stone-900">
+                      <div className="font-body text-sm text-stone-700 dark:text-stone-300">
+                        <strong className="text-ink dark:text-stone-100">Expected Impact:</strong>{" "}
+                        {rec.expected_impact}
                       </div>
                     </div>
-
-                    {/* Evidence button */}
-                    <button
-                      onClick={() => {
-                        // Toggle evidence visibility (implement if needed)
-                      }}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      Evidence → {rec.evidence_summary}
-                    </button>
                   </div>
                 </div>
               </div>
@@ -618,244 +859,300 @@ export default function SocialIntelligencePage() {
           </div>
         </div>
       )}
+    </div>
+  );
 
-      {/* V1.7 Section: Day of Week Performance View */}
-      <div className="mb-12">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            TIMING ANALYSIS — When to post
-          </h2>
-        </div>
+  // ── TRENDS ────────────────────────────────────────────────────────────────
+  const renderTrends = () => (
+    <div className={sectionCard}>
+      <h2 className={sectionTitle}>12-Month Engagement Trend</h2>
+      <p className={sectionSubtitle}>
+        Click any platform to isolate. Shift+click to compare multiple platforms.
+      </p>
 
-        {/* Sub-section A: Day of Week Heatmap */}
-        {dayOfWeekData && (
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Day of Week Performance
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border border-gray-300 dark:border-gray-600 p-2 bg-gray-100 dark:bg-gray-700 text-xs font-semibold">
-                      Day
-                    </th>
-                    {dayOfWeekData.days.map((day) => (
-                      <th
-                        key={day.day_of_week}
-                        className="border border-gray-300 dark:border-gray-600 p-2 bg-gray-100 dark:bg-gray-700 text-xs font-semibold"
-                      >
-                        {day.day_of_week.substring(0, 3)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-xs font-semibold bg-gray-50 dark:bg-gray-800">
-                      Avg Eng
-                    </td>
-                    {dayOfWeekData.days.map((day) => {
-                      const opacity =
-                        ((day.avg_engagement_per_post - Math.min(...dayOfWeekData.days.map((d) => d.avg_engagement_per_post))) /
-                          (Math.max(...dayOfWeekData.days.map((d) => d.avg_engagement_per_post)) -
-                            Math.min(...dayOfWeekData.days.map((d) => d.avg_engagement_per_post)))) *
-                          0.8 +
-                        0.2;
-
-                      return (
-                        <td
-                          key={day.day_of_week}
-                          className="border border-gray-300 dark:border-gray-600 p-3 text-center text-xs font-mono"
-                          style={{
-                            backgroundColor: `rgba(34, 197, 94, ${opacity})`,
-                            color: opacity > 0.5 ? "white" : "black",
-                          }}
-                          title={`${day.day_of_week}: ${day.avg_engagement_per_post.toLocaleString()} avg engagement (${
-                            day.vs_weekly_average_pct > 0 ? "+" : ""
-                          }${day.vs_weekly_average_pct}% vs weekly avg)`}
-                        >
-                          {(day.avg_engagement_per_post / 1000).toFixed(0)}K
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
-              <strong>Best day overall:</strong> {dayOfWeekData.best_day} (avg{" "}
-              {dayOfWeekData.best_day_avg.toLocaleString()})
-            </p>
-          </div>
-        )}
-
-        {/* Sub-section B: Match Moment Performance Chart */}
-        {matchMomentData && (
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Match Moment Performance
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={matchMomentData.moments} layout="vertical" margin={{ left: 100 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke={chartColors.axis} />
-                <YAxis type="category" dataKey="label" tick={{ fontSize: 11 }} stroke={chartColors.axis} width={90} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: chartColors.tooltipBg,
-                    border: `1px solid ${chartColors.tooltipBorder}`,
-                    borderRadius: "4px",
-                  }}
-                />
-                <Bar dataKey="avg_engagement" fill="#3B82F6" />
-              </BarChart>
-            </ResponsiveContainer>
-
-            {/* Underutilisation Alert */}
-            {matchMomentData.underutilised_moments.length > 0 && (
-              <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded">
-                <div className="flex items-start gap-2">
-                  <span className="text-xl">⚠️</span>
-                  <div>
-                    <div className="font-semibold text-amber-900 dark:text-amber-300 mb-2">
-                      UNDERUTILISED OPPORTUNITY
-                    </div>
-                    {matchMomentData.underutilised_moments.map((moment) => (
-                      <p key={moment.moment} className="text-sm text-amber-800 dark:text-amber-400 mb-2">
-                        <strong>{moment.label}</strong> averages {moment.avg_engagement.toLocaleString()} engagement ({moment.vs_non_matchday_multiplier.toFixed(1)}x non-matchday) but represents only{" "}
-                        {moment.pct_of_total_posts.toFixed(1)}% of posts. Increasing {moment.label.toLowerCase()} volume is a high-ROI opportunity.
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Sub-section C: Format Performance Table */}
-        {formatData && (
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Format Performance
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100 dark:bg-gray-700">
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-left text-xs font-semibold">
-                      Format
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-left text-xs font-semibold">
-                      Platform
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-right text-xs font-semibold">
-                      Avg Eng/Post
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-right text-xs font-semibold">
-                      Posts
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-right text-xs font-semibold">
-                      vs Standard Post
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-center text-xs font-semibold">
-                      Recommended
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formatData.formats.slice(0, 10).map((format, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-900"}>
-                      <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm font-semibold">
-                        {format.label}
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm">
-                        {format.platform}
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm text-right font-mono">
-                        {format.avg_engagement.toLocaleString()}
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm text-right">
-                        {format.post_count.toLocaleString()}
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm text-right font-bold">
-                        {format.vs_standard_post_multiplier.toFixed(1)}x
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-600 p-3 text-center">
-                        {format.recommended ? (
-                          <span className="text-green-600 dark:text-green-400 text-xl">✓</span>
-                        ) : format.vs_standard_post_multiplier > 1.5 ? (
-                          <span className="text-amber-600 dark:text-amber-400">—</span>
-                        ) : (
-                          <span className="text-red-600 dark:text-red-400">✗</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
-              <strong>Key finding:</strong> {formatData.top_format} generates{" "}
-              {formatData.top_format_multiplier.toFixed(1)}x more engagement than standard posts.
-            </p>
-          </div>
-        )}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {[
+          { key: "all",       label: "All",       color: null },
+          { key: "instagram", label: "Instagram", color: "#E1306C" },
+          { key: "tiktok",    label: "TikTok",    color: "#69C9D0" },
+          { key: "x",         label: "X",         color: "#1DA1F2" },
+          { key: "facebook",  label: "Facebook",  color: "#4267B2" },
+          { key: "youtube",   label: "YouTube",   color: "#FF0000" },
+        ].map(({ key, label, color }) => {
+          const isActive = selectedPlatforms.includes(key);
+          const hasBrandColor = isActive && color !== null;
+          return (
+            <button
+              key={key}
+              id={`platform-filter-${key}`}
+              onClick={(e) => handlePlatformFilterClick(key, e)}
+              className={`${pillBase} transition-all ${
+                hasBrandColor ? "" : isActive ? pillActive : pillInactive
+              }`}
+              style={hasBrandColor ? { backgroundColor: color!, borderColor: color!, color: "#fff" } : undefined}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* V1.7 Section: Hashtag Performance Index */}
-      {hashtagData && (
-        <div className="mb-12">
-          <div className="mb-6">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              HASHTAG INTELLIGENCE — What amplifies reach
-            </h2>
+      <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={trendChartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} horizontal={true} vertical={false} />
+          <XAxis dataKey="monthShort" stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} />
+          <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} tickFormatter={formatEngagement} />
+          <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatEngagement(v)} labelFormatter={(label) => trendChartData.find((d) => d.monthShort === label)?.month || label} />
+          <Legend wrapperStyle={{ color: chartColors.text, fontFamily: "'JetBrains Mono', monospace", fontSize: "11px" }} />
+          <Line type="monotone" dataKey="total_engagement" stroke="#A3A39E" strokeWidth={1.5} strokeDasharray="4 4" name="Total" dot={false} opacity={0.4} />
+          <Line type="monotone" dataKey="instagram" stroke="#E1306C" strokeWidth={2} name="Instagram" dot={false} activeDot={{ r: 4 }} opacity={getPlatformOpacity("instagram")} />
+          <Line type="monotone" dataKey="tiktok"    stroke="#69C9D0" strokeWidth={2} name="TikTok"    dot={false} activeDot={{ r: 4 }} opacity={getPlatformOpacity("tiktok")} />
+          <Line type="monotone" dataKey="x"         stroke="#1DA1F2" strokeWidth={2} name="X"         dot={false} activeDot={{ r: 4 }} opacity={getPlatformOpacity("x")} />
+          <Line type="monotone" dataKey="facebook"  stroke="#4267B2" strokeWidth={2} name="Facebook"  dot={false} activeDot={{ r: 4 }} opacity={getPlatformOpacity("facebook")} />
+          <Line type="monotone" dataKey="youtube"   stroke="#FF0000" strokeWidth={2} name="YouTube"   dot={false} activeDot={{ r: 4 }} opacity={getPlatformOpacity("youtube")} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  // ── PLATFORMS ─────────────────────────────────────────────────────────────
+  const renderPlatforms = () => (
+    <div>
+      <div className={sectionCard}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className={sectionTitle}>Platform Performance</h2>
+            <p className="font-body text-sm text-stone-600 dark:text-stone-400">
+              Selected month:{" "}
+              {selectedMonth
+                ? new Date(selectedMonth + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" })
+                : "—"}
+            </p>
           </div>
+          <div className="flex gap-2">
+            {(["avg", "total"] as const).map((view) => (
+              <button
+                key={view}
+                id={`platform-metric-${view}`}
+                onClick={() => setPlatformMetricView(view)}
+                className={`${pillBase} ${platformMetricView === view ? pillActive : pillInactive}`}
+              >
+                {view === "avg" ? "Avg Per Post" : "Total"}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {/* Sub-section A: Hashtag Leaderboard */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Hashtag Leaderboard
-            </h3>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={platformChartData} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} horizontal={false} />
+            <XAxis type="number" stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} tickFormatter={formatEngagement} />
+            <YAxis type="category" dataKey="name" stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} width={75} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatEngagement(v)} />
+            <Bar dataKey={platformMetricView === "avg" ? "avg_engagement" : "total_engagement"}
+                 name={platformMetricView === "avg" ? "Avg Engagement/Post" : "Total Engagement"}>
+              {platformChartData.map((entry) => (
+                <Cell
+                  key={entry.platformKey}
+                  fill={PLATFORM_COLORS[entry.platformKey] || "#2563EB"}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
 
-            {/* Filter pills */}
-            <div className="flex flex-wrap gap-2 mb-4">
+        <div className="mt-4 font-mono text-xs text-stone-500 dark:text-stone-400 uppercase tracking-widest">
+          Top platform:{" "}
+          <span className="text-ink dark:text-stone-100 font-semibold">
+            {summary.top_performing_platform}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── TIMING ────────────────────────────────────────────────────────────────
+  const renderTiming = () => (
+    <div>
+      {/* Day of Week Heatmap */}
+      {dayOfWeekData && (
+        <div className={sectionCard}>
+          <h2 className={sectionTitle}>Day of Week Performance</h2>
+          <p className={sectionSubtitle}>Average engagement per post by posting day.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className={tableHeader}>Metric</th>
+                  {dayOfWeekData.days.map((day) => (
+                    <th key={day.day_of_week} className={tableHeader}>
+                      {day.day_of_week.substring(0, 3)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className={tableCell + " font-semibold"}>Avg Eng/Post</td>
+                  {dayOfWeekData.days.map((day) => {
+                    const vals = dayOfWeekData.days.map((d) => d.avg_engagement_per_post);
+                    const min = Math.min(...vals);
+                    const max = Math.max(...vals);
+                    const opacity = ((day.avg_engagement_per_post - min) / (max - min)) * 0.75 + 0.25;
+                    const isHigh = opacity > 0.6;
+                    return (
+                      <td
+                        key={day.day_of_week}
+                        className="border border-stone-300 dark:border-stone-700 p-3 text-center font-mono text-xs"
+                        style={{
+                          backgroundColor: `rgba(22, 163, 74, ${opacity})`,   // good-600 RGB
+                          color: isHigh ? "#fff" : (isDark ? "#D1D1CC" : "#1A1A1A"),
+                        }}
+                        title={`${day.day_of_week}: ${day.avg_engagement_per_post.toLocaleString()} avg (${day.vs_weekly_average_pct > 0 ? "+" : ""}${day.vs_weekly_average_pct}% vs weekly avg)`}
+                      >
+                        {(day.avg_engagement_per_post / 1000).toFixed(0)}K
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td className={tableCell + " font-semibold"}>vs Weekly Avg</td>
+                  {dayOfWeekData.days.map((day) => (
+                    <td
+                      key={day.day_of_week}
+                      className={`${tableCellMono} text-center ${
+                        day.vs_weekly_average_pct > 0
+                          ? "text-good-light dark:text-good-dark"
+                          : "text-critical-light dark:text-critical-dark"
+                      }`}
+                    >
+                      {day.vs_weekly_average_pct > 0 ? "+" : ""}
+                      {day.vs_weekly_average_pct}%
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="font-mono text-xs text-stone-500 dark:text-stone-400 mt-3 uppercase tracking-widest">
+            Best day:{" "}
+            <span className="text-ink dark:text-stone-100 font-semibold">
+              {dayOfWeekData.best_day}
+            </span>{" "}
+            — avg {dayOfWeekData.best_day_avg.toLocaleString()}
+          </p>
+        </div>
+      )}
+
+      {/* Match Moment */}
+      {matchMomentData && (
+        <div className={sectionCard}>
+          <h2 className={sectionTitle}>Match Moment Performance</h2>
+          <p className={sectionSubtitle}>Engagement per post across different match contexts.</p>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={matchMomentData.moments} layout="vertical" margin={{ left: 110 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11 }} stroke={chartColors.axis} tickFormatter={formatEngagement} />
+              <YAxis type="category" dataKey="label" tick={{ fontSize: 11 }} stroke={chartColors.axis} width={100} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatEngagement(v)} />
+              <Bar dataKey="avg_engagement" name="Avg Engagement" fill="#2563EB" />
+            </BarChart>
+          </ResponsiveContainer>
+
+          {matchMomentData.underutilised_moments.length > 0 && (
+            <div className="mt-6 border-l-4 border-warning-600 dark:border-warning-dark bg-warning-50 dark:bg-stone-900 p-4">
+              <div className="font-mono text-xs uppercase tracking-wider text-warning-700 dark:text-warning-dark mb-2">
+                Underutilised Opportunity
+              </div>
+              {matchMomentData.underutilised_moments.map((moment) => (
+                <p key={moment.moment} className="font-body text-sm text-stone-700 dark:text-stone-300 mb-2">
+                  <strong className="text-ink dark:text-stone-100">{moment.label}</strong> averages{" "}
+                  {formatEngagement(moment.avg_engagement)} engagement (
+                  {moment.vs_non_matchday_multiplier.toFixed(1)}x non-matchday) but represents only{" "}
+                  {moment.pct_of_total_posts.toFixed(1)}% of posts.
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Format Performance */}
+      {formatData && (
+        <div className={sectionCard}>
+          <h2 className={sectionTitle}>Format Performance</h2>
+          <p className={sectionSubtitle}>
+            {formatData.top_format} generates {formatData.top_format_multiplier.toFixed(1)}x more engagement than standard posts.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className={tableHeader}>Format</th>
+                  <th className={tableHeader}>Platform</th>
+                  <th className={tableHeader + " text-right"}>Avg Eng/Post</th>
+                  <th className={tableHeader + " text-right"}>Posts</th>
+                  <th className={tableHeader + " text-right"}>vs Standard</th>
+                  <th className={tableHeader + " text-center"}>Recommended</th>
+                </tr>
+              </thead>
+              <tbody>
+                {formatData.formats.slice(0, 10).map((format, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-paper dark:bg-stone-800" : "bg-stone-50 dark:bg-stone-900"}>
+                    <td className={tableCell + " font-semibold"}>{format.label}</td>
+                    <td className={tableCell}>{format.platform}</td>
+                    <td className={tableCellMono + " text-right"}>{format.avg_engagement.toLocaleString()}</td>
+                    <td className={tableCell + " text-right"}>{format.post_count.toLocaleString()}</td>
+                    <td className={tableCellMono + " text-right font-semibold"}>{format.vs_standard_post_multiplier.toFixed(1)}x</td>
+                    <td className="border border-stone-300 dark:border-stone-700 p-3 text-center font-mono text-sm">
+                      {format.recommended ? (
+                        <span className="text-good-light dark:text-good-dark font-bold">✓</span>
+                      ) : format.vs_standard_post_multiplier > 1.5 ? (
+                        <span className="text-stone-400 dark:text-stone-500">—</span>
+                      ) : (
+                        <span className="text-critical-light dark:text-critical-dark">✗</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ── HASHTAGS ──────────────────────────────────────────────────────────────
+  const renderHashtags = () => (
+    <div>
+      {hashtagData && (
+        <>
+          {/* Leaderboard */}
+          <div className={sectionCard}>
+            <h2 className={sectionTitle}>Hashtag Intelligence</h2>
+            <p className={sectionSubtitle}>What amplifies reach — filter by hashtag type.</p>
+            <div className="flex flex-wrap gap-2 mb-6">
               {["all", "event", "player", "branded", "farewell"].map((type) => (
                 <button
                   key={type}
+                  id={`hashtag-filter-${type}`}
                   onClick={() => setHashtagFilter(type)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                    hashtagFilter === type
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                  }`}
+                  className={`${pillBase} ${hashtagFilter === type ? pillActive : pillInactive}`}
                 >
-                  {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}
+                  {type === "all" ? "All" : type}
                 </button>
               ))}
             </div>
-
-            {/* Hashtag table */}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-gray-100 dark:bg-gray-700">
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-left text-xs font-semibold">
-                      #
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-left text-xs font-semibold">
-                      Hashtag
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-right text-xs font-semibold">
-                      Avg Engagement
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-right text-xs font-semibold">
-                      Posts
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 p-3 text-left text-xs font-semibold">
-                      Type
-                    </th>
+                  <tr>
+                    <th className={tableHeader}>#</th>
+                    <th className={tableHeader}>Hashtag</th>
+                    <th className={tableHeader + " text-right"}>Avg Engagement</th>
+                    <th className={tableHeader + " text-right"}>Posts</th>
+                    <th className={tableHeader}>Type</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -865,35 +1162,22 @@ export default function SocialIntelligencePage() {
                     .map((hashtag, idx) => (
                       <tr
                         key={hashtag.hashtag}
-                        className={`cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                          idx % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-900"
-                        }`}
-                        onClick={() => setExpandedHashtag(expandedHashtag === hashtag.hashtag ? null : hashtag.hashtag)}
+                        className={`${idx % 2 === 0 ? "bg-paper dark:bg-stone-800" : "bg-stone-50 dark:bg-stone-900"}`}
                       >
-                        <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm font-bold text-gray-600 dark:text-gray-400">
-                          {idx + 1}
-                        </td>
-                        <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
-                          {hashtag.hashtag}
-                        </td>
-                        <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm text-right font-mono">
-                          {hashtag.avg_engagement.toLocaleString()}
-                        </td>
-                        <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm text-right">
-                          {hashtag.post_count}
-                        </td>
-                        <td className="border border-gray-300 dark:border-gray-600 p-3 text-sm">
+                        <td className={tableCellMono + " text-stone-400 dark:text-stone-500"}>{idx + 1}</td>
+                        <td className={tableCellMono + " text-info-600 dark:text-info-dark font-semibold"}>{hashtag.hashtag}</td>
+                        <td className={tableCellMono + " text-right"}>{hashtag.avg_engagement.toLocaleString()}</td>
+                        <td className={tableCell + " text-right"}>{hashtag.post_count}</td>
+                        <td className="border border-stone-300 dark:border-stone-700 p-3">
                           <span
-                            className={`px-2 py-1 rounded text-xs font-semibold ${
+                            className={`font-mono text-xs uppercase tracking-wider px-2 py-1 border ${
                               hashtag.hashtag_type === "farewell"
-                                ? "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300"
+                                ? "border-accent-600 text-accent-700 dark:text-accent-dark"
                                 : hashtag.hashtag_type === "event"
-                                ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                                ? "border-good-600 text-good-700 dark:text-good-dark"
                                 : hashtag.hashtag_type === "player"
-                                ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-                                : hashtag.hashtag_type === "branded"
-                                ? "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
-                                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                                ? "border-info-600 text-info-700 dark:text-info-dark"
+                                : "border-warning-600 text-warning-700 dark:text-warning-dark"
                             }`}
                           >
                             {hashtag.hashtag_type}
@@ -906,761 +1190,363 @@ export default function SocialIntelligencePage() {
             </div>
           </div>
 
-          {/* Sub-section B: 4-Box Category Comparison */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Hashtag Category Performance
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Category comparison */}
+          <div className={sectionCard}>
+            <h2 className={sectionTitle}>Hashtag Category Performance</h2>
+            <p className={sectionSubtitle}>Average engagement by hashtag category — farewell/tribute events dominate.</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {["farewell", "event", "player", "branded"].map((type) => {
-                const typeHashtags = hashtagData.hashtags.filter((ht) => ht.hashtag_type === type);
-                const avgEngagement =
-                  typeHashtags.length > 0
-                    ? typeHashtags.reduce((sum, ht) => sum + ht.avg_engagement, 0) / typeHashtags.length
-                    : 0;
-
+                const typeHt = hashtagData.hashtags.filter((ht) => ht.hashtag_type === type);
+                const avg = typeHt.length > 0 ? typeHt.reduce((s, ht) => s + ht.avg_engagement, 0) / typeHt.length : 0;
                 return (
-                  <div
-                    key={type}
-                    className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
-                  >
-                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 uppercase">
-                      {type}
+                  <div key={type} className="border-2 border-ink dark:border-stone-700 p-4 bg-paper dark:bg-stone-800">
+                    <div className="font-mono text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">{type}</div>
+                    <div className="font-mono text-2xl font-semibold text-ink dark:text-stone-100">
+                      {avg > 0 ? (avg / 1000).toFixed(0) + "K" : "N/A"}
                     </div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {avgEngagement > 0 ? (avgEngagement / 1000).toFixed(0) + "K" : "N/A"}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      avg engagement
-                    </div>
+                    <div className="font-mono text-xs text-stone-500 dark:text-stone-500 mt-1">avg engagement</div>
                   </div>
                 );
               })}
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
-              Farewell/tribute hashtags generate significantly more engagement than branded hashtags, indicating emotional milestone content dramatically outperforms routine promotional content.
-            </p>
-          </div>
 
-          {/* Sub-section C: Top 3 Recommendations */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Hashtag Recommendations
-            </h3>
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded">
-              <div className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
-                3 hashtags your content team should prioritise:
+            <div className="border-l-4 border-info-600 dark:border-info-dark bg-info-50 dark:bg-stone-900 p-4">
+              <div className="font-mono text-xs uppercase tracking-wider text-info-700 dark:text-info-dark mb-2">
+                Hashtag Recommendations — 3 to prioritise
               </div>
-              <ol className="space-y-2 text-sm text-blue-800 dark:text-blue-400">
+              <ol className="space-y-2 font-body text-sm text-stone-700 dark:text-stone-300">
                 <li>
-                  <strong>1. {hashtagData.top_hashtag_overall || "#event-hashtag"}:</strong> Planned event content (El Clásico, UCL draw) — highest overall engagement
+                  <strong className="text-ink dark:text-stone-100">1. {hashtagData.top_hashtag_overall || "#event-hashtag"}:</strong>{" "}
+                  Planned event content (El Clásico, UCL draw) — highest overall engagement
                 </li>
                 <li>
-                  <strong>2. {hashtagData.top_player_hashtag || "#player-hashtag"}:</strong> When featuring top-performing players — strongest player engagement
+                  <strong className="text-ink dark:text-stone-100">2. {hashtagData.top_player_hashtag || "#player-hashtag"}:</strong>{" "}
+                  Top-performing player features — strongest player engagement
                 </li>
                 <li>
-                  <strong>3. {hashtagData.top_evergreen_hashtag || "#evergreen-hashtag"}:</strong> Always-on content — consistent performance across seasons
+                  <strong className="text-ink dark:text-stone-100">3. {hashtagData.top_evergreen_hashtag || "#evergreen-hashtag"}:</strong>{" "}
+                  Always-on content — consistent performance across seasons
                 </li>
               </ol>
             </div>
           </div>
-        </div>
+        </>
       )}
+    </div>
+  );
 
-      {/* Section 2: Summary Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          cardId="total-engagement"
-          title="Total Engagement"
-          value={formatEngagement(summary.total_engagement)}
-          change={formatMoMChange(summary.total_engagement_mom_change)}
-          contextLine={`Across all platforms this month. Peak this year: ${monthlyTrend ? formatEngagement(Math.max(...monthlyTrend.total_engagement)) : "N/A"}. Current ranks ${monthlyTrend ? monthlyTrend.total_engagement.indexOf(summary.total_engagement) + 1 : "N/A"} of 12.`}
-        />
-        <StatCard
-          cardId="avg-per-post"
-          title="Avg Engagement Per Post"
-          value={formatEngagement(summary.avg_engagement_per_post)}
-          change={formatMoMChange(summary.avg_engagement_per_post_mom_change)}
-          contextLine={`Average interaction per post across all platforms. Higher = each post reaching and resonating more. Year average: ${monthlyTrend ? formatEngagement(monthlyTrend.avg_engagement_per_post.reduce((a, b) => a + b, 0) / monthlyTrend.avg_engagement_per_post.length) : "N/A"}.`}
-        />
-        <StatCard
-          cardId="instagram-share"
-          title="Instagram Share of Total Engagement"
-          value={formatPercentage(summary.instagram_engagement_rate)}
-          change={formatMoMChange(summary.instagram_engagement_rate_mom_change)}
-          contextLine="Instagram's contribution to total social engagement. Instagram dominates Real Madrid's social reach."
-        />
-        <StatCard
-          cardId="international"
-          title="International Engagement"
-          value={formatPercentage(summary.international_engagement_ratio)}
-          change={formatMoMChange(summary.international_engagement_ratio_mom_change)}
-          contextLine={`Share of engagement from non-Spanish language accounts. ${(summary.international_engagement_ratio * 100).toFixed(1)}% of Real Madrid's audience is international. High international reach supports global eCommerce and streaming growth.`}
-        />
-      </div>
-
-      {/* Section 3: Monthly Engagement Trend — Multi-Platform */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-[0.5px] border-gray-300 dark:border-gray-600 mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">12-Month Engagement Trend</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Click any platform to isolate. Shift+click to compare.
-        </p>
-
-        {/* Platform Filter Pills */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <button
-            onClick={(e) => handlePlatformFilterClick("all", e)}
-            className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-              selectedPlatforms.includes("all")
-                ? "bg-gray-700 dark:bg-gray-600 text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={(e) => handlePlatformFilterClick("instagram", e)}
-            className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-              selectedPlatforms.includes("instagram")
-                ? "text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-            }`}
-            style={selectedPlatforms.includes("instagram") ? { backgroundColor: "#E1306C" } : {}}
-          >
-            Instagram
-          </button>
-          <button
-            onClick={(e) => handlePlatformFilterClick("tiktok", e)}
-            className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-              selectedPlatforms.includes("tiktok")
-                ? "text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-            }`}
-            style={selectedPlatforms.includes("tiktok") ? { backgroundColor: "#69C9D0" } : {}}
-          >
-            TikTok
-          </button>
-          <button
-            onClick={(e) => handlePlatformFilterClick("x", e)}
-            className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-              selectedPlatforms.includes("x")
-                ? "text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-            }`}
-            style={selectedPlatforms.includes("x") ? { backgroundColor: "#1DA1F2" } : {}}
-          >
-            X
-          </button>
-          <button
-            onClick={(e) => handlePlatformFilterClick("facebook", e)}
-            className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-              selectedPlatforms.includes("facebook")
-                ? "text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-            }`}
-            style={selectedPlatforms.includes("facebook") ? { backgroundColor: "#4267B2" } : {}}
-          >
-            Facebook
-          </button>
-          <button
-            onClick={(e) => handlePlatformFilterClick("youtube", e)}
-            className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-              selectedPlatforms.includes("youtube")
-                ? "text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-            }`}
-            style={selectedPlatforms.includes("youtube") ? { backgroundColor: "#FF0000" } : {}}
-          >
-            YouTube
-          </button>
-        </div>
-
-        <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={trendChartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-            <XAxis dataKey="monthShort" stroke={chartColors.axis} tick={{ fill: chartColors.text }} />
-            <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.text }} tickFormatter={(val) => formatEngagement(val)} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: chartColors.tooltipBg,
-                border: `1px solid ${chartColors.tooltipBorder}`,
-                borderRadius: "8px",
-                color: chartColors.tooltipText
-              }}
-              formatter={(value: number, name: string) => {
-                return [formatEngagement(value), name];
-              }}
-              labelFormatter={(label) => {
-                const dataPoint = trendChartData.find(d => d.monthShort === label);
-                return dataPoint ? dataPoint.month : label;
-              }}
-            />
-            <Legend wrapperStyle={{ color: chartColors.text }} />
-            {/* Total as background reference line (dashed, low opacity) */}
-            <Line
-              type="monotone"
-              dataKey="total_engagement"
-              stroke="#9CA3AF"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              name="Total"
-              dot={false}
-              opacity={0.3}
-            />
-            {/* Platform lines with brand colors */}
-            <Line
-              type="monotone"
-              dataKey="instagram"
-              stroke="#E1306C"
-              strokeWidth={2}
-              name="Instagram"
-              dot={{ r: 4 }}
-              opacity={getPlatformOpacity("instagram")}
-            />
-            <Line
-              type="monotone"
-              dataKey="tiktok"
-              stroke="#69C9D0"
-              strokeWidth={2}
-              name="TikTok"
-              dot={{ r: 4 }}
-              opacity={getPlatformOpacity("tiktok")}
-            />
-            <Line
-              type="monotone"
-              dataKey="x"
-              stroke="#1DA1F2"
-              strokeWidth={2}
-              name="X"
-              dot={{ r: 4 }}
-              opacity={getPlatformOpacity("x")}
-            />
-            <Line
-              type="monotone"
-              dataKey="facebook"
-              stroke="#4267B2"
-              strokeWidth={2}
-              name="Facebook"
-              dot={{ r: 4 }}
-              opacity={getPlatformOpacity("facebook")}
-            />
-            <Line
-              type="monotone"
-              dataKey="youtube"
-              stroke="#FF0000"
-              strokeWidth={2}
-              name="YouTube"
-              dot={{ r: 4 }}
-              opacity={getPlatformOpacity("youtube")}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Section 4: Platform Performance Breakdown */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-[0.5px] border-gray-300 dark:border-gray-600 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Platform Performance (Latest Month)
-          </h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPlatformMetricView("avg")}
-              className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-                platformMetricView === "avg"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-              }`}
-            >
-              Avg Per Post
-            </button>
-            <button
-              onClick={() => setPlatformMetricView("total")}
-              className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-                platformMetricView === "total"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-              }`}
-            >
-              Total Engagement
-            </button>
-          </div>
-        </div>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={platformChartData} layout="horizontal">
-            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-            <XAxis type="number" stroke={chartColors.axis} tick={{ fill: chartColors.text }} tickFormatter={(val) => formatEngagement(val)} />
-            <YAxis type="category" dataKey="name" stroke={chartColors.axis} tick={{ fill: chartColors.text }} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: chartColors.tooltipBg,
-                border: `1px solid ${chartColors.tooltipBorder}`,
-                borderRadius: "8px",
-                color: chartColors.tooltipText
-              }}
-              formatter={(value: number) => formatEngagement(value)}
-            />
-            <Legend wrapperStyle={{ color: chartColors.text }} />
-            <Bar
-              dataKey={platformMetricView === "avg" ? "avg_engagement" : "total_engagement"}
-              name={platformMetricView === "avg" ? "Avg Engagement Per Post" : "Total Engagement"}
-              fill={(entry: any) => {
-                // Use platform brand colors
-                const platform = entry.name.toLowerCase();
-                if (platform === "instagram") return "#E1306C";
-                if (platform === "tiktok") return "#69C9D0";
-                if (platform === "x") return "#1DA1F2";
-                if (platform === "facebook") return "#4267B2";
-                if (platform === "youtube") return "#FF0000";
-                return "#3B82F6";
-              }}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-        <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-          Top platform: <span className="font-mono text-[10px] uppercase tracking-[1.2px] font-semibold text-gray-700 dark:text-gray-300">
-            {summary.top_performing_platform}
-          </span>
-        </div>
-      </div>
-
-      {/* Section 5: Content Intelligence (V1.6.4) */}
-      {contentIntelligence && contentIntelligence.signals.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-[0.5px] border-gray-300 dark:border-gray-600 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Content Intelligence — What Content Drives Revenue
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Correlation analysis between content types and commercial outcomes. Stronger correlations
-            suggest content strategy decisions that may influence commercial performance.
-          </p>
-
-          {/* Sub-section A: Content Performance Ranking */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-              Content Performance Ranking
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border border-gray-300 dark:border-gray-600 text-sm">
-                <thead className="bg-gray-100 dark:bg-gray-700">
-                  <tr>
-                    <th className="text-left p-3 border-r border-gray-300 dark:border-gray-600">Content Type</th>
-                    <th className="text-right p-3 border-r border-gray-300 dark:border-gray-600">Avg Eng/Post</th>
-                    <th className="text-left p-3 border-r border-gray-300 dark:border-gray-600">Correlates with</th>
-                    <th className="text-center p-3 border-r border-gray-300 dark:border-gray-600">Strength</th>
-                    <th className="text-center p-3 border-r border-gray-300 dark:border-gray-600">Lag</th>
-                    <th className="text-center p-3">Direction</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contentIntelligence.signals.slice(0, 7).map((signal, idx) => (
-                    <tr
-                      key={idx}
-                      className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                        idx % 2 === 0 ? "" : "bg-gray-50 dark:bg-gray-800"
-                      } ${selectedSignal === signal ? "bg-blue-50 dark:bg-blue-900" : ""}`}
-                      onClick={() => setSelectedSignal(signal)}
-                    >
-                      <td className="p-3 border-r border-gray-300 dark:border-gray-600 font-medium">
-                        {signal.content_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                      </td>
-                      <td className="p-3 text-right border-r border-gray-300 dark:border-gray-600">
-                        {signal.avg_content_engagement.toLocaleString()}
-                      </td>
-                      <td className="p-3 border-r border-gray-300 dark:border-gray-600">
-                        {signal.commercial_metric} ({signal.commercial_asset})
-                      </td>
-                      <td className="p-3 text-center border-r border-gray-300 dark:border-gray-600">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-semibold ${
-                            signal.strength_label === "Strong"
-                              ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                              : signal.strength_label === "Moderate"
-                              ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
-                              : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                          }`}
-                        >
-                          {signal.strength_label}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center border-r border-gray-300 dark:border-gray-600">{signal.lag_months}mo</td>
-                      <td className="p-3 text-center">
-                        {signal.direction === "positive" ? (
-                          <span className="text-green-600 dark:text-green-400 font-semibold" title="Positive correlation: Higher content engagement correlates with higher outcome values">
-                            ↑ Positive
-                          </span>
-                        ) : (
-                          <span className="text-amber-600 dark:text-amber-400 font-semibold" title="Inverse relationship: Higher content engagement correlates with lower outcome values — this does not mean the outcome goes negative, just that it tends to be below average">
-                            ↓ Inverse
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {selectedSignal && (
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-300 dark:border-blue-700 rounded">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                  {selectedSignal.content_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())} →{" "}
-                  {selectedSignal.commercial_metric} ({(selectedSignal.correlation * 100).toFixed(0)}% correlation)
-                </h4>
-                <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                  {selectedSignal.interpretation}
-                </p>
-
-                {/* What this means explanation */}
-                <div className="mt-3 p-3 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-800 rounded">
-                  <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                    {selectedSignal.direction === "positive" ? "✓ Positive Signal" : "⚠️ Inverse Signal"}
-                  </p>
-                  <p className="text-xs text-blue-800 dark:text-blue-200">
-                    {selectedSignal.direction === "positive" ? (
-                      <>
-                        When {selectedSignal.content_type.replace(/_/g, " ")} engagement rises, {selectedSignal.commercial_metric} tends to follow upward {selectedSignal.lag_months} month{selectedSignal.lag_months > 1 ? 's' : ''} later.
-                      </>
-                    ) : (
-                      <>
-                        This is a negative correlation (r={selectedSignal.correlation.toFixed(2)}). It does NOT mean {selectedSignal.commercial_metric} goes to zero or becomes negative.
-                        It means months with very high {selectedSignal.content_type.replace(/_/g, " ")} engagement tend to coincide with below-average {selectedSignal.commercial_metric} {selectedSignal.lag_months} month{selectedSignal.lag_months > 1 ? 's' : ''} later,
-                        and vice versa. Possible explanation: {selectedSignal.content_type.replace(/_/g, " ")} posts spike around major events that create unusual patterns in downstream metrics.
-                        Treat as a signal to monitor, not a causal rule.
-                      </>
-                    )}
-                  </p>
-                </div>
-
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                  {selectedSignal.confidence_note}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Sub-section B: Strongest Signal Card */}
-          {contentIntelligence.summary.strongest_signal && (
-            <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border-l-4 border-green-600 dark:border-green-400 rounded">
-              <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">
-                Strongest Content → Commercial Signal
-              </h3>
-              <p className="text-base text-green-800 dark:text-green-200 mb-2">
-                {contentIntelligence.summary.strongest_signal.interpretation}
-              </p>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-green-700 dark:text-green-300">
-                  Correlation strength: <strong className="font-mono">{Math.abs(contentIntelligence.summary.strongest_signal.correlation * 100).toFixed(0)}%</strong>
-                </span>
-                <span className="text-green-700 dark:text-green-300">
-                  Direction: <strong>{contentIntelligence.summary.strongest_signal.direction === "positive" ? "↑ Positive" : "↓ Inverse"}</strong>
-                </span>
-                <span className="text-green-700 dark:text-green-300">
-                  Sample: {contentIntelligence.summary.strongest_signal.sample_size_months} months
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Sub-section C: Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Correlations Found</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {contentIntelligence.summary.total_correlations_found}
-              </div>
-            </div>
-            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Most Predictive Content</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {contentIntelligence.summary.most_predictive_content_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-              </div>
-            </div>
-            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
-              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Avg Correlation</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {(contentIntelligence.summary.avg_correlation_strength * 100).toFixed(0)}%
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Section 6: Content Type Performance (Latest Month) */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-[0.5px] border-gray-300 dark:border-gray-600 mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Content Type Performance (Latest Month)
-        </h2>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={contentChartData} onClick={(data) => {
-            if (data && data.activePayload && data.activePayload[0]) {
-              const clickedType = data.activePayload[0].payload.name;
-              setSelectedContentType(selectedContentType === clickedType ? null : clickedType);
-            }
-          }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-            <XAxis dataKey="name" stroke={chartColors.axis} tick={{ fill: chartColors.text }} angle={-15} textAnchor="end" height={100} />
-            <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.text }} tickFormatter={(val) => formatEngagement(val)} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: chartColors.tooltipBg,
-                border: `1px solid ${chartColors.tooltipBorder}`,
-                borderRadius: "8px",
-                color: chartColors.tooltipText
-              }}
-              formatter={(value: number) => formatEngagement(value)}
-            />
-            <Legend wrapperStyle={{ color: chartColors.text }} />
-            <Bar
-              dataKey="avg_engagement"
-              name="Avg Engagement"
-              fill={(entry: any) => getContentTypeColor(entry.name)}
-              cursor="pointer"
-            />
-          </BarChart>
-        </ResponsiveContainer>
-        <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-          Top content type: <span className="font-mono text-[10px] uppercase tracking-[1.2px] font-semibold text-gray-700 dark:text-gray-300">
+  // ── CONTENT ───────────────────────────────────────────────────────────────
+  const renderContent = () => (
+    <div>
+      {/* Content Type Bar Chart */}
+      <div className={sectionCard}>
+        <h2 className={sectionTitle}>Content Type Performance</h2>
+        <p className={sectionSubtitle}>
+          Average engagement per post by content type — click a bar to drill down.{" "}
+          Top type:{" "}
+          <span className="font-mono text-xs uppercase tracking-widest text-ink dark:text-stone-100">
             {summary.top_performing_content_type}
           </span>
-        </div>
+        </p>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart
+            data={contentChartData}
+            onClick={(data) => {
+              if (data?.activePayload?.[0]) {
+                const clicked = data.activePayload[0].payload.name;
+                setSelectedContentType(selectedContentType === clicked ? null : clicked);
+              }
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
+            <XAxis dataKey="name" stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} angle={-15} textAnchor="end" height={80} />
+            <YAxis stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} tickFormatter={formatEngagement} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatEngagement(v)} />
+            <Bar dataKey="avg_engagement" name="Avg Engagement" cursor="pointer">
+              {contentChartData.map((entry) => (
+                <Cell
+                  key={entry.name}
+                  fill={getContentTypeColor(entry.name)}
+                  opacity={selectedContentType && selectedContentType !== entry.name ? 0.3 : 1}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
 
-        {/* Expanded Drill-Down Panel */}
-        {selectedContentType && monthlyTrend && (
-          <div className="mt-4 p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border border-blue-300 dark:border-blue-700 rounded">
+        {selectedContentType && (
+          <div className="mt-6 border-2 border-info-600 dark:border-info-dark p-6 bg-info-50 dark:bg-stone-900 animate-fade-in">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                Content Intelligence &gt; {selectedContentType}
+              <h3 className="font-headline text-xl text-ink dark:text-stone-100">
+                Drill-Down › {selectedContentType}
               </h3>
               <button
                 onClick={() => setSelectedContentType(null)}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-semibold"
+                className="font-mono text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 border border-stone-300 dark:border-stone-600 px-3 py-1"
               >
-                Close
+                Close ✕
               </button>
             </div>
-
-            {/* Section A: Performance Stats */}
-            <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-800">
-              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Performance Stats</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400">Avg Engagement Per Post:</span>
-                  <div className="text-xl font-bold text-gray-900 dark:text-white">
-                    {formatEngagement(contentChartData.find(c => c.name === selectedContentType)?.avg_engagement || 0)}
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="border border-stone-300 dark:border-stone-700 p-4 bg-paper dark:bg-stone-800">
+                <div className="font-mono text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">
+                  Avg Engagement / Post
                 </div>
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400">Year Average:</span>
-                  <div className="text-xl font-bold text-gray-900 dark:text-white">
-                    {monthlyTrend ? formatEngagement(
-                      monthlyTrend.months.reduce((sum, _, idx) => {
-                        const fieldName = selectedContentType.toLowerCase().replace(/ /g, '_') + '_avg_engagement';
-                        return sum + (monthlyTrend.months[idx] ? 0 : 0);
-                      }, 0) / monthlyTrend.months.length
-                    ) : 'N/A'}
-                  </div>
+                <div className="font-mono text-2xl font-semibold text-ink dark:text-stone-100">
+                  {formatEngagement(contentChartData.find((c) => c.name === selectedContentType)?.avg_engagement || 0)}
                 </div>
               </div>
             </div>
 
-            {/* Section B: Commercial Correlations */}
-            {contentIntelligence && contentIntelligence.signals.filter(s =>
-              s.content_type.replace(/_/g, ' ').toLowerCase() === selectedContentType.toLowerCase()
-            ).length > 0 && (
-              <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-800">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Commercial Correlations</h4>
-                {contentIntelligence.signals
-                  .filter(s => s.content_type.replace(/_/g, ' ').toLowerCase() === selectedContentType.toLowerCase())
-                  .slice(0, 3)
-                  .map((signal, idx) => (
-                    <div key={idx} className="mb-3 p-3 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {signal.commercial_metric} ({signal.commercial_asset})
-                        </span>
-                        <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                          signal.strength_label === "Strong"
-                            ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                            : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
-                        }`}>
-                          {signal.strength_label} · {signal.lag_months}mo lag
-                        </span>
+            {contentIntelligence &&
+              contentIntelligence.signals.filter(
+                (s) => s.content_type.replace(/_/g, " ").toLowerCase() === selectedContentType.toLowerCase()
+              ).length > 0 && (
+                <div>
+                  <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-3">
+                    Commercial Correlations
+                  </div>
+                  {contentIntelligence.signals
+                    .filter((s) => s.content_type.replace(/_/g, " ").toLowerCase() === selectedContentType.toLowerCase())
+                    .slice(0, 3)
+                    .map((signal, idx) => (
+                      <div key={idx} className="mb-3 p-3 border border-stone-200 dark:border-stone-700 bg-paper dark:bg-stone-800">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-body text-sm font-semibold text-ink dark:text-stone-100">
+                            {signal.commercial_metric} ({signal.commercial_asset})
+                          </span>
+                          <span className={`font-mono text-xs uppercase tracking-wider px-2 py-1 border ${signal.strength_label === "Strong" ? "border-good-600 text-good-700 dark:text-good-dark" : "border-warning-600 text-warning-700 dark:text-warning-dark"}`}>
+                            {signal.strength_label} · {signal.lag_months}mo lag
+                          </span>
+                        </div>
+                        <p className="font-body text-xs text-stone-700 dark:text-stone-300">
+                          {signal.interpretation}
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-700 dark:text-gray-300">{signal.interpretation}</p>
-                    </div>
-                  ))}
-              </div>
-            )}
-
-            {/* Section C: Monthly Trend */}
-            <div className="p-4 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-800">
-              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                Monthly Trend — {selectedContentType}
-              </h4>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                12-month engagement trend for this content type across 2025
-              </p>
-              <div className="h-40 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm">
-                Monthly trend visualization for {selectedContentType} — chart implementation pending
-              </div>
-            </div>
+                    ))}
+                </div>
+              )}
           </div>
         )}
       </div>
 
-      {/* Section 7: International Audience Intelligence (V1.6.6) */}
+      {/* Content Intelligence */}
+      {contentIntelligence && contentIntelligence.signals.length > 0 && (
+        <div className={sectionCard}>
+          <h2 className={sectionTitle}>Content Intelligence</h2>
+          <p className={sectionSubtitle}>
+            Correlation analysis between content types and commercial outcomes.
+          </p>
+
+          <div className="overflow-x-auto mb-6">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className={tableHeader}>Content Type</th>
+                  <th className={tableHeader + " text-right"}>Avg Eng/Post</th>
+                  <th className={tableHeader}>Correlates with</th>
+                  <th className={tableHeader + " text-center"}>Strength</th>
+                  <th className={tableHeader + " text-center"}>Lag</th>
+                  <th className={tableHeader + " text-center"}>Direction</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contentIntelligence.signals.slice(0, 7).map((signal, idx) => (
+                  <tr
+                    key={idx}
+                    className={`cursor-pointer transition-colors ${
+                      idx % 2 === 0 ? "bg-paper dark:bg-stone-800" : "bg-stone-50 dark:bg-stone-900"
+                    } ${selectedSignal === signal ? "outline outline-2 outline-info-600" : ""}`}
+                    onClick={() => setSelectedSignal(signal)}
+                  >
+                    <td className={tableCell + " font-semibold"}>
+                      {signal.content_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </td>
+                    <td className={tableCellMono + " text-right"}>{signal.avg_content_engagement.toLocaleString()}</td>
+                    <td className={tableCell}>{signal.commercial_metric} ({signal.commercial_asset})</td>
+                    <td className="border border-stone-300 dark:border-stone-700 p-3 text-center">
+                      <span className={`font-mono text-xs uppercase tracking-wider px-2 py-1 border ${signal.strength_label === "Strong" ? "border-good-600 text-good-700 dark:text-good-dark" : signal.strength_label === "Moderate" ? "border-warning-600 text-warning-700 dark:text-warning-dark" : "border-stone-400 text-stone-500"}`}>
+                        {signal.strength_label}
+                      </span>
+                    </td>
+                    <td className={tableCellMono + " text-center"}>{signal.lag_months}mo</td>
+                    <td className={`border border-stone-300 dark:border-stone-700 p-3 text-center font-mono text-sm font-semibold ${signal.direction === "positive" ? "text-good-light dark:text-good-dark" : "text-warning-light dark:text-warning-dark"}`}>
+                      {signal.direction === "positive" ? "↑ Positive" : "↓ Inverse"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {selectedSignal && (
+            <div className="border-2 border-info-600 dark:border-info-dark p-5 bg-info-50 dark:bg-stone-900 animate-fade-in">
+              <h4 className="font-headline text-lg text-ink dark:text-stone-100 mb-2">
+                {selectedSignal.content_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())} →{" "}
+                {selectedSignal.commercial_metric} ({(selectedSignal.correlation * 100).toFixed(0)}% correlation)
+              </h4>
+              <p className="font-body text-sm text-stone-700 dark:text-stone-300 mb-3">
+                {selectedSignal.interpretation}
+              </p>
+              <div className="border border-stone-200 dark:border-stone-700 p-3 bg-paper dark:bg-stone-800">
+                <p className="font-mono text-xs uppercase tracking-wider text-ink dark:text-stone-100 mb-1">
+                  {selectedSignal.direction === "positive" ? "✓ Positive Signal" : "⚠ Inverse Signal"}
+                </p>
+                <p className="font-body text-xs text-stone-700 dark:text-stone-300">
+                  {selectedSignal.confidence_note}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Summary stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            {[
+              { label: "Total Correlations Found", value: contentIntelligence.summary.total_correlations_found },
+              { label: "Most Predictive Content", value: contentIntelligence.summary.most_predictive_content_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) },
+              { label: "Avg Correlation", value: `${(contentIntelligence.summary.avg_correlation_strength * 100).toFixed(0)}%` },
+            ].map((stat) => (
+              <div key={stat.label} className="border border-stone-200 dark:border-stone-700 p-4 bg-stone-50 dark:bg-stone-900">
+                <div className="font-mono text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-1">{stat.label}</div>
+                <div className="font-mono text-2xl font-semibold text-ink dark:text-stone-100">{stat.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ── INTERNATIONAL ─────────────────────────────────────────────────────────
+  const renderInternational = () => (
+    <div>
       {internationalData && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-[0.5px] border-gray-300 dark:border-gray-600 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            International Audience Intelligence
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        <div className={sectionCard}>
+          <h2 className={sectionTitle}>International Audience Intelligence</h2>
+          <p className={sectionSubtitle}>
             Real Madrid's global fanbase by language market. International engagement is a leading indicator for global commercial reach.
           </p>
 
-          {/* Sub-section A: International Engagement Ratio Hero Stat */}
-          <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-6 rounded-lg border border-blue-300 dark:border-blue-700">
-            <div className="text-center">
-              <div className="text-6xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                {formatPercentage(internationalData.international_engagement_ratio)}
-              </div>
-              <p className="text-lg text-gray-700 dark:text-gray-300 mb-1">
-                of Real Madrid's social engagement comes from international accounts
-              </p>
-              {summary.international_engagement_ratio_mom_change !== null && (
-                <div
-                  className={`text-sm font-semibold ${
-                    summary.international_engagement_ratio_mom_change > 0
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}
-                >
-                  {summary.international_engagement_ratio_mom_change > 0 ? "↑" : "↓"}{" "}
-                  {Math.abs(summary.international_engagement_ratio_mom_change).toFixed(1)}% vs prior month
-                </div>
-              )}
+          {/* Hero stat */}
+          <div className="mb-8 border-2 border-ink dark:border-stone-700 p-8 text-center bg-stone-50 dark:bg-stone-900">
+            <div className="font-mono text-5xl font-semibold text-info-600 dark:text-info-dark mb-2">
+              {formatPercentage(internationalData.international_engagement_ratio)}
             </div>
-          </div>
-
-          {/* Sub-section B: Market Breakdown Chart */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-              Engagement by Language Market — {new Date(internationalData.month).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-            </h3>
-            {!internationalData.language_markets || internationalData.language_markets.length === 0 ? (
-              <div className="flex items-center justify-center h-60 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded">
-                <p className="text-gray-600 dark:text-gray-400">No language breakdown data available for this month.</p>
-              </div>
-            ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart
-                data={internationalData.language_markets.map((m) => ({
-                  name: m.language,
-                  engagement: m.monthly_engagement,
-                  pct: m.pct_of_total_engagement,
-                }))}
-                layout="horizontal"
+            <p className="font-body text-base text-stone-700 dark:text-stone-300 mb-2">
+              of Real Madrid's social engagement comes from international accounts
+            </p>
+            {summary.international_engagement_ratio_mom_change !== null && (
+              <div
+                className={`font-mono text-xs font-semibold ${
+                  summary.international_engagement_ratio_mom_change > 0
+                    ? "text-good-light dark:text-good-dark"
+                    : "text-critical-light dark:text-critical-dark"
+                }`}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                <XAxis type="number" stroke={chartColors.axis} tick={{ fill: chartColors.text }} tickFormatter={(val) => formatEngagement(val)} />
-                <YAxis type="category" dataKey="name" stroke={chartColors.axis} tick={{ fill: chartColors.text }} width={80} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: chartColors.tooltipBg,
-                    border: `1px solid ${chartColors.tooltipBorder}`,
-                    borderRadius: "8px",
-                    color: chartColors.tooltipText
-                  }}
-                  formatter={(value: number, name: string) => {
-                    if (name === "engagement") {
-                      const marketData = internationalData.language_markets.find(
-                        (m) => m.monthly_engagement === value
-                      );
-                      const pct = marketData?.pct_of_total_engagement || 0;
-                      return [`${formatEngagement(value)} (${pct.toFixed(1)}%)`, "Engagement"];
-                    }
-                    return [value, name];
-                  }}
-                />
-                <Legend wrapperStyle={{ color: chartColors.text }} />
-                <Bar
-                  dataKey="engagement"
-                  fill={(entry: any) => (entry.name === "Spanish" ? "#3B82F6" : "#10B981")}
-                  name="Monthly Engagement"
-                />
-              </BarChart>
-            </ResponsiveContainer>
+                {summary.international_engagement_ratio_mom_change > 0 ? "↑" : "↓"}{" "}
+                {Math.abs(summary.international_engagement_ratio_mom_change).toFixed(1)}% vs prior month
+              </div>
             )}
           </div>
 
-          {/* Sub-section C: Market Growth Ranking */}
+          {/* Language market chart */}
+          <div className="mb-8">
+            <h3 className={subSectionTitle}>
+              Engagement by Language Market —{" "}
+              {new Date(internationalData.month).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+            </h3>
+            {!internationalData.language_markets || internationalData.language_markets.length === 0 ? (
+              <div className="flex items-center justify-center h-40 border-2 border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
+                <p className="font-mono text-xs uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                  No language breakdown data available for this month
+                </p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={internationalData.language_markets.map((m) => ({
+                    name: m.language,
+                    engagement: m.monthly_engagement,
+                    pct: m.pct_of_total_engagement,
+                  }))}
+                  layout="vertical"
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} horizontal={false} />
+                  <XAxis type="number" stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} tickFormatter={formatEngagement} />
+                  <YAxis type="category" dataKey="name" stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} width={70} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(value: number, name: string) => {
+                      if (name === "engagement") {
+                        const m = internationalData.language_markets.find((mk) => mk.monthly_engagement === value);
+                        return [`${formatEngagement(value)} (${m?.pct_of_total_engagement?.toFixed(1)}%)`, "Engagement"];
+                      }
+                      return [value, name];
+                    }}
+                  />
+                  <Bar dataKey="engagement" name="Monthly Engagement">
+                    {internationalData.language_markets.map((m) => (
+                      <Cell key={m.language} fill={m.language === "Spanish" ? "#2563EB" : "#16A34A"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Market growth ranking */}
           {marketGrowth && (
-            <div className="mb-6">
+            <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Market Growth Ranking
-                </h3>
-                <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Compare Mode:</span>
+                <h3 className={subSectionTitle}>Market Growth Ranking</h3>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500">Compare:</span>
                   <select
+                    id="market-compare-mode"
                     value={marketCompareMode}
                     onChange={(e) => setMarketCompareMode(e.target.value as "mom" | "yoy" | "custom")}
-                    className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="font-mono text-xs border-2 border-ink dark:border-stone-600 bg-paper dark:bg-stone-800 text-ink dark:text-stone-100 px-2 py-1"
                   >
                     <option value="mom">Month over Month</option>
                     <option value="yoy">Year over Year</option>
-                    <option value="custom">vs Selected Month</option>
+                    <option value="custom">Custom Month</option>
                   </select>
                   {marketCompareMode === "custom" && availableMonths.length > 0 && (
                     <select
+                      id="market-compare-month"
                       value={marketCompareMonth || ""}
                       onChange={(e) => setMarketCompareMonth(e.target.value)}
-                      className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="font-mono text-xs border-2 border-ink dark:border-stone-600 bg-paper dark:bg-stone-800 text-ink dark:text-stone-100 px-2 py-1"
                     >
-                      <option value="">Select month...</option>
+                      <option value="">Select month…</option>
                       {availableMonths.map((m) => (
-                        <option key={m.value} value={m.value}>
-                          {m.label} 2025
-                        </option>
+                        <option key={m.value} value={m.value}>{m.label} 2025</option>
                       ))}
                     </select>
                   )}
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full border border-gray-300 dark:border-gray-600 text-sm">
-                  <thead className="bg-gray-100 dark:bg-gray-700">
+                <table className="w-full border-collapse">
+                  <thead>
                     <tr>
-                      <th className="text-left p-3 border-r border-gray-300 dark:border-gray-600">Market</th>
-                      <th className="text-right p-3 border-r border-gray-300 dark:border-gray-600">This Month</th>
-                      <th className="text-right p-3 border-r border-gray-300 dark:border-gray-600">Prior Month</th>
-                      <th className="text-right p-3">Change</th>
+                      <th className={tableHeader}>Market</th>
+                      <th className={tableHeader + " text-right"}>This Month</th>
+                      <th className={tableHeader + " text-right"}>Prior</th>
+                      <th className={tableHeader + " text-right"}>Change</th>
                     </tr>
                   </thead>
                   <tbody>
                     {marketGrowth.rankings.map((ranking, idx) => (
-                      <tr
-                        key={idx}
-                        className={idx % 2 === 0 ? "" : "bg-gray-50 dark:bg-gray-800"}
-                      >
-                        <td className="p-3 border-r border-gray-300 dark:border-gray-600 font-medium">
-                          {ranking.market}
-                        </td>
-                        <td className="p-3 text-right border-r border-gray-300 dark:border-gray-600">
-                          {formatEngagement(ranking.this_month)}
-                        </td>
-                        <td className="p-3 text-right border-r border-gray-300 dark:border-gray-600">
-                          {formatEngagement(ranking.prior_month)}
-                        </td>
-                        <td
-                          className={`p-3 text-right font-semibold ${
-                            ranking.mom_change_pct > 0
-                              ? "text-green-600 dark:text-green-400"
-                              : ranking.mom_change_pct < 0
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-gray-600 dark:text-gray-400"
-                          }`}
-                        >
+                      <tr key={idx} className={idx % 2 === 0 ? "bg-paper dark:bg-stone-800" : "bg-stone-50 dark:bg-stone-900"}>
+                        <td className={tableCell + " font-semibold"}>{ranking.market}</td>
+                        <td className={tableCellMono + " text-right"}>{formatEngagement(ranking.this_month)}</td>
+                        <td className={tableCellMono + " text-right"}>{formatEngagement(ranking.prior_month)}</td>
+                        <td className={`border border-stone-300 dark:border-stone-700 p-3 text-right font-mono text-sm font-semibold ${
+                          ranking.mom_change_pct > 0 ? "text-good-light dark:text-good-dark"
+                          : ranking.mom_change_pct < 0 ? "text-critical-light dark:text-critical-dark"
+                          : "text-stone-400"
+                        }`}>
                           {ranking.mom_change_pct > 0 ? "↑" : ranking.mom_change_pct < 0 ? "↓" : "—"}{" "}
                           {ranking.mom_change_pct !== 0 ? `${Math.abs(ranking.mom_change_pct).toFixed(1)}%` : "—"}
                         </td>
@@ -1672,85 +1558,197 @@ export default function SocialIntelligencePage() {
             </div>
           )}
 
-          {/* Sub-section D: Commercial Correlation Card */}
-          {internationalCorrelation && internationalCorrelation.strongest_correlation && (
-            <div className="p-6 bg-green-50 dark:bg-green-950 border border-green-300 dark:border-green-700 rounded">
-              <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">
+          {/* Commercial correlation */}
+          {internationalCorrelation?.strongest_correlation ? (
+            <div className="border-l-4 border-good-600 dark:border-good-dark bg-good-50 dark:bg-stone-900 p-5">
+              <h3 className="font-headline text-lg text-ink dark:text-stone-100 mb-2">
                 International Audience → Commercial Impact
               </h3>
-              <p className="text-base text-green-800 dark:text-green-200 mb-2">
+              <p className="font-body text-sm text-stone-700 dark:text-stone-300 mb-3">
                 {internationalCorrelation.strongest_correlation.interpretation}
               </p>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-green-700 dark:text-green-300">
-                  Correlation strength: <strong>{(internationalCorrelation.strongest_correlation.correlation * 100).toFixed(0)}%</strong>
+              <div className="flex flex-wrap gap-4 font-mono text-xs">
+                <span className="text-stone-600 dark:text-stone-400">
+                  Correlation:{" "}
+                  <strong className="text-ink dark:text-stone-100">
+                    {(internationalCorrelation.strongest_correlation.correlation * 100).toFixed(0)}%
+                  </strong>
                 </span>
-                <span className="text-green-700 dark:text-green-300">
-                  Lag: <strong>{internationalCorrelation.strongest_correlation.lag_months} month(s)</strong>
+                <span className="text-stone-600 dark:text-stone-400">
+                  Lag:{" "}
+                  <strong className="text-ink dark:text-stone-100">
+                    {internationalCorrelation.strongest_correlation.lag_months} month(s)
+                  </strong>
                 </span>
-                <span className="text-green-700 dark:text-green-300">
-                  Metric: <strong>{internationalCorrelation.strongest_correlation.commercial_metric}</strong>
+                <span className="text-stone-600 dark:text-stone-400">
+                  Metric:{" "}
+                  <strong className="text-ink dark:text-stone-100">
+                    {internationalCorrelation.strongest_correlation.commercial_metric}
+                  </strong>
                 </span>
               </div>
             </div>
-          )}
-
-          {internationalCorrelation && !internationalCorrelation.strongest_correlation && (
-            <div className="p-6 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                Commercial Correlation Analysis
-              </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                12 months of data may be insufficient for robust correlation detection. As more data accumulates,
-                correlations between international engagement and commercial metrics (streaming subscriptions,
-                ecommerce traffic) may emerge.
+          ) : internationalCorrelation ? (
+            <div className="border border-stone-200 dark:border-stone-700 p-5 bg-stone-50 dark:bg-stone-900">
+              <h3 className="font-body text-base font-semibold text-ink dark:text-stone-100 mb-2">Commercial Correlation Analysis</h3>
+              <p className="font-body text-sm text-stone-600 dark:text-stone-400">
+                12 months of data may be insufficient for robust correlation detection. As more data accumulates, correlations between international engagement and commercial metrics may emerge.
               </p>
             </div>
-          )}
+          ) : null}
         </div>
       )}
+    </div>
+  );
 
-      {/* Section 8: ScreenGuide */}
-      <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg border border-gray-300 dark:border-gray-600">
-        <button
-          onClick={() => setGuideExpanded(!guideExpanded)}
-          className="w-full flex items-center justify-between text-left"
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  // ── Strategy tab: three logical sub-sections within one tab ─────────────
+  const renderStrategy = () => (
+    <div>
+      {/* Strategy sub-navigation — lighter than main tabs */}
+      <div className="flex gap-6 mb-8 border-b border-stone-300 dark:border-stone-700">
+        {([
+          { id: "timing" as const,   label: "Timing" },
+          { id: "content" as const,  label: "Content" },
+          { id: "hashtags" as const, label: "Hashtags" },
+        ] as { id: typeof strategySubSection; label: string }[]).map((sub) => (
+          <button
+            key={sub.id}
+            id={`strategy-sub-${sub.id}`}
+            onClick={() => setStrategySubSection(sub.id)}
+            className={`font-mono text-xs uppercase tracking-wider pb-3 border-b-2 -mb-px transition-colors duration-150 ${
+              strategySubSection === sub.id
+                ? "border-stone-500 dark:border-stone-400 text-ink dark:text-stone-100"
+                : "border-transparent text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300"
+            }`}
+          >
+            {sub.label}
+          </button>
+        ))}
+      </div>
+      {strategySubSection === "timing" && renderTiming()}
+      {strategySubSection === "content" && renderContent()}
+      {strategySubSection === "hashtags" && renderHashtags()}
+    </div>
+  );
+
+  // ── Intelligence tab: two logical sub-sections within one tab ───────────
+  const renderIntelligence = () => (
+    <div>
+      {/* Intelligence sub-navigation */}
+      <div className="flex gap-6 mb-8 border-b border-stone-300 dark:border-stone-700">
+        {([
+          { id: "insights" as const,       label: "Insights & Recommendations" },
+          { id: "international" as const,  label: "International Audience" },
+        ] as { id: typeof intelligenceSubSection; label: string }[]).map((sub) => (
+          <button
+            key={sub.id}
+            id={`intelligence-sub-${sub.id}`}
+            onClick={() => setIntelligenceSubSection(sub.id)}
+            className={`font-mono text-xs uppercase tracking-wider pb-3 border-b-2 -mb-px transition-colors duration-150 ${
+              intelligenceSubSection === sub.id
+                ? "border-stone-500 dark:border-stone-400 text-ink dark:text-stone-100"
+                : "border-transparent text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300"
+            }`}
+          >
+            {sub.label}
+          </button>
+        ))}
+      </div>
+      {intelligenceSubSection === "insights" && renderInsights()}
+      {intelligenceSubSection === "international" && renderInternational()}
+    </div>
+  );
+
+  const tabContent: Record<SocialTab, React.ReactNode> = {
+    overview:     renderOverview(),
+    performance:  <div>{renderTrends()}{renderPlatforms()}</div>,
+    strategy:     renderStrategy(),
+    intelligence: renderIntelligence(),
+  };
+
+  return (
+    <div className="max-w-screen-xl mx-auto px-6">
+      {/* ── Page header ──────────────────────────────────────────────────── */}
+      <div className="py-8 border-b-2 border-ink dark:border-stone-700 mb-0">
+        <h1 className="font-headline text-4xl md:text-5xl tracking-tight text-ink dark:text-stone-100 mb-1">
+          Social Intelligence
+        </h1>
+        <p className="font-body text-base text-stone-600 dark:text-stone-400">
+          Real Madrid's social media performance across five platforms — the fifth digital pillar of ClubOS.
+        </p>
+      </div>
+
+      {/* ── Sticky sub-tab navigation ─────────────────────────────────────── */}
+      <div className="sticky top-[var(--header-height,112px)] z-30 bg-paper/95 dark:bg-stone-900/95 backdrop-blur-sm border-b-2 border-ink dark:border-stone-700 -mx-6 px-6">
+        <nav
+          className="flex overflow-x-auto gap-0 no-scrollbar"
+          aria-label="Social Intelligence sections"
         >
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {guideExpanded ? "▼" : "▶"} Screen Guide
-          </h3>
-        </button>
-        {guideExpanded && (
-          <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-            <p>
-              <strong>What social media metrics mean:</strong> Social engagement (likes, comments, shares, saves)
-              measures fan interaction intensity. Higher engagement = stronger emotional connection to content.
-            </p>
-            <p>
-              <strong>Why engagement rate matters more than raw engagement:</strong> Engagement rate (engagement
-              divided by follower count) normalizes for audience size. A 1.9% Instagram rate means 1.9% of followers
-              engage with each post — this is exceptional for an account with 180M followers.
-            </p>
-            <p>
-              <strong>International engagement ratio:</strong> Percentage of engagement from non-Spanish accounts.
-              High ratio (89%+) indicates global brand strength and commercial reach beyond domestic market.
-            </p>
-            <p>
-              <strong>Platform performance:</strong> TikTok often shows highest avg engagement per post due to
-              algorithm favoring viral content. Instagram leads in total volume due to largest follower base.
-            </p>
-            <p>
-              <strong>Content intelligence:</strong> Birthday posts and goal celebrations typically drive highest
-              engagement. Training content shows steady baseline engagement. Use this to optimize content calendar.
-            </p>
-            <p>
-              <strong>Content → Commercial correlations:</strong> V1.6.4 introduces correlation analysis between
-              content types and commercial outcomes (sales, subscriptions, web traffic). Lower threshold (45% vs 60%)
-              because content influences commercial metrics through longer causal chains. Use these insights to align
-              content strategy with revenue goals.
-            </p>
-          </div>
-        )}
+          {SOCIAL_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              id={`social-tab-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-shrink-0 px-6 py-3 border-b-2 transition-colors duration-150 text-left ${
+                activeTab === tab.id
+                  ? "border-ink dark:border-stone-300"
+                  : "border-transparent hover:border-stone-300 dark:hover:border-stone-600"
+              }`}
+            >
+              <div className={`font-mono text-xs uppercase tracking-wider ${
+                activeTab === tab.id ? "text-ink dark:text-stone-100" : "text-stone-400 dark:text-stone-500"
+              }`}>
+                {tab.label}
+              </div>
+              <div className={`font-body text-[11px] mt-0.5 hidden md:block ${
+                activeTab === tab.id ? "text-stone-500 dark:text-stone-400" : "text-stone-300 dark:text-stone-600"
+              }`}>
+                {tab.subtitle}
+              </div>
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* ── Active tab content ────────────────────────────────────────────── */}
+      <div className="py-8">
+        {tabContent[activeTab]}
+      </div>
+
+      {/* ── Screen Guide ─────────────────────────────────────────────────── */}
+      <div className="pb-12" data-screen-guide>
+        <ScreenGuide
+          screenName="Social Intelligence"
+          sections={[
+            {
+              title: "What social media metrics mean",
+              content:
+                "Social engagement (likes, comments, shares, saves) measures fan interaction intensity. Higher engagement = stronger emotional connection to content.",
+            },
+            {
+              title: "Why engagement rate matters more than raw engagement",
+              content:
+                "Engagement rate (engagement divided by follower count) normalizes for audience size. A 1.9% Instagram rate means 1.9% of followers engage with each post — exceptional for an account with 180M followers.",
+            },
+            {
+              title: "International engagement ratio",
+              content:
+                "Percentage of engagement from non-Spanish accounts. High ratio (89%+) indicates global brand strength and commercial reach beyond the domestic market.",
+            },
+            {
+              title: "Platform performance",
+              content:
+                "TikTok often shows highest avg engagement per post due to algorithm favoring viral content. Instagram leads in total volume due to its largest follower base.",
+            },
+            {
+              title: "Content → Commercial correlations",
+              content:
+                "Correlation analysis between content types and commercial outcomes (sales, subscriptions, web traffic). Use these insights to align content strategy with revenue goals.",
+            },
+          ]}
+        />
       </div>
     </div>
   );

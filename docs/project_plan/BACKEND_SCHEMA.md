@@ -46,7 +46,7 @@ React frontend       (typed fetch via lib/api.ts)
 | `summary_text` | string | One-sentence summary of the metric's status this month |
 | `why_it_matters` | string | Plain-English explanation of commercial significance |
 | `suggested_next_investigation` | string | Recommended next step for the team |
-| `supporting_metrics_json` | JSON string | Embedded JSON blob containing: `score_components` (five weighted values), `severity_inputs` (metric value, health status, trend direction, deviation), `persistence_inputs` (active months in last 3), `peer_context` (rank, club count, peer median, leader value, gaps), `linked_signal_references` (signal IDs), `supporting_metric_rows` (up to 12 corroborating metrics with their own health status and severity scores) |
+| `supporting_metrics_json` | JSON string | Embedded JSON blob containing: `score_components` (five weighted values: severity, persistence, peer_gap, commercial_weight, supporting_evidence), `severity_inputs` (metric value, health status, trend direction, seasonal_z_score, deviation_from_rolling_avg), `persistence_inputs` (active months in last 3), `peer_context` (rank, club count, peer median, leader value, gaps), `linked_signal_references` (signal IDs), `supporting_metric_rows` (up to 12 corroborating metrics with their own health status and severity scores) |
 
 **Primary key**: `(month, priority_id)` — one row per metric-asset per month.
 
@@ -56,28 +56,28 @@ React frontend       (typed fetch via lib/api.ts)
 
 ### 2.2 gold_kpi_health
 
-**Purpose**: Stores computed health status for every tracked metric across all digital assets for every month in the historical dataset. This is the source of truth for trend direction, deviation from seasonal baseline, and volatility signals. The Command Center reads the latest month's aggregate from this table.
+**Purpose**: Stores computed health status for every tracked metric across all digital assets for every month in the historical dataset. This is the source of truth for trend direction, seasonal anomaly detection (Z-score), rolling average deviation, and volatility signals. The Command Center reads the latest month's aggregate from this table.
 
 **Columns**:
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `month` | date (YYYY-MM-DD) | Reporting month |
-| `asset_name` | string | Digital platform: `main_website`, `ecommerce`, `streaming`, `fan_app` |
+| `asset_name` | string | Digital platform: `main_website`, `ecommerce`, `streaming`, `fan_app`, `social_media` |
 | `metric_name` | string | Canonical metric name (references metric_dictionary) |
 | `metric_value` | float | Actual metric value for this month |
 | `prior_month_value` | float (nullable) | Value from the immediately preceding month |
 | `prior_season_same_month_value` | float (nullable) | Value from the same calendar month in the prior year |
-| `rolling_12m_avg` | float | Rolling 12-month average of metric_value |
-| `seasonal_baseline` | float | Expected value for this month based on historical seasonal patterns |
-| `deviation_from_seasonal_baseline` | float | `(metric_value - seasonal_baseline) / seasonal_baseline` — signed percentage deviation |
+| `rolling_12m_avg` | float | Rolling 12-month average of metric_value (non-seasonal, used for trend context) |
+| `deviation_from_rolling_avg` | float | `(metric_value - rolling_12m_avg) / rolling_12m_avg` — signed percentage deviation from 12-month average |
+| `seasonal_z_score` | float | Seasonal anomaly score: `(metric_value - seasonal_mean) / seasonal_std` where mean/std are computed from historical same-calendar-month values only. Z-score = 0 means current value is perfectly normal for this calendar month. |
 | `trend_direction` | string | Enumerated: `up`, `down`, `flat` — based on 6-month slope |
 | `health_status` | string | Enumerated: `good`, `review`, `stable` — assigned by rule-based logic |
 
 **Health status assignment logic**:
-- `good`: positive trend slope AND volatility within norm AND not flagged as outlier
-- `review`: negative slope OR persistence ≥ 3 months declining OR abs(deviation) > 20%
-- `stable`: neither of the above — flat trend, no significant change
+- `good`: `deviation_from_rolling_avg > +0.05` (5% above rolling average)
+- `review`: `deviation_from_rolling_avg < -0.05` (5% below rolling average)
+- `stable`: `abs(deviation_from_rolling_avg) ≤ 0.05` (within ±5% of rolling average)
 
 **Primary key**: `(month, asset_name, metric_name)` — one row per metric per asset per month.
 
@@ -163,7 +163,7 @@ React frontend       (typed fetch via lib/api.ts)
 |--------|------|-------------|
 | `month` | date (YYYY-MM-DD) | Reporting month |
 | `top_priority_ids_json` | JSON string | Ordered list of priority_id strings for the top-ranked priorities this month |
-| `top_anomalies_json` | JSON string | List of anomaly objects: `{asset_name, metric_name, metric_value, deviation_from_seasonal_baseline}`, ordered by absolute deviation descending |
+| `top_anomalies_json` | JSON string | List of anomaly objects: `{asset_name, metric_name, metric_value, deviation_from_rolling_avg}`, ordered by absolute deviation descending |
 | `strongest_signal_ids_json` | JSON string | Ordered list of signal identifier strings (strongest signals by strength_score) |
 | `benchmark_summary_json` | JSON string | Object: `{benchmarked_metric_count, benchmark_underperformance_count, avg_gap_to_peer_median, worst_gap_to_peer_median}` |
 | `health_summary_json` | JSON string | Object: `{metric_count, good_count, review_count, stable_count, avg_abs_deviation}` |
@@ -459,7 +459,7 @@ All routes are prefixed at `http://localhost:8000`. No `/api/` or `/api/v1/` pre
 | `good_count` | int | Count of metric rows with `health_status = good` |
 | `review_count` | int | Count of metric rows with `health_status = review` |
 | `stable_count` | int | Count of metric rows with `health_status = stable` |
-| `avg_abs_deviation` | float (nullable) | Average of `abs(deviation_from_seasonal_baseline)` across all metrics for the latest month |
+| `avg_abs_deviation` | float (nullable) | Average of `abs(deviation_from_rolling_avg)` across all metrics for the latest month |
 
 **Data source**: `gold_kpi_health` — filters to latest month, aggregates counts and average.
 
@@ -690,7 +690,7 @@ All routes are prefixed at `http://localhost:8000`. No `/api/` or `/api/v1/` pre
       "asset_name": "streaming",
       "metric_name": "daily_users",
       "metric_value": 5275.2,
-      "deviation_from_seasonal_baseline": -0.293
+      "deviation_from_rolling_avg": -0.293
     }
   ],
   "strongest_signals": [
@@ -935,7 +935,7 @@ Same fields as `PriorityCard` plus:
 | `asset_name` | str | Yes | Digital platform |
 | `metric_name` | str | Yes | Metric displaying anomalous behaviour |
 | `metric_value` | float | Yes | Actual metric value this month |
-| `deviation_from_seasonal_baseline` | float | Yes | Signed percentage deviation (negative = below baseline) |
+| `deviation_from_rolling_avg` | float | Yes | Signed percentage deviation from 12-month rolling average (negative = below average) |
 
 ### 5.16 BriefingSignal
 

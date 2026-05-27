@@ -46,6 +46,7 @@ def get_benchmark_view(asset: str, metric: str) -> dict[str, Any]:
         "peer_leader_value": float(r["peer_leader_value"]),
         "rm_rank": int(r["rm_rank"]),
         "club_count": int(r["club_count"]),
+        "raw_gap_to_peer_median": float(r["raw_gap_to_peer_median"]),
         "gap_to_peer_median": float(r["gap_to_peer_median"]),
         "gap_to_leader": float(r["gap_to_leader"]),
         "rank_change_12m": _optional_int(r.get("rank_change_12m")),

@@ -422,17 +422,22 @@ export function CommandCenterPage() {
                 return order.indexOf(a) - order.indexOf(b);
               })
               .map(([assetName, stats]) => {
-                const assetLabel = assetName
-                  .split('_')
-                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ');
+                const assetLabel = assetName === 'social_media'
+                  ? 'Social Media'
+                  : assetName
+                      .split('_')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(' ');
 
                 // Determine overall asset health color
                 const healthPercentage = stats.health_percentage;
                 let borderColor = 'border-info-light dark:border-info-dark';
                 let bgColor = 'bg-info-light/10 dark:bg-info-dark/10';
 
-                if (healthPercentage >= 70) {
+                if (assetName === 'social_media') {
+                  borderColor = 'border-purple-600 dark:border-purple-400';
+                  bgColor = 'bg-purple-100 dark:bg-purple-900/20';
+                } else if (healthPercentage >= 70) {
                   borderColor = 'border-good-light dark:border-good-dark';
                   bgColor = 'bg-good-light/10 dark:bg-good-dark/10';
                 } else if (stats.review_count > stats.good_count) {
@@ -445,15 +450,15 @@ export function CommandCenterPage() {
                     key={assetName}
                     className={`border-2 ${borderColor} ${bgColor} p-6 rounded-lg`}
                   >
-                    <h3 className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-3">
+                    <h3 className={`font-mono text-xs uppercase tracking-widest mb-3 ${assetName === 'social_media' ? 'text-purple-700 dark:text-purple-300' : 'text-stone-500 dark:text-stone-400'}`}>
                       {assetLabel}
                     </h3>
 
                     <div className="mb-4">
-                      <div className="font-headline text-4xl text-ink dark:text-stone-100 mb-1">
+                      <div className={`font-headline text-4xl mb-1 ${assetName === 'social_media' ? 'text-purple-900 dark:text-purple-100' : 'text-ink dark:text-stone-100'}`}>
                         {stats.metric_count}
                       </div>
-                      <div className="text-xs text-stone-600 dark:text-stone-400">
+                      <div className={`text-xs ${assetName === 'social_media' ? 'text-purple-700/80 dark:text-purple-300/80' : 'text-stone-600 dark:text-stone-400'}`}>
                         Total Metrics
                       </div>
                     </div>
@@ -473,13 +478,18 @@ export function CommandCenterPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-stone-300 dark:border-stone-600">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-stone-600 dark:text-stone-400">Health %</span>
+                    <div className={`mt-4 pt-4 border-t ${assetName === 'social_media' ? 'border-purple-300 dark:border-purple-700/50' : 'border-stone-300 dark:border-stone-600'}`}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className={`text-xs ${assetName === 'social_media' ? 'text-purple-700 dark:text-purple-300' : 'text-stone-600 dark:text-stone-400'}`}>Health %</span>
                         <span className="font-mono font-bold text-lg">
                           {stats.health_percentage.toFixed(0)}%
                         </span>
                       </div>
+                      {assetName === 'social_media' && stats.review_count === 0 && (
+                        <div className="mt-2 text-[10px] leading-tight text-purple-600 dark:text-purple-300 italic">
+                          No social priorities this month — all metrics within expected range.
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

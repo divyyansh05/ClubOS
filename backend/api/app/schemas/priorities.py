@@ -4,11 +4,18 @@ from pydantic import BaseModel
 
 
 class ScoreBreakdown(BaseModel):
+    # Raw component scores (0-1 range)
     severity: float
     persistence: float
     peer_gap: float
     commercial: float
     evidence: float
+    # Weighted contributions (what goes into final score)
+    severity_contribution: float
+    persistence_contribution: float
+    peer_gap_contribution: float
+    commercial_contribution: float
+    evidence_contribution: float
 
 
 class HistoricalValue(BaseModel):
@@ -19,6 +26,7 @@ class HistoricalValue(BaseModel):
 class PeerValue(BaseModel):
     club: str
     value: float
+    is_estimated: bool = False
 
 
 class PriorityCard(BaseModel):

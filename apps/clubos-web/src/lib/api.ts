@@ -30,6 +30,24 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+export interface ScoringConfig {
+  formula_weights: {
+    severity: number;
+    persistence: number;
+    peer_gap: number;
+    commercial: number;
+    evidence: number;
+  };
+  severity_z_score_max: number;
+  persistence_window_months: number;
+  peer_rank_scores: Record<string, number>;
+  evidence_max_count: number;
+  health_status_thresholds: {
+    review_below: number;
+    good_above: number;
+  };
+}
+
 export async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`);
   if (!response.ok) {
@@ -111,8 +129,9 @@ export async function fetchSeasonalBaseline(asset: string, metric: string): Prom
 }
 
 // Social Media API calls (V1.6.1)
-export async function fetchSocialSummary(): Promise<SocialSummary> {
-  return fetchJson<SocialSummary>("/social/summary");
+export async function fetchSocialSummary(month?: string): Promise<SocialSummary> {
+  const url = month ? `/social/summary?month=${month}` : "/social/summary";
+  return fetchJson<SocialSummary>(url);
 }
 
 export async function fetchSocialMonthly(): Promise<SocialMonthlyTrend> {
@@ -269,4 +288,8 @@ export async function fetchContentRecommendations(team = "content"): Promise<Con
 
 export async function fetchPeerComparison(metric: string): Promise<PeerComparisonResponse> {
   return fetchJson<PeerComparisonResponse>(`/social/analytics/peer/${metric}`);
+}
+
+export async function fetchScoringConfig(): Promise<ScoringConfig> {
+  return fetchJson<ScoringConfig>("/config/scoring");
 }

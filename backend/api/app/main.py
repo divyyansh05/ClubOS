@@ -3,14 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.clients.databricks import SnapshotAccessError
-from app.routers import analytics, benchmark, briefing, events, health, priorities, refresh, signals, social
+from app.config.settings import get_cors_origins
+from app.routers import analytics, benchmark, briefing, config, events, health, priorities, refresh, signals, social
 
 app = FastAPI(title="ClubOS API", version="0.1.0")
 
-# CORS middleware to allow frontend (localhost:5173, 5174, 5176, 5177) to access API
+# CORS middleware (configure with CLUBOS_CORS_ORIGINS comma-separated env var)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5176", "http://127.0.0.1:5176", "http://localhost:5177", "http://127.0.0.1:5177"],
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,6 +26,7 @@ app.include_router(briefing.router, prefix="/briefing", tags=["briefing"])
 app.include_router(refresh.router, prefix="/refresh", tags=["refresh"])
 app.include_router(analytics.router, prefix="/analytics/seasonal", tags=["analytics"])
 app.include_router(social.router, prefix="/social", tags=["social"])
+app.include_router(config.router, tags=["config"])
 
 
 @app.exception_handler(SnapshotAccessError)

@@ -9,8 +9,17 @@ import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { ChartTooltip } from "../../components/ui/ChartTooltip";
 import { WelcomeBanner } from "../../components/ui/WelcomeBanner";
 import { ScreenGuide } from "../../components/ui/ScreenGuide";
+import { ScoreComponentBar } from "../../components/ui/ScoreComponentBar";
 import { getMetricDef, getMetricUnit, getPolaritySymbol } from "../../lib/metricDefinitions";
 import { formatMonthYear } from "../../lib/dateFormat";
+
+const SCORING_WEIGHTS = {
+  severity: 0.30,
+  persistence: 0.25,
+  peer_gap: 0.20,
+  commercial: 0.15,
+  evidence: 0.10
+};
 
 export function PriorityBoardPage() {
   const navigate = useNavigate();
@@ -56,8 +65,22 @@ export function PriorityBoardPage() {
     if (category === "all") {
       setFilteredPriorities(priorities);
     } else {
+      // Use same matching logic as badge counts to ensure consistency
       setFilteredPriorities(
-        priorities.filter((p) => p.category.toLowerCase().includes(category.toLowerCase()))
+        priorities.filter((p) => {
+          const cat = p.category.toLowerCase();
+
+          if (category === "critical") {
+            return cat.includes('critical') || cat.includes('conversion') || cat.includes('weakness');
+          } else if (category === "opportunity") {
+            return cat.includes('opportunity');
+          } else if (category === "benchmark") {
+            return cat.includes('benchmark');
+          } else {
+            // Fallback to simple string match for any other categories
+            return cat.includes(category.toLowerCase());
+          }
+        })
       );
     }
   }
@@ -109,7 +132,8 @@ export function PriorityBoardPage() {
     if (category.toLowerCase().includes('opportunity')) return 'good';
     if (category.toLowerCase().includes('benchmark')) return 'info';
     if (category.toLowerCase().includes('warning')) return 'warning';
-    if (category.toLowerCase().includes('social engagement')) return 'accent'; // V1.7 — Social priorities use purple/accent color
+    // V1.8.5 — Social priorities use purple/accent color (all social categories)
+    if (category.toLowerCase().includes('social')) return 'accent';
     return 'accent';
   }
 
@@ -149,6 +173,18 @@ export function PriorityBoardPage() {
     return colors[colorType as keyof typeof colors] || colors.accent;
   }
 
+  function formatAssetName(assetName: string): string {
+    // V1.8.5 — Format asset names for display badges
+    const assetMap: Record<string, string> = {
+      'ecommerce': 'ECOMMERCE',
+      'main_website': 'MAIN WEBSITE',
+      'streaming': 'STREAMING',
+      'fan_app': 'FAN APP',
+      'social_media': 'SOCIAL',
+    };
+    return assetMap[assetName] || assetName.toUpperCase();
+  }
+
   if (loading) {
     return (
       <div className="max-w-screen-xl mx-auto px-6 py-12">
@@ -173,7 +209,11 @@ export function PriorityBoardPage() {
   }
 
   // Count by category
-  const criticalCount = priorities.filter((p) => p.category.toLowerCase().includes('critical')).length;
+  const criticalCount = priorities.filter((p) =>
+    p.category.toLowerCase().includes('critical') ||
+    p.category.toLowerCase().includes('conversion') ||
+    p.category.toLowerCase().includes('weakness')
+  ).length;
   const opportunityCount = priorities.filter((p) => p.category.toLowerCase().includes('opportunity')).length;
   const benchmarkCount = priorities.filter((p) => p.category.toLowerCase().includes('benchmark')).length;
 
@@ -372,7 +412,7 @@ export function PriorityBoardPage() {
               <div className="grid grid-cols-2 gap-4 mb-4 text-xs">
                 <div>
                   <div className="font-mono uppercase tracking-widest text-stone-500 dark:text-stone-400">Asset</div>
-                  <div className="font-semibold text-ink dark:text-stone-100">{priority.asset_name}</div>
+                  <div className="font-semibold text-ink dark:text-stone-100">{formatAssetName(priority.asset_name)}</div>
                 </div>
                 <div>
                   <div className="font-mono uppercase tracking-widest text-stone-500 dark:text-stone-400">Metric</div>
@@ -408,42 +448,14 @@ export function PriorityBoardPage() {
                     <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
                       Score Components
                     </div>
-                    {/* Stacked bar */}
-                    <div className="h-1.5 flex overflow-hidden rounded-sm">
-                      <div
-                        className="bg-critical-light dark:bg-critical-dark transition-all hover:opacity-80 cursor-help"
-                        style={{ width: `${(priority.score_breakdown.severity / 0.30) * 30}%` }}
-                        title={`Severity: ${priority.score_breakdown.severity.toFixed(2)} / 0.30 max`}
-                      ></div>
-                      <div
-                        className="bg-warning-light dark:bg-warning-dark transition-all hover:opacity-80 cursor-help"
-                        style={{ width: `${(priority.score_breakdown.persistence / 0.25) * 25}%` }}
-                        title={`Persistence: ${priority.score_breakdown.persistence.toFixed(2)} / 0.25 max`}
-                      ></div>
-                      <div
-                        className="bg-info-light dark:bg-info-dark transition-all hover:opacity-80 cursor-help"
-                        style={{ width: `${(priority.score_breakdown.peer_gap / 0.20) * 20}%` }}
-                        title={`Peer Gap: ${priority.score_breakdown.peer_gap.toFixed(2)} / 0.20 max`}
-                      ></div>
-                      <div
-                        className="bg-accent-light dark:bg-accent-dark transition-all hover:opacity-80 cursor-help"
-                        style={{ width: `${(priority.score_breakdown.commercial / 0.15) * 15}%` }}
-                        title={`Commercial: ${priority.score_breakdown.commercial.toFixed(2)} / 0.15 max`}
-                      ></div>
-                      <div
-                        className="bg-good-light dark:bg-good-dark transition-all hover:opacity-80 cursor-help"
-                        style={{ width: `${(priority.score_breakdown.evidence / 0.10) * 10}%` }}
-                        title={`Evidence: ${priority.score_breakdown.evidence.toFixed(2)} / 0.10 max`}
-                      ></div>
-                    </div>
-                    {/* Component labels */}
-                    <div className="flex justify-between mt-1.5 font-mono text-[9px] text-stone-500 dark:text-stone-400">
-                      <span title="Severity (30% weight)">{priority.score_breakdown.severity.toFixed(2)}</span>
-                      <span title="Persistence (25% weight)">{priority.score_breakdown.persistence.toFixed(2)}</span>
-                      <span title="Peer Gap (20% weight)">{priority.score_breakdown.peer_gap.toFixed(2)}</span>
-                      <span title="Commercial (15% weight)">{priority.score_breakdown.commercial.toFixed(2)}</span>
-                      <span title="Evidence (10% weight)">{priority.score_breakdown.evidence.toFixed(2)}</span>
-                    </div>
+                    <ScoreComponentBar
+                      severity={priority.score_breakdown.severity}
+                      persistence={priority.score_breakdown.persistence}
+                      peerGap={priority.score_breakdown.peer_gap}
+                      commercial={priority.score_breakdown.commercial}
+                      evidence={priority.score_breakdown.evidence}
+                      weights={SCORING_WEIGHTS}
+                    />
                   </div>
                 )}
               </div>
@@ -671,6 +683,34 @@ export function PriorityBoardPage() {
                               For example: "Prioritise Reel format for all non-time-sensitive content. For every 10 standard image posts planned, consider converting 3-4 to Reels."
                             </p>
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* V1.8.5 — Social Priority Callout Box */}
+                  {selectedDetail.asset_name === "social_media" && (
+                    <div className="mb-6 p-4 border border-accent-light dark:border-accent-dark rounded-lg bg-accent-50 dark:bg-accent-dark/10">
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl">🎯</span>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-accent-light dark:text-accent-dark mb-2">
+                            Social Media Platform Analysis
+                          </h4>
+                          <p className="text-sm text-stone-700 dark:text-stone-300 mb-3">
+                            This priority is from the Social Media platform.
+                            For full platform breakdown, content performance, and international audience analysis →
+                          </p>
+                          <button
+                            onClick={() => {
+                              closeDetail();
+                              navigate('/social');
+                            }}
+                            className="px-4 py-2 rounded-lg font-semibold text-sm bg-accent-light dark:bg-accent-dark text-white hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+                          >
+                            View Social Intelligence Screen
+                            <span>↗</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1058,6 +1098,14 @@ export function PriorityBoardPage() {
                                 </BarChart>
                               </ResponsiveContainer>
 
+                              {selectedDetail.peer_values.some((entry) => entry.is_estimated) && (
+                                <div className="mt-3 p-3 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
+                                  <p className="font-mono text-xs text-amber-800 dark:text-amber-300">
+                                    Note: Some peer bars are modeled/estimated from aggregate benchmark stats (mean/median/leader), not direct club-level observed values.
+                                  </p>
+                                </div>
+                              )}
+
                               {/* Gap Annotation */}
                               {(gapToMedian || gapToLeader) && (
                                 <div className="mt-4 p-3 border-t border-stone-300 dark:border-stone-700">
@@ -1088,9 +1136,26 @@ export function PriorityBoardPage() {
                         Peer Benchmark
                       </h3>
                       <div className="p-6 bg-stone-50 dark:bg-stone-800/50 rounded-lg border border-stone-300 dark:border-stone-700">
-                        <p className="font-mono text-sm text-stone-500 dark:text-stone-400 text-center">
-                          Peer benchmark data unavailable
-                        </p>
+                        {selectedDetail.asset_name === "social_media" ? (
+                          <div className="text-center">
+                            <p className="font-mono text-sm text-stone-500 dark:text-stone-400 mb-3">
+                              Peer social benchmark comparison available on the Social Intelligence screen
+                            </p>
+                            <button
+                              onClick={() => {
+                                closeDetail();
+                                navigate('/social');
+                              }}
+                              className="px-3 py-1.5 rounded font-mono text-xs bg-accent-light dark:bg-accent-dark text-white hover:opacity-90 transition-opacity"
+                            >
+                              View Social Benchmarking →
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="font-mono text-sm text-stone-500 dark:text-stone-400 text-center">
+                            Peer benchmark data unavailable
+                          </p>
+                        )}
                       </div>
                     </section>
                   )}
@@ -1230,8 +1295,9 @@ export function PriorityBoardPage() {
                             <tr className="bg-stone-100 dark:bg-stone-800">
                               <th className="text-left p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Component</th>
                               <th className="text-right p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Weight</th>
-                              <th className="text-right p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Your Score</th>
-                              <th className="text-right p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Max Possible</th>
+                              <th className="text-right p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Component Score</th>
+                              <th className="text-right p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Contribution</th>
+                              <th className="text-right p-3 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Max</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1248,7 +1314,8 @@ export function PriorityBoardPage() {
                                 </div>
                               </td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">30%</td>
-                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.severity.toFixed(3)}</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 text-stone-600 dark:text-stone-400">{selectedDetail.score_breakdown.severity.toFixed(3)} / 1.00</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.severity_contribution.toFixed(3)}</td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">0.300</td>
                             </tr>
                             <tr className="bg-stone-50 dark:bg-stone-800/50">
@@ -1265,7 +1332,8 @@ export function PriorityBoardPage() {
                                 </div>
                               </td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">25%</td>
-                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.persistence.toFixed(3)}</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 text-stone-600 dark:text-stone-400">{selectedDetail.score_breakdown.persistence.toFixed(3)} / 1.00</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.persistence_contribution.toFixed(3)}</td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">0.250</td>
                             </tr>
                             <tr>
@@ -1283,7 +1351,8 @@ export function PriorityBoardPage() {
                                 </div>
                               </td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">20%</td>
-                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.peer_gap.toFixed(3)}</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 text-stone-600 dark:text-stone-400">{selectedDetail.score_breakdown.peer_gap.toFixed(3)} / 1.00</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.peer_gap_contribution.toFixed(3)}</td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">0.200</td>
                             </tr>
                             <tr className="bg-stone-50 dark:bg-stone-800/50">
@@ -1300,7 +1369,8 @@ export function PriorityBoardPage() {
                                 </div>
                               </td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">15%</td>
-                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.commercial.toFixed(3)}</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 text-stone-600 dark:text-stone-400">{selectedDetail.score_breakdown.commercial.toFixed(3)} / 1.00</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.commercial_contribution.toFixed(3)}</td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">0.150</td>
                             </tr>
                             <tr>
@@ -1317,17 +1387,22 @@ export function PriorityBoardPage() {
                                 </div>
                               </td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">10%</td>
-                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.evidence.toFixed(3)}</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 text-stone-600 dark:text-stone-400">{selectedDetail.score_breakdown.evidence.toFixed(3)} / 1.00</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700 font-bold">{selectedDetail.score_breakdown.evidence_contribution.toFixed(3)}</td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">0.100</td>
                             </tr>
                             <tr className="bg-stone-100 dark:bg-stone-800 font-bold">
                               <td className="p-3 border border-ink dark:border-stone-700">TOTAL</td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">100%</td>
+                              <td className="p-3 text-right border border-ink dark:border-stone-700">—</td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700 text-lg">{selectedDetail.score.toFixed(3)}</td>
                               <td className="p-3 text-right border border-ink dark:border-stone-700">1.000</td>
                             </tr>
                           </tbody>
                         </table>
+                        <p className="mt-2 px-3 py-2 bg-stone-50 dark:bg-stone-800 border-t border-stone-300 dark:border-stone-700 font-mono text-xs text-stone-600 dark:text-stone-400">
+                          Component Score shows raw performance (0–1.0). Contribution shows weighted impact on final score.
+                        </p>
                       </div>
                     </section>
                   )}
@@ -1383,6 +1458,47 @@ export function PriorityBoardPage() {
                           </div>
                         ))}
                       </div>
+
+                      {/* Gap Annotation (V1.8.3) */}
+                      {selectedDetail.supporting_metrics.peer_context.raw_gap_to_peer_median !== undefined && (() => {
+                        const metricDef = getMetricDef(selectedDetail.primary_metric);
+                        const polarity = metricDef?.polarity ?? 1;
+                        const rawGap = selectedDetail.supporting_metrics.peer_context.raw_gap_to_peer_median;
+                        const gapIsGood = (polarity === 1 && rawGap > 0) || (polarity === -1 && rawGap < 0);
+                        const peerMedian = selectedDetail.supporting_metrics.peer_context.peer_median;
+                        const peerLeader = selectedDetail.supporting_metrics.peer_context.peer_leader_value;
+
+                        return (
+                          <div className="mt-4 p-4 border border-stone-300 dark:border-stone-700 bg-paper dark:bg-stone-900">
+                            {gapIsGood ? (
+                              <p className="font-mono text-sm text-good-light dark:text-good-dark">
+                                <span className="font-bold">▲ Real Madrid is ahead of peer median on this metric</span>
+                                {polarity === -1 && rawGap < 0 && (
+                                  <span className="block mt-1 text-xs text-stone-600 dark:text-stone-400">
+                                    (Lower is better for this metric — being below median is an advantage)
+                                  </span>
+                                )}
+                              </p>
+                            ) : (
+                              <p className="font-mono text-sm text-critical-light dark:text-critical-dark">
+                                <span className="font-bold">▼ Real Madrid is {Math.abs(rawGap).toFixed(4)} behind peer median</span>
+                                {polarity === -1 && rawGap > 0 && (
+                                  <span className="block mt-1 text-xs text-stone-600 dark:text-stone-400">
+                                    (Lower is better for this metric — being above median indicates underperformance)
+                                  </span>
+                                )}
+                              </p>
+                            )}
+
+                            {/* Note when peer median equals peer leader */}
+                            {peerMedian !== undefined && peerLeader !== undefined && Math.abs(peerLeader - peerMedian) < 0.0001 && (
+                              <p className="mt-2 font-mono text-xs text-stone-500 dark:text-stone-400">
+                                All benchmarked clubs show similar values for this metric this month.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </section>
                   )}
 

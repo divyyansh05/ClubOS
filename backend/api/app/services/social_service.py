@@ -49,9 +49,12 @@ def get_social_metrics(month_str: Optional[str] = None) -> list[dict]:
     return rows
 
 
-def get_social_summary() -> SocialSummaryResponse:
+def get_social_summary(month_str: Optional[str] = None) -> SocialSummaryResponse:
     """
-    Get latest month summary with MoM comparison.
+    Get month summary with MoM comparison (defaults to latest month).
+
+    Args:
+        month_str: Optional month filter in YYYY-MM format
 
     Returns:
         SocialSummaryResponse with key metrics and changes
@@ -64,8 +67,17 @@ def get_social_summary() -> SocialSummaryResponse:
     # Sort by month descending
     rows_sorted = sorted(rows, key=lambda r: r.get("month", ""), reverse=True)
 
-    latest = rows_sorted[0]
-    prior = rows_sorted[1] if len(rows_sorted) > 1 else None
+    if month_str:
+        # Find the index of the row matching month_str
+        matching_indices = [i for i, r in enumerate(rows_sorted) if r.get("month", "").startswith(month_str)]
+        if not matching_indices:
+            raise ValueError(f"No social metrics data available for month {month_str}")
+        idx = matching_indices[0]
+        latest = rows_sorted[idx]
+        prior = rows_sorted[idx + 1] if idx + 1 < len(rows_sorted) else None
+    else:
+        latest = rows_sorted[0]
+        prior = rows_sorted[1] if len(rows_sorted) > 1 else None
 
     def compute_mom_change(current, previous):
         if previous is None or previous == 0:

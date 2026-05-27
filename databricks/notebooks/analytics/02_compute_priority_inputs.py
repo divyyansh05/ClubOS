@@ -10,6 +10,7 @@
 
 import pyspark.sql.functions as F
 from pyspark.sql.window import Window
+import json
 
 # 1. Load Gold tables
 kpi_health = spark.read.table("clubos_gold.gold_kpi_health")
@@ -69,7 +70,8 @@ df = kpi_health.alias("h").join(
     "metric_value",
     "health_status",
     "trend_direction",
-    "deviation_from_seasonal_baseline",
+    "deviation_from_rolling_avg",
+    "seasonal_z_score",
     F.col("b.rm_rank").alias("peer_rank"),
     F.col("b.club_count").alias("peer_club_count"),
     F.col("b.peer_median"),
@@ -82,11 +84,16 @@ df = kpi_health.alias("h").join(
 df = df.withColumn("metric_key", F.concat_ws("_", "asset_name", "metric_name"))
 df = df.withColumn("is_active", F.when(F.col("health_status") != "stable", F.lit(1)).otherwise(F.lit(0)))
 
+# NEW SEVERITY CALCULATION: Use seasonal Z-score instead of rolling avg deviation
+# Formula: severity = min(1.0, abs(z_score) / 2.0)
+# Z-score of 0 = no deviation = severity 0.0
+# Z-score of 1.0 = 1 std dev = severity 0.5
+# Z-score of 2.0+ = 2+ std devs = severity 1.0 (maximum)
 df = df.withColumn(
     "severity_score",
     F.when(
         F.col("health_status") != "stable",
-        F.least(F.lit(1.0), F.abs(F.col("deviation_from_seasonal_baseline")) / F.lit(0.20))
+        F.least(F.lit(1.0), F.abs(F.col("seasonal_z_score")) / F.lit(2.0))
     ).otherwise(F.lit(0.0))
 )
 
@@ -103,17 +110,37 @@ df = df.withColumn(
     .otherwise(F.lit(0.0))
 )
 
-# 5. Commercial weight from deterministic rules + validated signal links
-TARGET_KEYS = ["ecommerce_net_sales", "ecommerce_conversion_rate", "streaming_subscriptions"]
-validated_source_keys = source_signal_refs.select("metric_key").withColumn("is_validated_source", F.lit(1))
+# 5. Commercial weight from metric_dictionary.json
+# Load metric dictionary for commercial weights
+try:
+    with open("/dbfs/FileStore/clubos_config/metric_dictionary.json") as f:
+        metric_dict = json.load(f)
+except:
+    # Fallback to empty dict if not in DBFS
+    metric_dict = {}
 
-df = df.join(validated_source_keys, on="metric_key", how="left")
-df = df.withColumn(
-    "commercial_weight_score",
-    F.when(F.col("metric_key").isin(TARGET_KEYS), F.lit(1.0))
-    .when(F.col("is_validated_source") == 1, F.lit(0.8))
-    .otherwise(F.lit(0.4))
-)
+# Build commercial weight DataFrame
+# Note: metric_dictionary keys are metric names only (not asset_metric)
+# We need to extract just the metric name from metric_key for lookup
+commercial_weights_list = [
+    (metric_name, float(props.get("commercial_weight", 0.4)))
+    for metric_name, props in metric_dict.items()
+    if "commercial_weight" in props
+]
+
+if commercial_weights_list:
+    weights_df = spark.createDataFrame(commercial_weights_list, ["metric_name", "commercial_weight_score"])
+    df = df.join(weights_df, on="metric_name", how="left")
+    # Fill missing with default 0.4
+    df = df.fillna(0.4, subset=["commercial_weight_score"])
+else:
+    # Fallback if metric_dictionary not loaded
+    validated_source_keys = source_signal_refs.select("metric_key").withColumn("is_validated_source", F.lit(1))
+    df = df.join(validated_source_keys, on="metric_key", how="left")
+    df = df.withColumn(
+        "commercial_weight_score",
+        F.when(F.col("is_validated_source") == 1, F.lit(0.8)).otherwise(F.lit(0.4))
+    )
 
 # 6. Keep only actionable rows (non-stable health) and assign categories
 df = df.filter(F.col("is_active") == 1)
@@ -145,7 +172,8 @@ supporting_pool = df.select(
         "metric_value",
         "health_status",
         "trend_direction",
-        "deviation_from_seasonal_baseline",
+        "deviation_from_rolling_avg",
+        "seasonal_z_score",
         "severity_score"
     ).alias("supporting_row")
 ).groupBy("month", "asset_name").agg(F.collect_list("supporting_row").alias("asset_supporting_rows"))
@@ -156,9 +184,12 @@ df = df.withColumn(
     F.expr("filter(asset_supporting_rows, x -> x.metric_name <> metric_name)")
 ).drop("asset_supporting_rows")
 
+# NEW EVIDENCE SCORING: Scale with count instead of binary
+# 0 metrics = 0.0, 1 metric = 0.2, 5+ metrics = 1.0
+EVIDENCE_MAX_COUNT = 5
 df = df.withColumn(
     "supporting_evidence_score",
-    F.when(F.size("supporting_metric_rows") > 0, F.lit(1.0)).otherwise(F.lit(0.0))
+    F.least(F.lit(1.0), F.size("supporting_metric_rows") / F.lit(EVIDENCE_MAX_COUNT))
 )
 
 # 8. Attach linked signal references for source and target perspectives
@@ -218,7 +249,8 @@ final_cols = [
     "metric_value",
     "health_status",
     "trend_direction",
-    "deviation_from_seasonal_baseline",
+    "deviation_from_rolling_avg",
+    "seasonal_z_score",
     "severity_score",
     "persistence_months",
     "persistence_score",

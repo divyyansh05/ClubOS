@@ -1,0 +1,35 @@
+{
+  "formula_weights": {
+    "severity": 0.30,
+    "persistence": 0.25,
+    "peer_gap": 0.20,
+    "commercial": 0.15,
+    "evidence": 0.10
+  },
+  "severity_z_score_max": 2.0,
+  "persistence_window_months": 3,
+  "peer_rank_scores": {
+    "5+": 1.0,
+    "4": 0.8,
+    "3": 0.4,
+    "2": 0.2,
+    "1": 0.0
+  },
+  "evidence_max_count": 5,
+  "health_status_thresholds": {
+    "review_below": -0.05,
+    "good_above": 0.05
+  },
+  "signal_valid_directions": [
+    {"source_asset": "main_website", "target_asset": "ecommerce"},
+    {"source_asset": "main_website", "target_asset": "streaming"},
+    {"source_asset": "fan_app", "target_asset": "ecommerce"},
+    {"source_asset": "fan_app", "target_asset": "streaming"},
+    {"source_asset": "social_media", "target_asset": "ecommerce"},
+    {"source_asset": "social_media", "target_asset": "main_website"},
+    {"source_asset": "social_media", "target_asset": "streaming"}
+  ],
+  "signal_correlation_threshold_internal": 0.60,
+  "signal_correlation_threshold_social": 0.50,
+  "signal_provisional_sample_size_months": 60
+}

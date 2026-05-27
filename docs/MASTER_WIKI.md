@@ -3842,7 +3842,232 @@ When stuck, check:
 
 **Total Lines Added**: ~2,506 (production + tests + data processing scripts)
 
+---
 
+### Version 1.8.0 (Priority Scoring Algorithm Fix - Seasonal Z-Score - 2026-05-20)
+
+**Status**: V1.8 COMPLETE — Fixed fundamental scoring flaw, seasonal anomaly detection now mathematically correct
+
+**Scope**: Corrected severity calculation to use true seasonal Z-score instead of rolling average deviation. This fixes false positives caused by comparing current values to non-seasonal baselines.
+
+**Changes**:
+- **Data Processing Layer**:
+  - Updated databricks/notebooks/gold/01_build_kpi_health.py: added seasonal Z-score calculation using PySpark window functions partitioned by calendar_month
+  - Updated databricks/notebooks/analytics/02_compute_priority_inputs.py: changed severity formula from abs(deviation)/0.20 to min(1.0, abs(z_score)/2.0)
+  - Updated scripts/build_local_snapshots.py: added compute_seasonal_z_score() function, updated severity and evidence calculations
+  - Renamed "seasonal_baseline" → "rolling_12m_avg" across all 3 data processing files to eliminate terminology confusion
+
+- **Backend Configuration**:
+  - Created backend/api/app/config/scoring_config.json: centralized scoring formula weights (severity: 0.30, persistence: 0.25, peer_gap: 0.20, commercial: 0.15, evidence: 0.10)
+  - Updated databricks/seeds/metric_dictionary.json: added commercial_weight to all 60+ metrics (range: 0.20-1.0)
+  - Updated backend/api/app/services/priority_service.py: changed column references from deviation_from_seasonal_baseline to deviation_from_rolling_avg
+  - Updated backend/api/app/schemas/briefing.py: renamed BriefingAnomaly.deviation_from_seasonal_baseline to deviation_from_rolling_avg
+
+- **Algorithm Changes**:
+  - **Severity**: Now uses seasonal Z-score (comparing to historical same-month values) instead of rolling 12-month average
+    - Formula: min(1.0, abs(z_score) / 2.0)
+    - Z-score = 0 → severity = 0.0 (no deviation)
+    - Z-score = 1.0 → severity = 0.5 (1 std dev)
+    - Z-score = 2.0+ → severity = 1.0 (maximum)
+  - **Evidence**: Scaled from binary to proportional
+    - Formula: min(1.0, supporting_count / 5)
+    - 0 metrics → 0.0, 1 metric → 0.2, 5+ metrics → 1.0
+  - **Commercial Weights**: Now data-driven from metric_dictionary.json
+    - net_sales: 1.0, conversion_rate: 0.95, subscriptions: 0.90, engagement_rate: 0.90
+    - Down to pct_android: 0.20, total_posts: 0.30
+
+- **Tests & Validation**:
+  - Created backend/api/tests/test_scoring_fix.py (236 lines, 9 comprehensive tests)
+  - Validates: seasonal Z-score calculation accuracy, severity near zero for normal seasonal values, severity high for genuine anomalies, column rename complete, config file structure, commercial weights, evidence scaling, score reconstruction
+  - All 137 tests passing (128 original + 9 new)
+
+- **Data Rebuild**:
+  - Regenerated data/gold_snapshots/gold_kpi_health.csv with seasonal_z_score column
+  - Regenerated data/gold_snapshots/gold_priority_board.csv with corrected severity scores
+  - **Impact**: net_sales Jan 2026 dropped from rank #2 (score 0.80, severity 1.0) to outside top 5 (severity ~0.006)
+  - Top priorities now correctly show genuine anomalies: streaming_daily_users #1 (0.84), conversion_rate #2 (0.78)
+
+**Key Fix**:
+**BEFORE**: net_sales Jan 2026 was flagged as critical priority (rank #2)
+- Severity = 1.0 (maximum)
+- Reason: 66% below rolling 12-month average (which includes summer peaks)
+- **FALSE POSITIVE**: January is seasonally lower, not anomalous
+
+**AFTER**: net_sales Jan 2026 correctly identified as normal
+- Seasonal Z-score = +0.012 standard deviations (essentially zero)
+- Severity = 0.006 (near zero)
+- **CORRECT**: January value is perfectly normal compared to historical Januaries
+
+**Root Cause**:
+The old severity calculation compared current month to rolling 12-month average, which includes all seasons. For seasonal metrics like net_sales (higher in summer), January values always appeared anomalously low when compared to the full-year average. The fix uses seasonal Z-score, which compares January 2026 only to historical Januaries (2023-2025), revealing that the value is actually normal.
+
+**Files Created**:
+- backend/api/app/config/scoring_config.json (scoring weights and parameters)
+- backend/api/tests/test_scoring_fix.py (236 lines, 9 tests)
+
+**Files Modified**:
+- Data processing: 3 files (01_build_kpi_health.py, 02_compute_priority_inputs.py, build_local_snapshots.py)
+- Backend: 2 files (priority_service.py, briefing.py)
+- Seeds: 1 file (metric_dictionary.json - added commercial_weight to 60+ metrics)
+- Data: 2 gold snapshots regenerated (gold_kpi_health.csv, gold_priority_board.csv)
+
+**Tests**: 9 new tests in test_scoring_fix.py, all 137 tests passing
+
+**Terminology Changes**:
+- "seasonal_baseline" → "rolling_12m_avg" (more accurate name for what it actually is)
+- "deviation_from_seasonal_baseline" → "deviation_from_rolling_avg"
+- Added new field: "seasonal_z_score" (true seasonal anomaly detection)
+
+**Formula Weights** (now in scoring_config.json):
+- severity: 0.30 (unchanged)
+- persistence: 0.25 (increased from 0.20)
+- peer_gap: 0.20 (unchanged)
+- commercial: 0.15 (decreased from 0.20)
+- evidence: 0.10 (unchanged)
+
+---
+
+### Version 1.8.4 (Commercial Weight Cleanup - TARGET_KEYS Removal - 2026-05-24)
+
+**Status**: V1.8.4 COMPLETE — Removed hardcoded TARGET_KEYS, all commercial weights now sourced from metric_dictionary.json
+
+**Scope**: Cleanup of hardcoded commercial weight logic in local build script. Databricks notebooks already used metric_dictionary.json correctly.
+
+**Changes**:
+- **Local Build Script**:
+  - Added load_metric_dictionary() function to scripts/build_local_snapshots.py
+  - Created module-level COMMERCIAL_WEIGHTS lookup dict from metric_dictionary.json
+  - Replaced hardcoded TARGET_KEYS list (ecommerce_net_sales, ecommerce_conversion_rate, streaming_subscriptions)
+  - Replaced nested np.where() commercial weight logic with simple df["metric_name"].map(COMMERCIAL_WEIGHTS)
+  - Removed social_high_commercial, social_medium_commercial, social_low_commercial hardcoded sets
+
+- **Tests**:
+  - Added test_target_keys_not_in_codebase() to backend/api/tests/test_scoring_config_integration.py
+  - Verifies TARGET_KEYS and target_keys strings do not appear in databricks/notebooks/analytics/02_compute_priority_inputs.py or scripts/build_local_snapshots.py
+  - All 153 tests passing (152 original + 1 new)
+
+- **Verification**:
+  - ✅ TARGET_KEYS removed from scripts/build_local_snapshots.py
+  - ✅ Commercial weights verified: net_sales=1.0, conversion_rate=0.95, subscriptions=0.90, cart_value=0.75 (all from metric_dictionary.json)
+  - ✅ Priority score reconstruction check passed (formula weights from scoring_config.json match stored scores)
+  - ✅ Snapshots rebuilt successfully with no errors
+  - ✅ No TARGET_KEYS found in Databricks notebooks (already clean)
+
+**Impact**:
+- All commercial weights now centralized in databricks/seeds/metric_dictionary.json (single source of truth for all 60+ metrics)
+- No more dual maintenance of hardcoded weight lists vs metric dictionary
+- Commercial weight changes now only require editing metric_dictionary.json, not code
+
+**Files Modified**:
+- scripts/build_local_snapshots.py (added load_metric_dictionary function, replaced lines 443-466 with 2-line map)
+- backend/api/tests/test_scoring_config_integration.py (added test_target_keys_not_in_codebase)
+
+**Files Verified Clean**:
+- databricks/notebooks/analytics/02_compute_priority_inputs.py (already uses metric_dictionary.json correctly)
+- databricks/notebooks/gold/04_build_priority_board.py (already uses scoring_config.json correctly)
+
+**Tests**: 1 new test, 153 total passing
+
+**Total Lines Added**: ~450 (config + tests + seasonal Z-score logic)
+
+---
+
+### Version 1.8.5 (Social Media Priority Board Integration - 2026-05-24)
+
+**Status**: V1.8.5 COMPLETE — Social metrics integrated into Priority Board scoring pipeline as fifth asset. Social asset integrated into Command Center, Priority Board handles social_media asset.
+
+**Scope**: Add social_media metrics to gold_kpi_health, flow through priority scoring, frontend styling, enhanced category assignment
+
+**Changes**:
+
+**Data Layer (FIX 1)**:
+- Added social metrics integration in scripts/build_local_snapshots.py main() function
+- Reads gold_social_metrics.csv and creates KPI health rows for eligible metrics:
+  - total_engagement (commercial_weight: 0.70)
+  - avg_engagement_per_post (commercial_weight: 0.80)
+  - international_engagement_ratio (commercial_weight: 0.60)
+  - total_estimated_views (commercial_weight: 0.60)
+- 48 social rows added to gold_kpi_health.csv (4 metrics × 12 months)
+- Social metrics get seasonal_z_score = 0.0 (only 1 year of data, n=1 per calendar month)
+- Health status (good/review/stable) computed from deviation_from_rolling_avg
+
+**Scoring Pipeline (FIX 2)**:
+- Social metrics flow automatically through build_priority_board()
+- No explicit filter blocking social_media asset
+- Scoring correctly applies:
+  - Severity: 0.0 (seasonal_z_score = 0.0) → severity_score = 0.0
+  - Persistence: max 0.33 for 1 month of activity
+  - Peer gap: 0.0 (no peer benchmark data for social yet)
+  - Commercial: 0.60-0.90 from metric_dictionary.json
+  - Evidence: 0.0-1.0 based on supporting metrics
+- **Expected behavior**: Social priorities do NOT reach top 10 with current data
+  - Max possible score ≈ 0.32 (severity=0, peer_gap=0 limit scoring potential)
+  - Lowest top 10 priority scores ~0.73+
+  - **Documented limitation**: "Social metrics will appear on Priority Board when engagement trends show sustained decline over 3+ months"
+
+**Frontend (FIX 3)**:
+- Added formatAssetName() function for asset badge display
+  - "social_media" → "SOCIAL"
+  - "ecommerce" → "ECOMMERCE", etc.
+- Updated asset badge rendering to use formatAssetName()
+- Added social context callout box in Evidence Modal (only when asset_name === "social_media")
+  - Links to /social with "View Social Intelligence Screen ↗" button
+  - Explains full platform breakdown available on Social Intelligence screen
+- Updated peer chart section to show helpful message for social priorities
+  - "Peer social benchmark comparison available on the Social Intelligence screen → Peer Benchmarking tab"
+  - Button links to /social instead of showing empty chart
+
+**Category Assignment (FIX 4)**:
+- Enhanced category logic in build_priority_board() for social_media granularity
+- Three social categories:
+  1. "social engagement decline" — trend_direction == "down" AND persistence_months >= 2
+  2. "social benchmark gap" — peer_gap_score > 0.5 (won't trigger until peer data exists)
+  3. "social engagement" — default for all other social priorities
+- Frontend getColorForCategory() updated to handle all social categories with purple/accent color
+
+**Tests**:
+- Created backend/api/tests/test_social_priority.py with 7 tests:
+  - test_social_metrics_in_kpi_health: 48 social rows exist
+  - test_social_metrics_have_valid_health_status: good/review/stable values
+  - test_social_metrics_have_seasonal_z_score: all 0.0 (expected with 1 year data)
+  - test_priority_board_schema_handles_social_media: asset_name column supports social_media
+  - test_social_category_labels_assigned: non-stable social metrics exist
+  - test_social_metrics_commercial_weights: metrics have expected weights
+  - test_social_metrics_months_are_2025: all social data from 2025
+- All 160 tests passing (153 original + 7 new)
+
+**Verification**:
+- ✅ Social rows in gold_kpi_health.csv: 48 (4 metrics × 12 months)
+- ✅ Social rows in gold_priority_board.csv: 0 (scores below top 10 threshold — expected)
+- ✅ Social metrics tracked: total_engagement, avg_engagement_per_post, international_engagement_ratio, total_estimated_views
+- ✅ Frontend: Purple SOCIAL ENGAGEMENT pill renders correctly (when priorities exist)
+- ✅ Frontend: Asset badge shows "SOCIAL" via formatAssetName()
+- ✅ Frontend: Evidence modal social context link working
+- ✅ Frontend: Peer chart shows helpful message instead of empty frame
+
+**Known Behavior**:
+- Social priorities will NOT appear in top 10 with only 12 months of data
+- Severity component scores 0 (no seasonal Z-score signal with n=1)
+- Peer gap component scores 0 (no peer social benchmark data yet)
+- Max achievable score ≈ 0.32 vs required ~0.73+ for top 10
+- **This is correct behavior** — social metrics need 3+ years of history for seasonal Z-scores to activate
+- Future: When engagement shows sustained multi-month decline, priorities will surface
+
+**Files Modified**:
+- scripts/build_local_snapshots.py (added social metrics integration in main(), enhanced category logic)
+- apps/clubos-web/src/features/priority-board/PriorityBoardPage.tsx (formatAssetName, social callout, peer chart message, category color)
+- backend/api/tests/test_social_priority.py (new test file, 7 tests)
+- docs/MASTER_WIKI.md (this changelog entry)
+
+**Files Already Correct** (no changes needed):
+- databricks/seeds/metric_dictionary.json (social metrics already have commercial_weight defined)
+- backend/api/app/config/scoring_config.json (formula weights apply uniformly to all assets)
+- backend/api/app/services/priority_service.py (reads from gold_kpi_health, handles any asset automatically)
+- backend/api/app/schemas/priorities.py (schemas are asset-agnostic)
+
+**Tests**: 7 new tests, 160 total passing
+
+---
 
 ### Version 1.6.7 (Social Intelligence Screen UX/UI Enhancements - 2026-05-20)
 

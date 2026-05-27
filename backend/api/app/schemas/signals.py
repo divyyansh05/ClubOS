@@ -41,6 +41,8 @@ class SignalItem(BaseModel):
     relationship_type: Optional[str] = None
     # V1.6.2: Signal Type Classification
     signal_type: Optional[str] = "internal"
+    # V1.8.2: Signal Provisional Flag (Audit Fix 3)
+    provisional: bool = False
 
 
 class SignalResponse(BaseModel):

@@ -347,30 +347,56 @@ export function PeerBenchmarkPage() {
           {/* Gap Stats - Now Clickable */}
           <div className="grid grid-cols-2 gap-px bg-ink dark:bg-stone-700 border border-ink dark:border-stone-700">
             <button
-              onClick={() => showMetricDetail({
-                name: "Gap to Peer Median",
-                value: latestPoint.gap_to_peer_median.toLocaleString(),
-                category: latestPoint.gap_to_peer_median < 0 ? "Review Needed" : "Good Performance",
-                explanation: `Real Madrid is ${Math.abs(latestPoint.gap_to_peer_median).toLocaleString()} ${latestPoint.gap_to_peer_median < 0 ? 'behind' : 'ahead of'} the peer median for ${selectedMetric.label}. The median represents the middle value when all ${latestPoint.club_count} clubs are ranked.`,
-                businessContext: `${latestPoint.gap_to_peer_median < 0 ? 'Being behind the median means Real Madrid is performing worse than half of peer clubs. This gap represents lost revenue potential and competitive disadvantage.' : 'Performing above the median demonstrates competitive strength and positions Real Madrid in the upper tier of peer clubs.'}`,
-                additionalInfo: {
-                  "Gap": latestPoint.gap_to_peer_median.toLocaleString(),
-                  "RM Value": latestPoint.rm_value.toLocaleString(),
-                  "Peer Median": latestPoint.peer_median.toLocaleString(),
-                  "Status": latestPoint.gap_to_peer_median < 0 ? "Behind" : "Ahead",
-                }
-              })}
+              onClick={() => {
+                const isNegativePolarity = selectedMetric.metric === "bounce_rate";
+                const rawGap = latestPoint.raw_gap_to_peer_median;
+                const isGoodPerformance = isNegativePolarity ? (rawGap < 0) : (rawGap > 0);
+
+                showMetricDetail({
+                  name: "Gap to Peer Median",
+                  value: rawGap.toLocaleString(),
+                  category: isGoodPerformance ? "Good Performance" : "Review Needed",
+                  explanation: isNegativePolarity
+                    ? `Real Madrid's ${selectedMetric.label} is ${Math.abs(rawGap).toLocaleString()} ${rawGap < 0 ? 'lower than' : 'higher than'} the peer median. For ${selectedMetric.label}, ${rawGap < 0 ? 'lower is better — this indicates good performance' : 'higher is worse — this indicates underperformance'}. The median represents the middle value when all ${latestPoint.club_count} clubs are ranked.`
+                    : `Real Madrid is ${Math.abs(rawGap).toLocaleString()} ${rawGap < 0 ? 'behind' : 'ahead of'} the peer median for ${selectedMetric.label}. The median represents the middle value when all ${latestPoint.club_count} clubs are ranked.`,
+                  businessContext: isNegativePolarity
+                    ? (rawGap < 0
+                        ? `Being below the median in ${selectedMetric.label} means Real Madrid has better user engagement than half of peer clubs. This demonstrates competitive strength.`
+                        : `Being above the median in ${selectedMetric.label} means Real Madrid has worse user engagement than half of peer clubs. This represents an area requiring strategic focus.`)
+                    : (rawGap < 0
+                        ? 'Being behind the median means Real Madrid is performing worse than half of peer clubs. This gap represents lost revenue potential and competitive disadvantage.'
+                        : 'Performing above the median demonstrates competitive strength and positions Real Madrid in the upper tier of peer clubs.'),
+                  additionalInfo: {
+                    "Raw Gap": rawGap.toLocaleString(),
+                    "RM Value": latestPoint.rm_value.toLocaleString(),
+                    "Peer Median": latestPoint.peer_median.toLocaleString(),
+                    "Status": isGoodPerformance ? "Good" : "Needs Review",
+                  }
+                });
+              }}
               className="bg-paper dark:bg-stone-900 p-4 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors text-left"
             >
-              <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1 flex items-center gap-2">
                 Gap to Median
+                {selectedMetric.metric === "bounce_rate" && (
+                  <InfoTooltip
+                    content="For Bounce Rate, lower values are better. Real Madrid being below the peer median is good for this metric."
+                    size="sm"
+                  />
+                )}
               </div>
               <div className="font-mono text-xl font-bold text-ink dark:text-stone-100">
-                {latestPoint.gap_to_peer_median > 0 ? "+" : ""}
-                {latestPoint.gap_to_peer_median.toLocaleString()}
+                {latestPoint.raw_gap_to_peer_median > 0 ? "+" : ""}
+                {latestPoint.raw_gap_to_peer_median.toLocaleString()}
               </div>
-              <div className={`font-mono text-sm ${latestPoint.gap_to_peer_median < 0 ? 'text-critical-light dark:text-critical-dark' : 'text-good-light dark:text-good-dark'}`}>
-                {latestPoint.gap_to_peer_median < 0 ? "Behind" : "Ahead"}
+              <div className={`font-mono text-sm ${
+                selectedMetric.metric === "bounce_rate"
+                  ? (latestPoint.raw_gap_to_peer_median < 0 ? 'text-good-light dark:text-good-dark' : 'text-critical-light dark:text-critical-dark')
+                  : (latestPoint.raw_gap_to_peer_median < 0 ? 'text-critical-light dark:text-critical-dark' : 'text-good-light dark:text-good-dark')
+              }`}>
+                {selectedMetric.metric === "bounce_rate"
+                  ? (latestPoint.raw_gap_to_peer_median < 0 ? "↓ Below (Good)" : "↑ Above (Bad)")
+                  : (latestPoint.raw_gap_to_peer_median < 0 ? "Behind" : "Ahead")}
               </div>
             </button>
             <button
@@ -474,15 +500,25 @@ export function PeerBenchmarkPage() {
           {/* Gap Annotation */}
           <div className="mt-4 p-4 border-t border-stone-300 dark:border-stone-700 bg-paper dark:bg-stone-900">
             <p className="font-body text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-              <strong className="text-ink dark:text-stone-100">Understanding the gaps:</strong> Real Madrid (red line) is currently{" "}
-              <span className={latestPoint.gap_to_peer_median < 0 ? 'text-critical-600 dark:text-critical-dark font-semibold' : 'text-good-600 dark:text-good-dark font-semibold'}>
-                {latestPoint.gap_to_peer_median < 0 ? Math.abs(latestPoint.gap_to_peer_median).toFixed(4) + ' behind' : '+' + latestPoint.gap_to_peer_median.toFixed(4) + ' ahead of'}
-              </span>{" "}
-              the peer median (blue line) and{" "}
-              <span className={latestPoint.gap_to_leader < 0 ? 'text-critical-600 dark:text-critical-dark font-semibold' : 'text-good-600 dark:text-good-dark font-semibold'}>
-                {latestPoint.gap_to_leader < 0 ? Math.abs(latestPoint.gap_to_leader).toFixed(4) + ' behind' : '+' + latestPoint.gap_to_leader.toFixed(4) + ' ahead of'}
-              </span>{" "}
-              the market leader (green line). {latestPoint.gap_to_peer_median < 0 ? 'Closing these gaps represents significant commercial upside potential.' : 'Maintaining performance above peers demonstrates competitive strength.'}
+              <strong className="text-ink dark:text-stone-100">Understanding the gaps:</strong>{" "}
+              {selectedMetric.metric === "bounce_rate" ? (
+                <>
+                  Real Madrid (red line) has a bounce rate that is{" "}
+                  <span className={latestPoint.raw_gap_to_peer_median < 0 ? 'text-good-600 dark:text-good-dark font-semibold' : 'text-critical-600 dark:text-critical-dark font-semibold'}>
+                    {Math.abs(latestPoint.raw_gap_to_peer_median).toFixed(4)} {latestPoint.raw_gap_to_peer_median < 0 ? 'lower than' : 'higher than'}
+                  </span>{" "}
+                  the peer median (blue line){latestPoint.raw_gap_to_peer_median < 0 ? ' — lower bounce rate indicates better user engagement' : ' — higher bounce rate indicates engagement challenges'}.{" "}
+                  {latestPoint.raw_gap_to_peer_median < 0 ? 'This demonstrates competitive strength in user engagement.' : 'Reducing bounce rate represents significant upside potential.'}
+                </>
+              ) : (
+                <>
+                  Real Madrid (red line) is currently{" "}
+                  <span className={latestPoint.raw_gap_to_peer_median < 0 ? 'text-critical-600 dark:text-critical-dark font-semibold' : 'text-good-600 dark:text-good-dark font-semibold'}>
+                    {latestPoint.raw_gap_to_peer_median < 0 ? Math.abs(latestPoint.raw_gap_to_peer_median).toFixed(4) + ' behind' : '+' + latestPoint.raw_gap_to_peer_median.toFixed(4) + ' ahead of'}
+                  </span>{" "}
+                  the peer median (blue line). {latestPoint.raw_gap_to_peer_median < 0 ? 'Closing this gap represents significant commercial upside potential.' : 'Maintaining performance above peers demonstrates competitive strength.'}
+                </>
+              )}
             </p>
           </div>
 
@@ -533,28 +569,40 @@ export function PeerBenchmarkPage() {
                 return (
                   <tr
                     key={point.month}
-                    onClick={() => showMetricDetail({
-                      name: `${selectedMetric.label} - ${point.month}`,
-                      value: point.rm_value.toLocaleString(),
-                      category: point.gap_to_peer_median < 0 ? "Behind Peers" : "Above Peers",
-                      explanation: `In ${point.month}, Real Madrid's ${selectedMetric.label} was ${point.rm_value.toLocaleString()}, ranking #${point.rm_rank} out of ${point.club_count} clubs. This was ${Math.abs(point.gap_to_peer_median).toLocaleString()} ${point.gap_to_peer_median < 0 ? 'below' : 'above'} the peer median of ${point.peer_median.toLocaleString()}.`,
-                      businessContext: `Historical performance shows how Real Madrid's competitive position has evolved over time. ${point.gap_to_peer_median < 0 ? 'Consistent underperformance vs peers indicates a structural issue requiring strategic intervention.' : 'Sustained performance above peers demonstrates competitive strength.'}`,
-                      additionalInfo: {
-                        "Month": point.month,
-                        "RM Value": point.rm_value.toLocaleString(),
-                        "Peer Median": point.peer_median.toLocaleString(),
-                        "Gap": point.gap_to_peer_median.toLocaleString(),
-                        "Rank": `#${point.rm_rank}`,
-                      }
-                    })}
+                    onClick={() => {
+                      const isNegativePolarity = selectedMetric.metric === "bounce_rate";
+                      const rawGap = point.raw_gap_to_peer_median;
+                      const isGoodPerformance = isNegativePolarity ? (rawGap < 0) : (rawGap > 0);
+
+                      showMetricDetail({
+                        name: `${selectedMetric.label} - ${point.month}`,
+                        value: point.rm_value.toLocaleString(),
+                        category: isGoodPerformance ? "Above Peers" : "Behind Peers",
+                        explanation: isNegativePolarity
+                          ? `In ${point.month}, Real Madrid's ${selectedMetric.label} was ${point.rm_value.toLocaleString()}, ranking #${point.rm_rank} out of ${point.club_count} clubs. This was ${Math.abs(rawGap).toLocaleString()} ${rawGap < 0 ? 'lower than' : 'higher than'} the peer median of ${point.peer_median.toLocaleString()}. For ${selectedMetric.label}, ${rawGap < 0 ? 'lower is better' : 'higher is worse'}.`
+                          : `In ${point.month}, Real Madrid's ${selectedMetric.label} was ${point.rm_value.toLocaleString()}, ranking #${point.rm_rank} out of ${point.club_count} clubs. This was ${Math.abs(rawGap).toLocaleString()} ${rawGap < 0 ? 'below' : 'above'} the peer median of ${point.peer_median.toLocaleString()}.`,
+                        businessContext: `Historical performance shows how Real Madrid's competitive position has evolved over time. ${isGoodPerformance ? 'Sustained performance above peers demonstrates competitive strength.' : 'Consistent underperformance vs peers indicates a structural issue requiring strategic intervention.'}`,
+                        additionalInfo: {
+                          "Month": point.month,
+                          "RM Value": point.rm_value.toLocaleString(),
+                          "Peer Median": point.peer_median.toLocaleString(),
+                          "Raw Gap": rawGap.toLocaleString(),
+                          "Rank": `#${point.rm_rank}`,
+                        }
+                      });
+                    }}
                     className="hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
                   >
                     <td className="p-4 text-ink dark:text-stone-100 font-semibold border border-ink dark:border-stone-700">{point.month}</td>
                     <td className="p-4 text-right font-bold border border-ink dark:border-stone-700">{point.rm_value.toLocaleString()}</td>
                     <td className="p-4 text-right border border-ink dark:border-stone-700">{point.peer_median.toLocaleString()}</td>
-                    <td className={`p-4 text-right font-bold border border-ink dark:border-stone-700 ${point.gap_to_peer_median < 0 ? 'text-critical-light dark:text-critical-dark' : 'text-good-light dark:text-good-dark'}`}>
-                      {point.gap_to_peer_median > 0 ? "+" : ""}
-                      {point.gap_to_peer_median.toLocaleString()}
+                    <td className={`p-4 text-right font-bold border border-ink dark:border-stone-700 ${
+                      selectedMetric.metric === "bounce_rate"
+                        ? (point.raw_gap_to_peer_median < 0 ? 'text-good-light dark:text-good-dark' : 'text-critical-light dark:text-critical-dark')
+                        : (point.raw_gap_to_peer_median < 0 ? 'text-critical-light dark:text-critical-dark' : 'text-good-light dark:text-good-dark')
+                    }`}>
+                      {point.raw_gap_to_peer_median > 0 ? "+" : ""}
+                      {point.raw_gap_to_peer_median.toLocaleString()}
                     </td>
                     <td className={`p-4 text-right border border-ink dark:border-stone-700 ${trendColor}`}>{trendIcon}</td>
                   </tr>
