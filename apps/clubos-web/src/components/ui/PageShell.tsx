@@ -11,7 +11,8 @@ const navItems = [
   { to: "/events", label: "Events" },
   { to: "/social", label: "Social" },
   { to: "/connectors", label: "Connectors" },
-  { to: "/briefing", label: "Briefing" }
+  { to: "/briefing", label: "Briefing" },
+  { to: "/upcoming", label: "Upcoming" }
 ];
 
 export function PageShell({ children }: PropsWithChildren) {

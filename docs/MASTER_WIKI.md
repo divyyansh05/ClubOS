@@ -6,8 +6,8 @@ Last Updated: 2026-05-11
 Git Commit: no-git
 Wiki Version: 3
 Generator: Claude Code (project-wiki skill)
-File Count: 61 code files
-Metric Count: 52 metrics
+File Count: 66 code files
+Metric Count: 59 metrics
 -->
 
 # ClubOS - Master Wiki
@@ -29,7 +29,7 @@ Metric Count: 52 metrics
 9. [Data Sources & Data Dictionary](#9-data-sources--data-dictionary)
 10. [API Reference](#10-api-reference)
 11. [Business Context & Stakeholders](#11-business-context--stakeholders)
-12. [Setup & Running Locally](#12-setup--running-locally)
+12. [Setup, Running Locally & Deployment](#12-setup-running-locally--deployment)
 13. [Key Design Decisions](#13-key-design-decisions)
 14. [Known Limitations & Next Steps](#14-known-limitations--next-steps)
 15. [AI Agent Bootstrap](#15-ai-agent-bootstrap)
@@ -106,10 +106,10 @@ priority_score = (0.30 × severity) + (0.25 × persistence) + (0.20 × peer_gap)
 ```
 
 Where:
-- **Severity** = how far the metric deviates from expected (absolute value of trend slope)
-- **Persistence** = number of consecutive months declining (0-12 scale)
-- **Peer gap** = absolute gap to peer median, normalized 0-1 (only for 8 benchmarked metrics, else 0)
-- **Commercial weight** = business importance lookup (eCommerce revenue = 1.0, streaming subscriptions = 0.8, fan app downloads = 0.3)
+- **Severity** = how far the metric deviates from expected (based on seasonal Z-score deviation)
+- **Persistence** = number of active (non-stable) months in the last 3 months (0-3 scale)
+- **Peer gap** = based on peer rank (rank 5+ = 1.0, rank 4 = 0.8, rank 3 = 0.4, else 0.0)
+- **Commercial weight** = business importance lookup (e.g., net_sales = 1.0, streaming subscriptions = 0.9, fan app downloads = 0.5)
 - **Supporting evidence** = count of validated signals connected to this metric / 5 (capped at 1.0)
 
 The system ranks all metric-asset combinations by score descending. Top 10 become the Priority Board. Each priority gets a category label: "critical" (score > 0.8), "opportunity" (positive trend but with peer gaps), "benchmark" (peer-driven), or "warning" (moderate concern).
@@ -162,23 +162,28 @@ Tests: Three test modules under `tests/`: `test_api_contracts.py` (pytest + http
 
 **3. Frontend SaaS App (React 18 + TypeScript + Vite)**
 
-Single-page application with five feature screens, client-side routing, state management with React hooks, dark/light theme toggle persisted in localStorage, reusable `MetricDetailModal` component for clickable metric explanations. Calls backend API on page load via typed `fetch` wrappers, renders results with recharts visualizations (line charts, bar charts, donut charts). Built with Vite for sub-200ms hot module replacement during development.
+Single-page application with eight feature screens, client-side routing, state management with React hooks, dark/light theme toggle persisted in localStorage, reusable `MetricDetailModal` component for clickable metric explanations. Calls backend API on page load via typed `fetch` wrappers, renders results with recharts visualizations (line charts, bar charts, donut charts). Built with Vite for sub-200ms hot module replacement during development.
 
-Entry point: `src/main.tsx` mounts React app to DOM, wraps in `BrowserRouter` for routing, applies global styles. `src/app/App.tsx` defines routes: `/` → Priority Board, `/command-center` → Command Center, `/peer-benchmark` → Peer Benchmark, `/signal-engine` → Signal Engine, `/monthly-briefing` → Monthly Briefing. All routes wrapped in `PageShell` layout component.
+Entry point: `src/main.tsx` mounts React app to DOM, wraps in `BrowserRouter` for routing, applies global styles. `src/app/App.tsx` defines routes: `/` → Priority Board, `/command-center` → Command Center, `/benchmark` → Peer Benchmark, `/signals` → Signal Engine, `/events` → Event Intelligence, `/social` → Social Intelligence, `/connectors` → Live Connectors, `/briefing` → Monthly Briefing. All routes wrapped in `PageShell` layout component.
 
-Features (Pages): Five page components under `src/features/`:
+Features (Pages): Eight page components under `src/features/`:
 - `priority-board/PriorityBoardPage.tsx`: Hero feature, fetches `/priorities/latest`, renders summary cards (counts by category) and priority cards grid (rank badges, scores, categories, "View Evidence" buttons), implements category filtering, opens evidence modal on button click
 - `command-center/CommandCenterPage.tsx`: Fetches `/health/summary`, renders overview cards (total metrics, good count, review count, stable count), health breakdown bars (horizontal stacked), deviation index (large number with trend arrow)
 - `peer-benchmark/PeerBenchmarkPage.tsx`: Fetches `/benchmark/{asset}/{metric}` for selected asset-metric pair, renders current position snapshot (rank diagram showing Real Madrid vs peers), 12-month trend line chart (Real Madrid vs peer median vs leader), recent trend table (sortable)
 - `signal-engine/SignalEnginePage.tsx`: Fetches `/signals`, renders signal cards (flow diagrams with source → target arrows, strength bars, lag times, status badges), expandable detail panel (business interpretation, validation criteria, usage guidance)
+- `events/EventCalendarPage.tsx`: Allows users to track real-world events that impact digital metrics, view a history grouped by month, and confirm/dismiss automatically detected social anomalies to add context to KPI changes.
+- `social/SocialIntelligencePage.tsx`: Dashboard for analyzing social media performance, displaying key metrics, platform trends, content intelligence, and commercial correlations based on monthly social data.
+- `connectors/ConnectorsPage.tsx`: Displays the health, configuration status, and recent synced data of live data connectors (YouTube, Wikipedia, Slack), demonstrating real-time ingestion capabilities and testing webhooks.
 - `monthly-briefing/MonthlyBriefingPage.tsx`: Fetches `/briefing/latest`, renders executive summary (key takeaways bullets), top 3 priorities grid, notable anomalies table, top signals grid, benchmark summary stats, health donut chart
 
-Components (Shared UI): Two reusable components under `src/components/ui/`:
+Components (Shared UI): Three reusable components under `src/components/ui/`:
 - `PageShell.tsx`: Layout wrapper providing header with navigation links, theme toggle button, footer. Persists theme choice in localStorage (`dark` or `light`), applies `.dark` class to document root. Navigation highlights active route.
 - `MetricDetailModal.tsx`: Full-screen modal overlay (glassmorphism backdrop) with metric explanation sections. Props: `metricName`, `metricValue`, `metricCategory`, `explanation` (plain-English "what this means"), `businessContext` ("why it matters"), optional `trendData` (array for recharts line chart), optional `additionalInfo` (key-value grid). Triggered by clicking any metric number anywhere in the app. Close button in top-right corner.
+- `ScreenGuide.tsx`: A standard helper component providing contextual guidance to the user explaining the business value and usage instructions for the current screen.
 
-Libraries: Two utility modules under `src/lib/` and `src/types/`:
-- `lib/api.ts`: Typed API client wrapping `fetch` calls. Functions: `getPriorities()`, `getHealthSummary()`, `getBenchmark(asset, metric)`, `getSignals()`, `getBriefing()`. Each function calls `fetch(${API_BASE_URL}/path)`, checks `response.ok`, parses JSON, returns typed result. Error handling: logs to console, re-throws for component error boundaries.
+Libraries: Three utility modules under `src/lib/` and `src/types/`:
+- `lib/api.ts`: Typed API client wrapping `fetch` calls. Functions: `getPriorities()`, `getHealthSummary()`, `getBenchmark(asset, metric)`, `getSignals()`, `getBriefing()`, plus dynamic endpoints for events, social intelligence, and connectors. Each function calls `fetch(${API_BASE_URL}/path)`, checks `response.ok`, parses JSON, returns typed result. Error handling: logs to console, re-throws for component error boundaries.
+- `lib/formatNumber.ts`: Utility for centralizing metric formatting rules. Handles converting raw numbers into human-readable strings (e.g., abbreviating to "K" or "M", enforcing percentage decimal places, detecting polarity for coloring).
 - `types/clubos.ts`: TypeScript interfaces matching backend Pydantic schemas. Types: `PriorityResponse`, `HealthSummaryResponse`, `BenchmarkResponse`, `SignalResponse`, `BriefingResponse`. Ensures compile-time type safety when passing API responses to components.
 
 Configuration: Three config files:
@@ -198,11 +203,11 @@ Snapshot staleness risk: Developers working in snapshot mode must manually refre
 
 Two types of reference data guide business logic:
 
-Metric dictionary: `databricks/seeds/metric_dictionary.json` defines polarity for each of the 52 metrics. Format: `{"metric_name": {"polarity": 1 or -1 or 0}}`. Polarity meanings: `+1` = higher is better (visits, sales, engagement), `-1` = lower is better (bounce_rate only), `0` = neutral/descriptive (pct_android). Used by peer benchmark gap calculation to invert logic for bounce_rate. Critical for correct ranking — without polarity awareness, peer benchmark shows inverted results for bounce_rate (claims Real Madrid ahead when actually behind).
+Metric dictionary: `databricks/seeds/metric_dictionary.json` defines polarity for each of the 59 metrics. Format: `{"metric_name": {"polarity": 1 or -1 or 0}}`. Polarity meanings: `+1` = higher is better (visits, sales, engagement), `-1` = lower is better (bounce_rate only), `0` = neutral/descriptive (pct_android). Used by peer benchmark gap calculation to invert logic for bounce_rate. Critical for correct ranking — without polarity awareness, peer benchmark shows inverted results for bounce_rate (claims Real Madrid ahead when actually behind).
 
 Event annotations: `databricks/seeds/event_annotations.csv` curates business events with columns: `event_date`, `event_name`, `event_type` (match, transfer, campaign, holiday), `affected_assets` (comma-separated list of assets expected to show impact), `description`. Example: `2025-12-25, Christmas Holiday, holiday, ecommerce, "Expected surge in eCommerce sales"`. Purpose: provide context for metric anomalies (traffic spike explained by Champions League final, not data error). Currently seeded but not yet integrated into Priority Board UI (planned for Event Intelligence module).
 
-Data contracts: Four markdown files in `data_contracts/`: `internal_metrics_contract.md` (schema for 4 asset CSV files), `benchmark_contract.md` (schema for peer benchmark CSV), `event_annotations_contract.md` (schema for event seed file), `metric_inventory.md` (catalog of all 52 metrics with definitions). Purpose: document expected structure for monthly data uploads, validate source files before ingestion, guide Bronze notebook schema enforcement.
+Data contracts: Four markdown files in `data_contracts/`: `internal_metrics_contract.md` (schema for 4 asset CSV files), `benchmark_contract.md` (schema for peer benchmark CSV), `event_annotations_contract.md` (schema for event seed file), `metric_inventory.md` (catalog of all 59 metrics with definitions). Purpose: document expected structure for monthly data uploads, validate source files before ingestion, guide Bronze notebook schema enforcement.
 
 **6. Quality Layer (Data Validation & Testing)**
 
@@ -998,6 +1003,30 @@ This section documents every code file in the ClubOS project. Each entry describ
 
 ---
 
+### ./backend/api/app/routers/connectors.py
+
+**Role**: FastAPI router exposing live data connector status and sync endpoints
+
+**Type**: API router (Python)
+
+**Key functions**: Exposes `/connectors/status` to aggregate connection health and `/connectors/data/{connector_id}` to fetch live third-party data.
+
+**Connections**: Registered in `app/main.py`. Imports `connector_service.py`.
+
+---
+
+### ./backend/api/app/routers/notifications.py
+
+**Role**: FastAPI router for triggering external alerting logic
+
+**Type**: API router (Python)
+
+**Key functions**: Exposes `/notifications/test-slack` to run demo rank change alerts, and `/notifications/status` to check webhook configuration.
+
+**Connections**: Registered in `app/main.py`. Imports `notification_service.py`.
+
+---
+
 ### ./backend/api/app/schemas/priorities.py
 
 **Role**: Pydantic schema definitions for priority endpoints
@@ -1236,6 +1265,52 @@ This section documents every code file in the ClubOS project. Each entry describ
 
 ---
 
+### ./backend/api/app/services/connector_service.py
+
+**Role**: Manages the dynamic loading, initialization, and execution of external data connectors outside the immediate backend structure.
+
+**Type**: Backend Service (Python)
+
+**Key functions**: `import_connector()`, `get_all_statuses()`, `get_connector_data()`
+
+**Data in**: Connector IDs, `days_back` query parameters.
+
+**Data out**: List of connector statuses or standardized ClubOS metric records.
+
+**Connections**: Dynamically loads classes from the `integrations/` directory (`YouTubeConnector`, `WikipediaConnector`, `GA4Connector`, `AdobeAnalyticsConnector`); used by `backend/api/app/routers/connectors.py`.
+
+---
+
+### ./backend/api/app/services/notification_service.py
+
+**Role**: Analyzes priority rank changes between months and dispatches formatted alerts to external communication channels (e.g., Slack).
+
+**Type**: Backend Service (Python)
+
+**Key functions**: `detect_rank_changes()`, `send_priority_alert()`, `_format_slack_message()`
+
+**Data in**: Current and previous month's `gold_priority_board` records, `SLACK_WEBHOOK_URL` environment variable.
+
+**Data out**: HTTP POST requests containing rich Slack Block Kit payloads; dictionaries detailing dispatch success or failure.
+
+**Connections**: Consumed by `backend/api/app/routers/notifications.py`; posts externally to Slack webhook URLs.
+
+---
+
+### ./integrations/base_connector.py
+
+**Role**: Establishes the foundational interface and strict data contracts for all ClubOS external data integrations.
+
+**Type**: Abstract Base Class (Python)
+
+**Key functions**: `test_connection()`, `fetch()`, `to_metric_rows()`
+
+**Data out**: `ConnectorStatus` and `ConnectorResult` data classes.
+
+**Connections**: Extended by all concrete connectors in the `integrations/` directory; executed and standardized by `connector_service.py`.
+
+---
+
 ### ./backend/api/tests/test_api_contracts.py
 
 **Role**: API integration tests validating endpoint contracts and response schemas
@@ -1368,7 +1443,7 @@ This section documents every code file in the ClubOS project. Each entry describ
 
 **Type**: Databricks PySpark notebook (Python)
 
-**Key functions**: Reads `clubos_silver.silver_internal_asset_metrics` fact table. Computes time-series features using PySpark Window functions partitioned by (asset_name, metric_name), ordered by month: `prior_month_value` (lag 1 month), `prior_season_same_month_value` (lag 12 months for year-over-year comparison), `rolling_12m_avg` (12-month rolling average as baseline), `seasonal_baseline` (alias for rolling average), `deviation_from_seasonal_baseline` ((current - baseline) / baseline as percentage), `trend_direction` ('up'/'down'/'flat' based on prior month comparison). Maps `METRIC_POLARITY` dictionary (hardcoded, 52 metrics: 1 = higher is better, -1 = lower is better for bounce_rate only, 0 = neutral for pct_android) using `F.create_map()` to add `polarity` column. Computes `health_status` using polarity-aware logic: for polarity +1, deviation >5% = 'good', <-5% = 'review', else 'stable'; for polarity -1, inverts logic (deviation <-5% = 'good', >5% = 'review').
+**Key functions**: Reads `clubos_silver.silver_internal_asset_metrics` fact table. Computes time-series features using PySpark Window functions partitioned by (asset_name, metric_name), ordered by month: `prior_month_value` (lag 1 month), `prior_season_same_month_value` (lag 12 months for year-over-year comparison), `rolling_12m_avg` (12-month rolling average as baseline), `seasonal_baseline` (alias for rolling average), `deviation_from_seasonal_baseline` ((current - baseline) / baseline as percentage), `trend_direction` ('up'/'down'/'flat' based on prior month comparison). Maps `METRIC_POLARITY` dictionary (hardcoded, 59 metrics: 1 = higher is better, -1 = lower is better for bounce_rate only, 0 = neutral for pct_android) using `F.create_map()` to add `polarity` column. Computes `health_status` using polarity-aware logic: for polarity +1, deviation >5% = 'good', <-5% = 'review', else 'stable'; for polarity -1, inverts logic (deviation <-5% = 'good', >5% = 'review').
 
 **Data in**: `clubos_silver.silver_internal_asset_metrics` fact table (long format: month, asset_name, metric_name, metric_value)
 
@@ -1778,13 +1853,91 @@ This section documents every code file in the ClubOS project. Each entry describ
 
 **Connections**: Imported by `App.tsx` route `/briefing`. Imports `getLatestBriefing` from `lib/api.ts`. Aggregates data from all other Gold tables via briefing_service JSON parsing. Uses recharts PieChart for health visualization. Intended as monthly presentation material for leadership (printable, screenshot-friendly layout).
 
-**PASS 2 COMPLETE - All 61 files documented.**
+---
+
+### ./apps/clubos-web/src/features/social/SocialIntelligencePage.tsx
+
+**Role**: Dashboard for analyzing social media performance, displaying key metrics, platform trends, content intelligence, and commercial correlations based on monthly social data.
+
+**Type**: React page component (TypeScript)
+
+**Key functions**: Main component handles state, data fetching, and rendering of the four main tabs (Overview, Performance, Strategy, Intelligence). Sub-components like `StatCard` display individual metric cards with expansion capabilities. Orchestrates multiple parallel API requests to hydrate the dashboard via `loadData` / `loadMonthData`. Helper functions: `formatEngagement`, `formatPercentage`, `formatMoMChange`, `getContentTypeColor`.
+
+**Data in**: Consumes multiple API endpoints via `lib/api` (e.g., `fetchSocialSummary`, `fetchSocialMonthly`, `fetchContentIntelligence`, `fetchDynamicInsights`) and typed structures from `types/clubos`.
+
+**Data out**: Renders a comprehensive tabbed dashboard including KPIs, Recharts-based trend lines and bar charts, insight cards, and tabular strategy recommendations.
+
+**Regeneration blueprint**: Maintain the four-tab architecture answering specific business questions. Utilize the standard ClubOS design system (`ink`, `paper`, `stone-*` Tailwind classes, monospace typography) and preserve reactive dark mode support for charts. Gracefully handle empty states or loading states for the extensive API payload. 
+
+**Connections**: `../../lib/api`, `../../types/clubos`, `recharts`, `../../components/ui/ScreenGuide`, `../../lib/formatNumber`.
+
+---
+
+### ./apps/clubos-web/src/features/events/EventCalendarPage.tsx
+
+**Role**: Allows users to track real-world events that impact digital metrics, view a history grouped by month, and confirm/dismiss automatically detected social anomalies to add context to KPI changes.
+
+**Type**: React page component (TypeScript)
+
+**Key functions**: Main component orchestrating event display and management. Fetches user-created events and AI-detected social anomalies via `loadEvents` / `loadAnomalies`. Manages lifecycle of manual events (`handleAddEvent` / `handleDelete`). Workflow for verifying AI-detected data anomalies as real events (`handleConfirmAnomaly` / `submitAnomalyConfirmation` / `handleDismissAnomaly`).
+
+**Data in**: Fetches events and anomalies via `lib/api`, accepts user input through the Add Event / Confirm Anomaly forms.
+
+**Data out**: Outputs a chronological "newsprint" style list of events, a panel of pending anomalies, category filters, and modal forms for adding/confirming events.
+
+**Regeneration blueprint**: Ensure strict adherence to the newspaper aesthetic (borders, uppercase mono text, stark background colors). Support the two parallel workflows: manual event creation and anomaly confirmation. Keep the `ScreenGuide` included to explain the value of events to users.
+
+**Connections**: `../../lib/api`, `../../types/events`, `../../types/clubos`, `../../components/ui/ScreenGuide`.
+
+---
+
+### ./apps/clubos-web/src/features/connectors/ConnectorsPage.tsx
+
+**Role**: Displays the health, configuration status, and recent synced data of live data connectors (e.g., YouTube, Wikipedia, Slack), demonstrating real-time ingestion capabilities.
+
+**Type**: React page component (TypeScript)
+
+**Key functions**: Main functional component for status display. Fetches connection statuses, YouTube stats, Wikipedia pageviews, and Slack configuration via `loadData`. Triggers test messages to the configured Slack webhook via `testSlackAlert`. Utility functions for consistent styling of status badges (`getStatusColor` / `getAuthTypeBadge`).
+
+**Data in**: Ingests status and integration data from endpoints via `lib/api` (`fetchConnectorStatus`, `fetchConnectorData`) and local REST endpoints for notifications.
+
+**Data out**: Renders a grid of connector status cards, live YouTube KPI cards, a Recharts line chart for Wikipedia views, and a Slack alert testing section.
+
+**Regeneration blueprint**: Render statuses clearly using semantic colors (good/warning/critical). Include Recharts for time-series data visualization (Wikipedia). Maintain the Slack integration test capability. Ensure the "How This Connects to ClubOS Production" section is kept to explain the architecture to stakeholders.
+
+**Connections**: `../../lib/api`, `../../lib/formatNumber`, `recharts`, and the environment variable `VITE_API_BASE_URL`.
+
+---
+
+### ./apps/clubos-web/src/components/ui/ScreenGuide.tsx
+
+**Role**: Standard helper component providing contextual guidance to the user explaining the business value and usage instructions for the current screen.
+
+**Type**: React UI component (TypeScript)
+
+**Key functions**: Renders an expandable "Help" or "Guide" popover or panel.
+
+**Connections**: Imported by most feature screens to provide in-app documentation.
+
+---
+
+### ./apps/clubos-web/src/lib/formatNumber.ts
+
+**Role**: Utility for centralizing metric formatting rules. 
+
+**Type**: TypeScript utility module
+
+**Key functions**: Handles converting raw numbers into human-readable strings (e.g., abbreviating to "K" or "M", enforcing percentage decimal places, detecting polarity for coloring).
+
+**Connections**: Imported extensively by `PriorityBoardPage`, `ConnectorsPage`, and `SocialIntelligencePage`.
+
+**PASS 2 COMPLETE - All 66 files documented.**
 
 ---
 
 ## 8. Metrics Registry
 
-This section documents all 52 metrics tracked in ClubOS across four digital assets (Main Website, eCommerce, Streaming, Fan App). Each metric includes definition, polarity (higher=better, lower=better, or neutral), typical assets where it appears, and business context.
+This section documents all 59 metrics tracked in ClubOS across four digital assets (Main Website, eCommerce, Streaming, Fan App). Each metric includes definition, polarity (higher=better, lower=better, or neutral), typical assets where it appears, and business context.
 
 **Polarity Legend**:
 - **+1 (Higher is Better)**: Increasing values indicate positive performance (e.g., sales, visitors, engagement)
@@ -1967,7 +2120,7 @@ This section documents all 52 metrics tracked in ClubOS across four digital asse
 
 **Related Metrics**: `visits` (consumption per visit = engagement depth), `video_plays` (streaming-specific consumption driver)
 
-**PASS 3 - 10/52 metrics documented, saving.**
+**PASS 3 - 10/59 metrics documented, saving.**
 
 ---
 
@@ -2129,7 +2282,7 @@ This section documents all 52 metrics tracked in ClubOS across four digital asse
 
 **Related Metrics**: `marketing_visits` (purchase rate from paid campaigns), `purchases` (channel attribution mix)
 
-**PASS 3 - 20/52 metrics documented, saving.**
+**PASS 3 - 20/59 metrics documented, saving.**
 
 ---
 
@@ -2291,7 +2444,7 @@ This section documents all 52 metrics tracked in ClubOS across four digital asse
 
 **Related Metrics**: `daily_users` (subscriptions / daily_users = paid user rate), `subscription_rate` (subscription conversion)
 
-**PASS 3 - 30/52 metrics documented, saving.**
+**PASS 3 - 30/59 metrics documented, saving.**
 
 ---
 
@@ -2453,7 +2606,7 @@ This section documents all 52 metrics tracked in ClubOS across four digital asse
 
 **Related Metrics**: `video_progress_25_rate` (prior funnel step), `video_progress_75_rate` (next funnel step)
 
-**PASS 3 - 40/52 metrics documented, saving.**
+**PASS 3 - 40/59 metrics documented, saving.**
 
 ---
 
@@ -2633,7 +2786,77 @@ This section documents all 52 metrics tracked in ClubOS across four digital asse
 
 ---
 
-**PASS 3 COMPLETE - All 52 metrics documented.**
+### total_engagement
+
+**Definition**: Sum of all measurable interactions (likes, comments, shares, retweets, reactions) across connected social platforms during the month.
+
+**Polarity**: +1 (Higher is Better)
+
+**Typical Assets**: Social Media
+
+---
+
+### avg_engagement_per_post
+
+**Definition**: Total engagement divided by the total number of posts published in the month, measuring average content resonance.
+
+**Polarity**: +1 (Higher is Better)
+
+**Typical Assets**: Social Media
+
+---
+
+### engagement_rate
+
+**Definition**: Total engagement divided by total estimated views or total followers, expressed as a percentage indicating audience interaction efficiency.
+
+**Polarity**: +1 (Higher is Better)
+
+**Typical Assets**: Social Media
+
+---
+
+### instagram_engagement
+
+**Definition**: Total measurable interactions occurring specifically on the club's Instagram account.
+
+**Polarity**: +1 (Higher is Better)
+
+**Typical Assets**: Social Media
+
+---
+
+### total_posts
+
+**Definition**: The aggregate volume of content published across all connected social channels in a given month.
+
+**Polarity**: 0 (Neutral / Contextual)
+
+**Typical Assets**: Social Media
+
+---
+
+### international_engagement_ratio
+
+**Definition**: Percentage of total social engagement originating from users outside the domestic market.
+
+**Polarity**: +1 (Higher is Better)
+
+**Typical Assets**: Social Media
+
+---
+
+### total_estimated_views
+
+**Definition**: Aggregated impressions, video views, and reach metrics across all social platforms.
+
+**Polarity**: +1 (Higher is Better)
+
+**Typical Assets**: Social Media
+
+---
+
+**PASS 3 COMPLETE - All 59 metrics documented.**
 
 ---
 
@@ -2659,7 +2882,7 @@ This section documents all 52 metrics tracked in ClubOS across four digital asse
 - **Grain**: Monthly aggregated data per club (one row per month-club combination)
 - **Time Coverage**: Same 103 months
 - **Club Coverage**: 6 clubs total (5 peer clubs + Real Madrid anonymized: masia_fc, merseyside_red, gunners_fc, fc_baviera, citizens, real_madrid_anonymized)
-- **Metric Coverage**: 8-13 benchmarked metrics per asset (limited subset of internal 52 metrics)
+- **Metric Coverage**: 8-13 benchmarked metrics per asset (limited subset of internal 59 metrics)
 - **Benchmarked Metrics**: unique_visitors, visits, bounce_rate, recurrence (website); conversion_rate, cart_value (ecommerce); daily_users, streamers_rate, video_play_rate (streaming); app_downloads, matchday_visits, heavy_users, user_rating (fan app)
 - **Row Count**: 103 months × 6 clubs ≈ 618 rows per sheet
 - **Source System**: Industry benchmark provider or peer data sharing agreement
@@ -2675,7 +2898,7 @@ This section documents all 52 metrics tracked in ClubOS across four digital asse
 **Metric Dictionary**:
 - **File**: `databricks/seeds/metric_dictionary.json`
 - **Structure**: JSON with metric_name keys, polarity values
-- **Purpose**: Defines polarity for all 52 metrics (higher=better, lower=better, neutral)
+- **Purpose**: Defines polarity for all 59 metrics (higher=better, lower=better, neutral)
 - **Critical Field**: `bounce_rate` has polarity -1 (only metric where lower is better)
 - **Usage**: Peer benchmark gap calculation, health status determination
 
@@ -2686,7 +2909,7 @@ Four data contract documents in `data_contracts/` directory specify expected sch
 1. **internal_metrics_contract.md**: Schema for 4 internal asset CSV/Excel files (required columns: Month + metric columns, metric names must match allowlist)
 2. **benchmark_contract.md**: Schema for peer benchmark CSV/Excel (required columns: Month, Club + metric columns)
 3. **event_annotations_contract.md**: Schema for event seed file (required columns: event_date, event_name, event_type, affected_assets, description)
-4. **metric_inventory.md**: Catalog of all 52 metrics with definitions, units, typical ranges
+4. **metric_inventory.md**: Catalog of all 59 metrics with definitions, units, typical ranges
 
 ### Data Quality Rules
 
@@ -2902,6 +3125,43 @@ Enabled for frontend origins: `http://localhost:5176`, `http://localhost:5177`, 
 
 ---
 
+#### GET /connectors/status
+
+**Purpose**: Aggregates and returns the connection health, authentication type, and last sync info for all available data connectors.
+
+**Response Schema**:
+```json
+[
+  {
+    "id": "youtube",
+    "name": "YouTube Data API v3",
+    "status": "connected",
+    "auth_type": "API Key",
+    "data_type": "streaming_performance"
+  }
+]
+```
+
+**Status Codes**: 200 OK
+
+---
+
+#### POST /notifications/test-slack
+
+**Purpose**: Evaluates the two most recent months and triggers a demo Slack alert (ignoring normal rank change thresholds).
+
+**Response Schema**:
+```json
+{
+  "status": "success",
+  "alerts_sent": 3
+}
+```
+
+**Status Codes**: 200 OK
+
+---
+
 ## 11. Business Context & Stakeholders
 
 ### Problem Statement
@@ -2965,7 +3225,7 @@ Real Madrid's digital and commercial teams manage four digital platforms generat
 
 ---
 
-## 12. Setup & Running Locally
+## 12. Setup, Running Locally & Deployment
 
 ### Prerequisites
 
@@ -3080,6 +3340,29 @@ Remove or rename `data/gold_snapshots/` folder to force Databricks mode. Restart
 
 **Import errors**: Rerun `./scripts/bootstrap.sh` to reinstall dependencies.
 
+### Deployment & Infrastructure (Cloud Run)
+
+The application is containerized and deployed as a unified service on Google Cloud Run.
+
+**Containerization**:
+- Uses a unified `Dockerfile` based on `python:3.11-slim`.
+- Installs Node.js inside the container to build the frontend Vite app.
+- Builds frontend into `apps/clubos-web/dist`.
+- Runs the FastAPI backend via `uvicorn` which mounts and serves the React static files as the frontend.
+
+**CI/CD Pipeline (GitHub Actions)**:
+- Triggered on pushes to `dev` or `main`.
+- Authenticates with Google Cloud via Workload Identity Federation.
+- Builds Docker image and pushes to Google Artifact Registry.
+- Deploys the image to Cloud Run service `clubos`.
+- Injects necessary secrets and environment variables during deployment using GitHub Secrets.
+
+**Critical Environment Variables**:
+- `YOUTUBE_API_KEY`: Data API key for YouTube connector.
+- `GA4_CREDENTIALS_JSON`: Base64 encoded service account JSON for Google Analytics 4.
+- `ADOBE_CREDENTIALS_JSON`: Base64 encoded credentials for Adobe Analytics.
+- `SLACK_WEBHOOK_URL`: Webhook URL for sending Slack priority alerts.
+
 ---
 
 ## 13. Key Design Decisions
@@ -3166,7 +3449,7 @@ Remove or rename `data/gold_snapshots/` folder to force Databricks mode. Restart
 - **Next Step**: Add weekly data ingestion for critical metrics (conversion_rate, net_sales), alert on week-over-week changes.
 
 **2. Limited Peer Benchmark Coverage**:
-- **Limitation**: Only 8 out of 52 metrics benchmarked (85% of metrics lack peer context), only 5 peer clubs (small sample).
+- **Limitation**: Only 8 out of 59 metrics benchmarked (85% of metrics lack peer context), only 5 peer clubs (small sample).
 - **Impact**: Priority scoring relies heavily on internal trends, peer gap component = 0 for 44 metrics.
 - **Next Step**: Expand benchmark data provider agreement to cover top 20 metrics, negotiate access to 10+ peer clubs.
 
@@ -3303,7 +3586,7 @@ From `AGENTS.md`, follow this sequence:
 - Data is **monthly-only** (no daily/weekly granularity)
 - 103 months of history (2017-2025)
 - 4 digital assets (Main Website, eCommerce, Streaming, Fan App)
-- 52 metrics total, 8 peer-benchmarked
+- 59 metrics total, 8 peer-benchmarked
 - Python runtime: **3.11.x** (no other versions)
 
 **Product Constraints**:
@@ -3502,7 +3785,7 @@ When stuck, check:
 
 **Digital Asset**: One of four Real Madrid digital platforms: Main Website, eCommerce, Streaming Platform, or Fan App.
 
-**Metric**: Quantifiable measure of digital performance (e.g., conversion_rate, net_sales, bounce_rate). ClubOS tracks 52 metrics across 4 assets.
+**Metric**: Quantifiable measure of digital performance (e.g., conversion_rate, net_sales, bounce_rate). ClubOS tracks 59 metrics across 4 assets.
 
 **Polarity**: Direction indicating whether higher values are better (+1), worse (-1), or neutral (0). Example: bounce_rate has polarity -1 (lower is better).
 
@@ -3636,7 +3919,7 @@ When stuck, check:
 
 **Scope**: Complete documentation of ClubOS MVP including:
 - 61 code files documented (14 frontend, 31 backend, 11 databricks, 5 scripts)
-- 52 metrics documented with definitions, polarity, business context
+- 59 metrics documented with definitions, polarity, business context
 - 7 API endpoints with full request/response schemas
 - 6 major design decisions explained
 - 10 MVP limitations with roadmap
@@ -3653,7 +3936,7 @@ When stuck, check:
 **Execution Details**:
 - **PASS 1**: Sections 1-6 (Project Overview, Why This Exists, How It Works, Architecture, Tech Stack, Core Data Flow)
 - **PASS 2**: Section 7 Module Deep Dives (61 files documented in batches of 10 with saves)
-- **PASS 3**: Section 8 Metrics Registry (52 metrics documented in batches of 10 with saves)
+- **PASS 3**: Section 8 Metrics Registry (59 metrics documented in batches of 10 with saves)
 - **PASS 4**: Sections 9-16 (Data Sources, API Reference, Business Context, Setup, Design Decisions, Limitations, AI Bootstrap, Glossary)
 - **PASS 5**: Completeness check (verified counts), added missing metric `other_channel_visits`, wrote Changelog
 
@@ -4153,6 +4436,50 @@ The old severity calculation compared current month to rolling 12-month average,
 ---
 ---
 
+### Version 2.0.0 (Cloud Run Deployment & Full CI/CD - 2026-05-27)
+
+**Status**: Production deployment stabilized with Workload Identity Federation
+
+**Scope**: GitHub Actions, Dockerfile, Cloud Run configuration
+
+**Changes**:
+- Configured Cloud Run service `clubos` using unified `python:3.11-slim` image
+- Set up GitHub Actions CI/CD with Workload Identity Federation
+- Injected required Secrets/Env Vars (`YOUTUBE_API_KEY`, `GA4_CREDENTIALS_JSON`, `ADOBE_CREDENTIALS_JSON`, `SLACK_WEBHOOK_URL`)
+- Implemented robust `Dockerfile` installing both Node.js for frontend build and Python for backend execution
+- Re-architected application to run as single container serving React from FastAPI mounted route
+
+---
+
+### Version 1.9.0 (Dynamic Connector System & Master Wiki Audit - 2026-05-27)
+
+**Status**: Connector abstractions complete, backend deep dive documentation verified
+
+**Scope**: Connector service, Notification service, Master Wiki
+
+**Changes**:
+- Audited `MASTER_WIKI.md` adding 7 new social metrics, bringing tracked metrics from 52 to 59
+- Documented 5 new backend files including `connector_service.py` and `notification_service.py`
+- Documented dynamic connector abstractions (`BaseConnector`) allowing runtime loading
+- Integrated rich Slack messaging for priority rank changes
+- Completed extensive Module Deep Dives for new Frontend sections (Social, Event, Connectors)
+
+---
+
+### Version 1.8.0 (Priority Scoring Algorithm Fix - Seasonal Z-Score - 2026-05-20)
+
+**Status**: Core scoring logic stabilized using deterministic DBFS weights
+
+**Scope**: Databricks Analytics, Priority Board
+
+**Changes**:
+- Updated Severity component to correctly use seasonal Z-score deviation over static rolling average
+- Fixed missing metric tracking, ensuring alignment with `databricks/seeds/metric_dictionary.json`
+- Resolved false-positive seasonality spikes for non-benchmarked social metrics
+- Validated deterministic fallback to default weights when DBFS weights unavailable
+
+---
+
 ### Version 1.5.3 (Seasonal Baseline Intelligence - 2026-05-19)
 
 **Status**: Seasonal intelligence layer complete — distinguishes seasonal patterns from genuine anomalies
@@ -4242,13 +4569,13 @@ When updating this wiki, document changes as follows:
 
 ---
 
-**PASS 5 COMPLETE - Completeness verified (61 files, 52 metrics), Changelog written.**
+**PASS 5 COMPLETE - Completeness verified (66 files, 59 metrics), Changelog written.**
 
 **MASTER WIKI GENERATION COMPLETE.**
 
 **Summary**:
-- ✅ All 61 code files documented
-- ✅ All 52 metrics documented
+- ✅ All 66 code files documented
+- ✅ All 59 metrics documented
 - ✅ All 7 API endpoints documented
 - ✅ All sections complete (1-17)
 - ✅ Zero placeholders

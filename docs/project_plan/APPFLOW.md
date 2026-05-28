@@ -1,7 +1,7 @@
 ---
 # ClubOS — Application Flow Document
-**Version**: 1.0
-**Status**: Reconstructed from MVP
+**Version**: 2.0
+**Status**: Production MVP deployed on Cloud Run
 **Date**: 2026-05-14
 ---
 
@@ -29,7 +29,7 @@ The sticky header is divided into two rows:
 
 **Main header row**:
 - Left: `ClubOS` wordmark (NavLink) — clicking navigates to `/priorities`
-- Right: Five navigation links
+- Right: Eight navigation links
 
 | Nav Label | Route | Default Active? |
 |-----------|-------|----------------|
@@ -38,6 +38,9 @@ The sticky header is divided into two rows:
 | Benchmark | `/benchmark` | No |
 | Signals | `/signals` | No |
 | Briefing | `/briefing` | No |
+| Social | `/social` | No |
+| Events | `/events` | No |
+| Connectors | `/connectors` | No |
 
 Active state: the current route's nav link gets `border-b-2 border-ink` underline treatment. Hover state applies `text-info-light` (blue tint). Navigation is hidden on mobile (md breakpoint) — mobile navigation is not built in V1.
 
@@ -106,7 +109,7 @@ When detail loads, modal shows:
 
 ### 3.2 Command Center (`/command-center`)
 
-**Purpose**: Show the monthly health status of all 52 tracked metrics across the four digital platforms in one consolidated view.
+**Purpose**: Show the monthly health status of all 59 tracked metrics across the four digital platforms in one consolidated view.
 
 **On load**:
 - Calls `GET /health/summary` via `getHealthSummary()`
@@ -269,6 +272,43 @@ When detail loads, modal shows:
 - Loading state: "Loading monthly briefing..."
 - Error state: "Error:" + message in red
 - Empty state (no briefing or no `month`): "No briefing data available."
+
+---
+
+### 3.6 Social Intelligence (`/social`)
+
+**Purpose**: Analyze unified social media performance across platforms, tracking 7 specific metrics such as engagement, impressions, and followers.
+
+**On load**:
+- Calls `GET /analytics/seasonal?asset=social`
+- Renders total metrics summary and charts for social activity.
+- Visualizes platform-level breakdowns and trends.
+
+---
+
+### 3.7 Event Calendar (`/events`)
+
+**Purpose**: Manage real-world context (match days, kit launches) that suppress anomalies or explain spikes.
+
+**On load**:
+- Calls `GET /events`
+- Displays list of configured events, their date ranges, and categories.
+- User can interact to filter events by `match`, `campaign`, or `external`.
+- Events defined here are rendered as `⚡` annotations on charts across the platform.
+
+---
+
+### 3.8 Connectors (`/connectors`)
+
+**Purpose**: Manage data ingestion plugins, verify credentials, and test Slack notification alerts.
+
+**On load**:
+- Calls `GET /connectors/status`
+- Displays dynamic grid of all registered integrations (e.g. YouTube Data API, Wikipedia, Slack).
+- Status badge shows `Connected`, `Not Configured`, or `Error`.
+
+**User actions**:
+- Click **"Test Alert"** on Slack connector: Calls `POST /notifications/test-slack` to fire a sample priority shift alert to the configured channel.
 
 ---
 

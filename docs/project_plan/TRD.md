@@ -1,7 +1,7 @@
 ---
 # ClubOS — Technical Requirements Document
-**Version**: 1.0
-**Status**: Reconstructed from MVP
+**Version**: 2.0
+**Status**: Production MVP deployed on Cloud Run
 **Date**: 2026-05-14
 **Author**: Divyansh Shrivastava
 ---
@@ -40,9 +40,9 @@ Monthly CSV / Excel files  (analyst uploads to DBFS)
            ↓
    Gold Delta tables     scored, ranked, benchmarked, aggregated
            ↓
- [Layer 2: Service Layer — FastAPI]
+ [Layer 2: Service Layer — FastAPI + Cloud Run]
    DatabricksClient      reads Gold via SQL or CSV snapshot
-   Service modules       filter, aggregate, parse JSON blobs
+   Service & Connectors  dynamic plugin engine (`BaseConnector`), Slack alerts
    Pydantic schemas      validate and type every response
            ↓
  [Layer 3: Presentation Layer — React + TypeScript]
@@ -53,9 +53,9 @@ Monthly CSV / Excel files  (analyst uploads to DBFS)
 
 **Layer 1 — Data Layer (Databricks PySpark Notebooks):** Reads raw monthly files from Databricks File System (DBFS), applies three-stage medallion transformation, and produces five Gold Delta Lake tables. Notebooks are the only components allowed to write to Delta tables. Each notebook is idempotent — rerunning on the same data produces the same output. Notebooks communicate only through Delta tables; there is no shared in-memory state between stages.
 
-**Layer 2 — Service Layer (FastAPI):** Reads Gold tables — either by executing `SELECT * FROM {catalog}.{schema}.{table_name}` against a Databricks SQL Warehouse (live mode) or by reading pre-exported CSV files from `data/gold_snapshots/` (snapshot mode). Applies in-Python filtering, aggregation, and JSON blob parsing. Validates every API response against a Pydantic v2 model before returning. Exposes eight REST endpoints on `localhost:8000`.
+**Layer 2 — Service Layer (FastAPI on Cloud Run):** Reads Gold tables. Applies in-Python filtering, aggregation, and powers the dynamic `BaseConnector` plugin system for third-party integrations (YouTube, Adobe, GA4). Validates every API response against a Pydantic v2 model before returning. Exposes endpoints and serves the compiled React frontend via mounted static routes on Cloud Run.
 
-**Layer 3 — Presentation Layer (React SPA):** Fetches from the FastAPI backend via typed `fetch` wrappers in `lib/api.ts`. Maintains all state locally using React `useState` and `useEffect` — no Redux, no Zustand, no shared global store. Renders five feature screens plus shared layout and modal components. Client-side routing via `react-router-dom v6`.
+**Layer 3 — Presentation Layer (React SPA):** Fetches from the FastAPI backend via typed `fetch` wrappers in `lib/api.ts`. Maintains all state locally using React `useState` and `useEffect`. Rendered dynamically by the backend container on Cloud Run. Client-side routing via `react-router-dom v6`.
 
 **Isolation guarantees:**
 - Frontend has no knowledge of Delta Lake, PySpark, or Gold table schemas — it only knows Pydantic-validated JSON shapes.
@@ -75,7 +75,7 @@ Monthly CSV / Excel files  (analyst uploads to DBFS)
 | Data contracts | Pydantic v2 | Manual validation, marshmallow, attrs | Pydantic v2 (Rust core) validates every API response at runtime — schema drift caught before JSON reaches the frontend; auto-generates OpenAPI schemas; integrates natively with FastAPI |
 | Dual operating mode | Snapshot mode + Live Databricks mode | Live-only, mock data only | Snapshot mode enables local development without credentials (faster onboarding), offline demos, and isolated test runs; mock data rejected (not realistic); live-only blocks every developer without Databricks access |
 | Polarity handling | Stored in metric_dictionary.json, applied in Gold pipeline | Hardcoded if-else, separate "lower-is-better" tables | Dictionary-driven approach scales to any future reverse-polarity metrics without code changes; consistent formula `gap = (rm_value - peer_median) × polarity` applies identically across all 8 benchmarked metrics |
-| Signal validation | Three-gate filter (statistical + temporal + business prior) | Test all 52×52 pairs, threshold-only | 2,704 metric pairs would produce high false-positive rate; business prior filter eliminates spurious correlations that are statistically significant but causally backwards or nonsensical |
+| Signal validation | Three-gate filter (statistical + temporal + business prior) | Test all 59×59 pairs, threshold-only | 3,481 metric pairs would produce high false-positive rate; business prior filter eliminates spurious correlations that are statistically significant but causally backwards or nonsensical |
 | State management | React `useState` / `useEffect` only | Redux, Zustand, React Query | Application has no cross-page shared state; all data fetches are per-page; adding a state management library would introduce unnecessary complexity for five read-only screens |
 
 ---
@@ -99,9 +99,11 @@ Monthly CSV / Excel files  (analyst uploads to DBFS)
 |-----------|---------|---------|------------|
 | Python | 3.11.x | Backend runtime | Consistency with pipeline; type hints (3.10+) improve maintainability |
 | FastAPI | 0.115.0 | Web framework; router registration; exception handling | Auto-generates OpenAPI docs; native Pydantic v2 integration; lightweight (no ORM, no template engine) |
-| Uvicorn | 0.30.6 | ASGI server | `uvicorn[standard]` includes `watchfiles` for `--reload` in development; production-capable single-worker deployment for MVP load |
-| Pydantic | 2.8.2 | Runtime schema validation for all API responses | v2 Rust core is 10× faster than v1; validates every response before returning JSON; auto-generates OpenAPI schemas |
-| pydantic-settings | 2.3.4 | Environment variable loading | `BaseSettings` reads all configuration from environment or `.env` file; prevents raw `os.getenv()` calls scattered across codebase |
+| Uvicorn | 0.30.6 | ASGI server | Runs inside the unified Docker container on Cloud Run for production delivery |
+| Pydantic | 2.8.2 | Runtime schema validation | v2 Rust core validates every response before returning JSON; auto-generates OpenAPI schemas |
+| Google Cloud Run | GCP | Production Hosting | Serverless, scalable container hosting. Authenticated securely via Workload Identity Federation in GitHub Actions |
+| Docker | 27.x | Containerization | Unified `python:3.11-slim` image handles both Node.js frontend build and Python backend runtime |
+| pydantic-settings | 2.3.4 | Environment variable loading | `BaseSettings` reads all configuration from environment or injected Cloud Run Secrets |
 | pandas | 2.2.2 | CSV snapshot reading and in-memory data operations | Reads Gold CSV snapshots; performs in-Python filtering/aggregation that would be SQL in live mode |
 | httpx | 0.27.2 | HTTP client in test suite | Async-capable client for pytest-based API contract tests (`TestClient` wrapper) |
 | openpyxl | 3.1.5 | Excel file reading | Available for ingestion scripts; not used in current API request handling |
@@ -213,7 +215,7 @@ These constraints are architectural — they are enforced by schema design, not 
 |-----------|--------------|----------------------|
 | Data granularity | Monthly only — `month` column stores first day of month (YYYY-MM-01) | Day-level columns do not exist in any table; no pathway for sub-monthly aggregation |
 | Historical depth | 103 months loaded (2017–2026) | Fixed dataset from client data provider; pipeline can extend on new upload but cannot extend beyond available source data |
-| Metric registry | 52 metrics in `metric_dictionary.json`; expanding requires a schema change and pipeline update | Gold table schemas reflect the 52 fixed metrics; adding a metric without updating Gold notebooks produces NULL columns |
+| Metric registry | 59 metrics in `metric_dictionary.json`; expanding requires a schema change and pipeline update | Gold table schemas reflect the 59 fixed metrics; adding a metric without updating Gold notebooks produces NULL columns |
 | Peer benchmark coverage | Exactly 8 metrics across 2 assets; peer gap = 0 for all other metrics | Benchmark CSV from data provider contains only 8 metrics; the system must never claim comparison on metrics absent from that file |
 | Peer club set | 5 anonymised clubs: `masia_fc`, `merseyside_red`, `gunners_fc`, `fc_baviera`, `citizens` | Fixed by data provider agreement; `club_count` column in `gold_peer_benchmark` reflects actual count, typically 6 (Real Madrid + 5 peers) |
 | Pipeline refresh trigger | Manual analyst upload to DBFS → notebook execution (V1) | No automated ingestion in V1; analysts upload Excel/CSV files and run notebooks manually |
@@ -574,10 +576,10 @@ The test suite is considered passing when:
 
 ## 9. Security Requirements (V1)
 
-**No authentication in V1.** This is an explicit, documented scope decision. The application has no login screen, no session management, and no access tokens. Anyone with the URL can access all data. The consequence is that the application must not be deployed to a public internet address — it is an internal tool accessible only on a private network or local machine.
+**No authentication in V1.** This is an explicit, documented scope decision. The application has no login screen, no session management, and no access tokens. However, the Cloud Run deployment utilizes Workload Identity Federation for secure backend deployment via GitHub Actions, isolating our CI/CD secrets.
 
 **Credential isolation:**
-- `CLUBOS_DATABRICKS_TOKEN` and all Databricks credentials are loaded exclusively from environment variables or a `.env` file at the backend working directory.
+- `CLUBOS_DATABRICKS_TOKEN`, `YOUTUBE_API_KEY`, `SLACK_WEBHOOK_URL`, and other secrets are injected securely via Google Secret Manager in Cloud Run.
 - `.env` files are in `.gitignore` — they must never be committed to version control.
 - No credentials appear in any source code file, API response, frontend bundle, or log output.
 - The frontend bundle (compiled JavaScript) must not contain any Databricks credentials. The frontend has no Databricks credentials and does not need them.
@@ -609,7 +611,7 @@ These limitations are accepted constraints of the MVP. Each entry documents the 
 
 | # | Limitation | Root Cause | Impact | V2 Resolution |
 |---|-----------|-----------|--------|---------------|
-| 1 | No authentication or authorisation | Scoped out of MVP to reduce delivery complexity; internal-tool assumption for V1 | Application cannot be deployed to public internet; anyone with URL can access sensitive commercial data | SSO via Okta/Auth0; role-based access control (viewer vs. admin); session tokens |
+| 1 | No application-level authentication | Scoped out of MVP to reduce delivery complexity; Cloud Run handles network-level access but no app-level users | Application relies on obscure URL or IAP; anyone with URL can access | SSO via Okta/Auth0; role-based access control (viewer vs. admin); session tokens |
 | 2 | Single-threaded Pandas serving (no connection pool) | Snapshot mode reads CSV files on each request with no caching; live mode opens one SQL connection per request | CPU saturation at ~100 concurrent requests; Pandas CSV re-parse on every GET call is redundant | Redis caching layer — parse DataFrames once, evict on pipeline refresh signal; connection pooling for live Databricks |
 | 3 | Monthly data cadence only | Source data from client analytics platform is monthly-aggregated; pipeline schemas have no day-level columns | Cannot detect intra-month issues; a week-3 conversion rate drop is invisible until month end | Weekly ingestion for critical metrics (`conversion_rate`, `net_sales`); add `week` column to Silver/Gold schemas |
 | 4 | Manual data upload workflow | No API connector to client analytics platform; Databricks ingestion trigger is manual | Human error risk on upload (wrong file, corrupt data, missed month); dependency on analyst availability | Automated monthly pull via analytics platform API or scheduled DBFS ingestion; upload validation before Bronze write |
@@ -619,7 +621,7 @@ These limitations are accepted constraints of the MVP. Each entry documents the 
 | 8 | Single club only (Real Madrid hardcoded) | No `club_id` dimension in internal metrics schema; all Gold tables implicitly assume one club | Cannot deploy ClubOS for a second club without a full schema migration and separate Databricks workspace | Add `club_id` to internal metrics schema; multi-tenant architecture; club-level RBAC; parameterise benchmark peer set per club |
 | 9 | No export capabilities | Not implemented in MVP; requires PDF generation library or CSV download handlers | Stakeholders copy-paste priority data into PowerPoint (manual, error-prone); no version-controlled exported reports | PDF export for monthly briefing (ReportLab/WeasyPrint); CSV download for all table views; shareable priority deep-link URLs |
 | 10 | Databricks vendor lock-in | Pipeline tightly couples to Delta Lake, PySpark notebooks, and Databricks SQL Warehouse; no abstraction layer | Cannot migrate to Snowflake, BigQuery, or Spark-on-Kubernetes without full pipeline rewrite | Abstract data layer behind `read_table()`/`write_table()` interfaces; support Delta Lake, Parquet, and PostgreSQL backends interchangeably |
-| 11 | Peer benchmark limited to 8 of 52 metrics | Peer data provider contract covers only 8 metrics across 2 assets; no peer data exists for the other 44 | Priority scoring peer_gap component = 0 for 85% of metrics; system cannot contextualise streaming or fan app underperformance against peers | Renegotiate data provider agreement to cover 20+ metrics; alternatively, compute synthetic peer benchmarks from publicly available club traffic estimates (lower confidence) |
+| 11 | Peer benchmark limited to 8 of 59 metrics | Peer data provider contract covers only 8 metrics across 2 assets; no peer data exists for the other 51 | Priority scoring peer_gap component = 0 for 85% of metrics; system cannot contextualise streaming or fan app underperformance against peers | Renegotiate data provider agreement to cover 20+ metrics; alternatively, compute synthetic peer benchmarks from publicly available club traffic estimates (lower confidence) |
 | 12 | React DOM lag at >50 priority cards | No virtualised list in MVP; React reconciles all card DOM nodes simultaneously | Priority Board would visibly lag at 50+ cards; current max is 10 by design constraint | Implement `react-window` virtualised list for Priority Board; enables displaying full top-50 without DOM performance degradation |
 | 13 | Databricks notebook 15-minute timeout at scale | Default Databricks job timeout applies; sequential notebook execution; single-node cluster | Full pipeline (Bronze→Gold) for 1 club takes ~2 minutes now, but would exceed 15 minutes at 50 clubs × 200 metrics | Parallelise Bronze ingestion (one notebook per club); partition Gold tables by `club_id`; upgrade to multi-node Spark cluster for large-scale runs |
 | 14 | Snapshot CSV staleness risk | No automatic sync between Gold Delta tables (Databricks) and CSV exports (`data/gold_snapshots/`) | Developer working in snapshot mode may serve data that is weeks out of date without knowing it; schema drift between CSV and Pydantic model causes runtime ValidationErrors | Automate CSV export as part of pipeline completion step; add snapshot freshness check to `GET /refresh/status`; document manual refresh procedure in ENV_SETUP.md |

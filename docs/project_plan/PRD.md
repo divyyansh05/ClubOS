@@ -1,7 +1,7 @@
 ---
 # ClubOS — Product Requirements Document
-**Version**: 1.0
-**Status**: Reconstructed from MVP
+**Version**: 2.0
+**Status**: Production MVP deployed on Cloud Run
 **Date**: 2026-05-14
 **Author**: Divyansh Shrivastava
 ---
@@ -57,17 +57,19 @@ ClubOS is a recurring monthly operating system, not a dashboard. Where a dashboa
 - Gold monthly briefing inputs: aggregated top 3 priorities, top 4 signals, benchmark summary, health summary
 - Polarity-aware benchmark gap calculation (lower is better for bounce_rate; system inverts logic automatically)
 - Local snapshot mode: app functions without live Databricks credentials using pre-computed CSV snapshots
-- React web application with five screens: Priority Board, Command Center, Peer Benchmark, Signal Engine, Monthly Briefing
+- React web application with eight screens: Priority Board, Command Center, Peer Benchmark, Signal Engine, Monthly Briefing, Social Intelligence, Event Calendar, and Connectors
 - Priority Board as default landing screen with category labels (critical, opportunity, benchmark, warning)
 - Drill-down modals: every number in the UI is clickable and opens a plain-language explanation
 - Score decomposition: every priority score shows the five weighted components
 - Data quality checks notebook: validates schema compliance, row counts, duplicates, date coverage for all pipeline stages
-- 52-metric registry with polarity definitions (metric_dictionary.json)
+- 59-metric registry with polarity definitions (metric_dictionary.json)
 - 103 months of historical data across all four platforms
 - Five anonymised peer clubs: masia_fc, merseyside_red, gunners_fc, fc_baviera, citizens
 - AI-generated wording for monthly briefing summaries and priority card explanations (summaries only — not scoring logic)
 - Newsprint design system: dark-themed, professional, production-grade visual presentation
-- 23 regression tests covering core pipeline and API behaviour
+- Event Intelligence screen mapping real-world events to metric trends
+- Public cloud deployment and CI/CD via Google Cloud Run and GitHub Actions
+- 28 regression tests covering core pipeline and API behaviour
 
 ### 5.2 Out of Scope — Version 1
 
@@ -76,14 +78,10 @@ ClubOS is a recurring monthly operating system, not a dashboard. Where a dashboa
 - PDF or PowerPoint export of player or monthly briefing content
 - Open-ended AI assistant or conversational Q&A interface
 - Scenario simulation or what-if modelling
-- Event intelligence screen (built in pipeline but not integrated into UI — stretch item)
-- Full event archetype clustering engine
-- Benchmarking on metrics not present in the peer benchmark dataset
 - Multi-club deployment (currently hardcoded for Real Madrid context)
 - Weekly or daily data cadence — monthly only
 - Day-level precision or short-window campaign optimisation
 - Tableau support layer (identified as secondary visualisation option; not built in MVP)
-- Public cloud deployment or production hosting
 - AI-driven priority ranking (deterministic scoring only — AI cannot be the core ranking logic)
 - Broader peer network beyond the five clubs in the provided dataset
 
@@ -116,7 +114,7 @@ The pipeline must be idempotent: rerunning on the same data produces the same ou
   ```
   priority_score = (0.30 × severity) + (0.25 × persistence) + (0.20 × peer_gap) + (0.15 × commercial_weight) + (0.10 × supporting_evidence)
   ```
-- All inputs normalized 0–1 before scoring
+- All inputs normalized 0–1 before scoring (Severity uses Seasonal Z-Score deviation rather than static rolling average)
 - Commercial weight lookup: eCommerce net_sales = 1.0, streaming subscriptions = 0.8, eCommerce conversion_rate = 0.9, fan app downloads = 0.3 (full lookup table in config)
 - Supporting evidence = count of validated signals connected to this metric ÷ 5, capped at 1.0
 - Peer gap = 0 for any metric not in the 8 benchmarked metrics
@@ -163,7 +161,7 @@ The pipeline must be idempotent: rerunning on the same data produces the same ou
 - Gold tables: `gold.kpi_health`, `gold.peer_benchmark`, `gold.signal_relationships`, `gold.priority_board`, `gold.monthly_brief_inputs`
 - Snapshot mode: pre-computed Gold CSV exports allow full app demo without live Databricks credentials; backend reads CSV files if Databricks connection fails
 - Historical depth: 103 months of data across all four platforms
-- 52 tracked metrics across all assets; polarity registered in metric_dictionary.json for all 52
+- 59 tracked metrics across all assets; polarity registered in metric_dictionary.json for all 59
 - NULL handling: mark missing values as null; never zero-impute; display as "—" in the UI
 
 ---
@@ -211,7 +209,7 @@ ClubOS is working correctly when:
 - AI cannot be a hard dependency — the system must function fully if AI services are unavailable
 - Real Madrid context is assumed for V1 — club-specific constants (team identity, benchmark peers) are embedded and not configurable through the UI
 - Monthly cadence is fixed — the product is not designed for real-time or near-real-time data feeds
-- 52-metric registry is the complete metric set; expanding it requires a new data contract and pipeline update
+- 59-metric registry is the complete metric set; expanding it requires a new data contract and pipeline update
 
 ---
 
@@ -219,7 +217,7 @@ ClubOS is working correctly when:
 
 | Alternative | Why Rejected |
 |-------------|-------------|
-| Tableau / Power BI | Can visualize data but cannot automatically rank priorities or compute polarity-aware peer gaps; requires analysts to build new charts every month; does not scale across 52 metrics × 4 assets × 103 months |
+| Tableau / Power BI | Can visualize data but cannot automatically rank priorities or compute polarity-aware peer gaps; requires analysts to build new charts every month; does not scale across 59 metrics × 4 assets × 103 months |
 | Excel macros | Fragile against column name changes, cannot handle Databricks-scale data processing, no web interface for stakeholders to self-serve, breaks when file structure shifts |
 | AI auto-scoring (GPT-4 generates priorities) | Not auditable, not reproducible, cannot be defended in board meetings; stakeholders need traceable breakdowns for why eCommerce conversion rates outranks streaming engagement |
 | Generic BI + manual analyst interpretation | Does not reduce analyst time; still requires bespoke monthly storytelling; no recurring priority ranking; no automated briefing |
