@@ -1,7 +1,7 @@
 ---
 # ClubOS — Backend Schema Document
-**Version**: 1.0
-**Status**: Reconstructed from MVP
+**Version**: 2.0
+**Status**: Production MVP deployed on Cloud Run
 **Date**: 2026-05-14
 ---
 
@@ -405,6 +405,10 @@ All routes are prefixed at `http://localhost:8000`. No `/api/` or `/api/v1/` pre
 | GET | `/social/analytics/insights?data_month={YYYY-MM}` | social.py | Dynamically generated InsightCards from live data (auto-refreshes with new uploads) (V1.7.0) |
 | GET | `/social/analytics/recommendations?team=content` | social.py | Priority-ranked actionable recommendations for content team (CONVERT/SCHEDULE/INCREASE/REDUCE) (V1.7.0) |
 | GET | `/social/analytics/peer/{metric}` | social.py | Peer comparison on analytics metrics (Real Madrid vs 9 clubs on goal_celebration_avg, post_match_avg, reel_multiplier, etc.) (V1.7.0) |
+| GET | `/connectors/status` | connectors.py | Dynamic grid of registered integrations and status |
+| GET | `/connectors/data/{connector_id}` | connectors.py | Return recent synced data for a connector |
+| POST | `/notifications/test-slack` | notifications.py | Fire sample priority shift alert |
+| GET | `/notifications/status` | notifications.py | Check Slack webhook configuration |
 
 **CORS**: Allowed origins — `http://localhost:5176`, `http://127.0.0.1:5176`, `http://localhost:5177`, `http://127.0.0.1:5177`, `http://localhost:5174`, `http://127.0.0.1:5174`. All methods and headers allowed.
 
@@ -757,6 +761,101 @@ All routes are prefixed at `http://localhost:8000`. No `/api/` or `/api/v1/` pre
 
 ---
 
+#### GET `/analytics/seasonal/{asset}/{metric}`
+
+**Purpose**: Fetches the 12-month historical seasonal baseline for a given metric.
+
+**Path parameters**:
+| Param | Type | Description |
+|-------|------|-------------|
+| `asset` | string | Digital platform (e.g., `main_website`) |
+| `metric` | string | Canonical metric name (e.g., `bounce_rate`) |
+
+---
+
+#### GET `/events`
+
+**Purpose**: Fetches registered business events, with optional category and year filters.
+
+**Query parameters**:
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `category` | string | No | Filter by event category |
+| `year` | integer | No | Filter by event year |
+
+---
+
+#### POST `/events`
+
+**Purpose**: Creates a new business event in the Event Calendar.
+
+---
+
+#### DELETE `/events/{event_id}`
+
+**Purpose**: Deletes a specific event from the Event Calendar.
+
+---
+
+---
+
+#### GET `/connectors/status`
+
+**Purpose**: Returns the status of all data connectors (e.g. YouTube, Wikipedia, Slack). Used by the Connectors page.
+
+**Response schema**:
+```json
+{
+  "connectors": [
+    {
+      "connector_id": "youtube",
+      "name": "YouTube Data API v3",
+      "status": "connected",
+      "last_sync": "2026-05-27T19:15:32",
+      "records_fetched": 8875,
+      "error_message": null,
+      "auth_type": "API Key",
+      "data_type": "streaming_performance"
+    }
+  ],
+  "connected_count": 1,
+  "total_count": 4
+}
+```
+
+---
+
+#### GET `/connectors/data/{connector_id}`
+
+**Purpose**: Fetches recently synced data for a specific connector.
+
+**Path parameters**:
+| Param | Type | Description |
+|-------|------|-------------|
+| `connector_id` | string | Connector ID (e.g., `youtube`) |
+
+---
+
+#### POST `/notifications/test-slack`
+
+**Purpose**: Fires a sample priority shift alert to the configured Slack channel using current priority data.
+
+---
+
+#### GET `/notifications/status`
+
+**Purpose**: Checks if the Slack webhook URL is configured.
+
+**Response schema**:
+```json
+{
+  "slack_configured": true,
+  "webhook_preview": "https://hooks.slack.com/ser..."
+}
+```
+
+---
+
 ## 5. Pydantic Models
 
 All models use Pydantic v2 (`pydantic==2.8.2`). FastAPI validates all responses against these schemas at runtime before returning JSON.
@@ -810,6 +909,8 @@ All models use Pydantic v2 (`pydantic==2.8.2`). FastAPI validates all responses 
 | `peer_leader_value` | float | No | Best peer value (nullable) |
 | `seasonal_context` | dict[str, Any] | No | Seasonal baseline intelligence (V1.5.3): seasonal_mean, seasonal_std, z_score, is_within_normal_range, interpretation, etc. (nullable) |
 | `conversion_context` | dict[str, Any] | No | Conversion rate + volume pairing (V1.5.4): quadrant, label, interpretation, color, conversion_rate_value, visitors_value, etc. Only populated for conversion_rate metric (nullable) |
+| `anomaly_context` | dict[str, Any] | No | Event-adjusted classification (V1.5.2): classification, interpretation, related_events (nullable) |
+| `event_suppressed` | bool | No | True if priority was suppressed due to being an expected event-driven movement (V1.5.2) |
 
 ### 5.5 PriorityListResponse
 
@@ -1191,6 +1292,26 @@ Response from GET /social/international/correlation.
 |-------|------|----------|-------------|
 | `correlations` | list[InternationalCommercialCorrelation] | Yes | All correlations found |
 | `strongest_correlation` | InternationalCommercialCorrelation \| None | Yes | Strongest correlation if any pass threshold |
+
+### 5.37 ConnectorStatus
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `connector_id` | str | Yes | Unique ID for the connector |
+| `name` | str | Yes | Display name |
+| `status` | str | Yes | `connected`, `error`, `not_configured` |
+| `last_sync` | str \| None | No | ISO timestamp of last sync |
+| `records_fetched` | int | Yes | Total records fetched |
+| `error_message` | str \| None | No | Error details if status is `error` |
+| `auth_type` | str | Yes | e.g. `API Key`, `No Auth`, `Webhook` |
+| `data_type` | str | Yes | Description of data returned |
+
+### 5.38 NotificationStatusResponse
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `slack_configured` | bool | Yes | True if SLACK_WEBHOOK_URL is set |
+| `webhook_preview` | str | Yes | Truncated preview or "not set" |
 
 ---
 

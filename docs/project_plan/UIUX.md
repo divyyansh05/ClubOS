@@ -1,7 +1,7 @@
 ---
 # ClubOS — UI/UX Design Document
-**Version**: 1.0
-**Status**: Reconstructed from MVP
+**Version**: 2.0
+**Status**: Production MVP deployed on Cloud Run
 **Date**: 2026-05-14
 **Author**: Divyansh Shrivastava
 ---
@@ -18,7 +18,7 @@ The choice is motivated by three things:
 
 **Authority and credibility.** The product is shown to a club's digital business lead and commercial lead — people who attend board meetings. A presentation-ready interface modelled on financial reporting aesthetics (not a product management tool or CRM) signals that the numbers on screen are substantive and defensible, not marketing metrics.
 
-Specific choices this philosophy drives: 2px `border-ink` rules instead of box shadows on cards, DM Serif Display for page titles rather than a geometric sans, JetBrains Mono for every number and score rather than a proportional font, and a warm off-white (`paper: #FAFAF8`) rather than pure white. In dark mode, the background shifts to `stone-900` (#1A1A18), maintaining the same warm tonal quality.
+Specific choices this philosophy drives: 2px `border-ink` rules instead of box shadows on cards, DM Serif Display for page titles rather than a geometric sans, JetBrains Mono for every number and score rather than a proportional font, and a warm off-white (`paper: #FAFAF8`) rather than pure white. In dark mode, the background shifts to `stone-900` (#1A1A18), maintaining the same warm tonal quality. All newly added screens (Social Intelligence, Event Calendar, Connectors) strictly adhere to these foundational rules.
 
 ---
 
@@ -175,7 +175,7 @@ Semantic colors encode data state directly in the visual system. Any element car
 
 ## 3. Layout Principles
 
-**Maximum width:** `max-w-screen-xl` (`1280px`) centered with `mx-auto`, padded by `px-6` (24px each side). All five screens use this constraint — no full-bleed content areas except the sticky header itself and the full-width WelcomeBanner.
+**Maximum width:** `max-w-screen-xl` (`1280px`) centered with `mx-auto`, padded by `px-6` (24px each side). All eight screens use this constraint — no full-bleed content areas except the sticky header itself and the full-width WelcomeBanner.
 
 **Sticky header:** `position: sticky; top: 0; z-index: 40; backdrop-blur-sm`. The header never scrolls away. It maintains `bg-paper/95` (95% opacity) with blur so content beneath is visible but unreadable — preventing the header from becoming visually competitive with data below it.
 
@@ -293,7 +293,7 @@ Two distinct modal implementations exist in ClubOS.
 
 2. **Main header** (`py-6`):
    - Left: ClubOS logo link (`NavLink to="/priorities"`) — `font-headline text-4xl md:text-5xl tracking-tight` with `font-mono text-[10px] uppercase tracking-widest text-stone-500` tagline beneath it.
-   - Right: Navigation links — `hidden md:flex gap-8 font-sans text-sm uppercase tracking-wider`. Five items: Board, Center, Benchmark, Signals, Briefing.
+   - Right: Navigation links — `hidden md:flex gap-6 font-sans text-sm uppercase tracking-wider`. Eight items: Board, Center, Benchmark, Signals, Briefing, Social, Events, Connectors.
 
 **Active state:** Active `NavLink` gets `border-b-2 border-ink dark:border-stone-300 pb-1`. No background fill, no colour change — a simple underline rule is the only active indicator, consistent with newspaper section headers.
 
@@ -336,6 +336,8 @@ Used in: Command Center (health trend), Peer Benchmark (12-month gap chart), Met
 
 **Grid:** `CartesianGrid strokeDasharray="3 3"` at `stroke="#E8E8E5"` (stone-200) in light mode, `stroke="#434340"` (stone-700) in dark mode. Horizontal grid lines only — no vertical.
 
+**Event Annotations (V2):** Trend charts overlay real-world events using Recharts `ReferenceDot` or custom SVG icons (`⚡`) positioned along the X-axis for months with significant events, linking trend anomalies to documented context.
+
 ---
 
 ### 5.2 Bar Charts (Peer Benchmark)
@@ -368,6 +370,15 @@ Used in: Command Center summary cards (4 small inline trends), Monthly Briefing 
 - Trend flat / stable → `#A3A39E` (stone-400)
 
 **Stroke:** `strokeWidth={1.5}`, no dots. The line alone communicates trajectory — the minimal format suits the card's space constraint.
+
+---
+
+### 5.4 Seasonal Context Range Bars (V2)
+
+Used in: Priority Evidence Modal (Seasonal Context card).
+
+**Visual Structure:** A horizontal range bar showing historical distribution (min, p25, mean, p75, max) for a specific calendar month. The current actual value is plotted as a distinct marker along this axis.
+**Interpretation Integration:** Border colors dynamically shift based on the `is_within_normal_range` boolean, providing an immediate visual cue if the current month's performance is a true anomaly vs. expected seasonality.
 
 ---
 
@@ -434,7 +445,7 @@ ClubOS is designed **desktop-first**. The primary use case is a digital business
 
 | Decision | Rationale |
 |----------|-----------|
-| Newsprint aesthetic over modern SaaS | Signals editorial authority and "monthly briefing" cadence. Differentiates from generic BI tools. Dense typography is appropriate for the data volume (52 metrics, 10 priorities per screen). Printable layouts are a side benefit. |
+| Newsprint aesthetic over modern SaaS | Signals editorial authority and "monthly briefing" cadence. Differentiates from generic BI tools. Dense typography is appropriate for the data volume (59 metrics, 10 priorities per screen). Printable layouts are a side benefit. |
 | Monospace font for all numbers and scores | Ensures columnar alignment in tables. Signals data precision to analysts. Creates visual distinction between "this is a data value" (mono) and "this is a label" (headline or body). |
 | Dark mode as equal default (follows system) | No hardcoded default — system `prefers-color-scheme` is respected first. Analysts running ClubOS in presentation rooms with dimmed lighting benefit from dark mode. Both modes are fully designed, not afterthoughts. |
 | No sidebar navigation | A sidebar consumes ~250px of horizontal space that is better used for data tables and charts. Five screens fit comfortably in a header-based tab pattern. Sidebar patterns imply a hierarchical navigation model; ClubOS five screens are peer-level, not hierarchical. |

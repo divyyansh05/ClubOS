@@ -70,7 +70,7 @@ export default function UpcomingPage() {
       </div>
 
       {/* Feature Cards */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredFeatures.map((feature) => {
           const isExpanded = expandedId === feature.id;
           const colors = CATEGORY_COLORS[feature.category];

@@ -1,7 +1,7 @@
 ---
 # ClubOS — Implementation Plan
-**Version**: 1.0
-**Status**: V1 Complete · V2 Planning
+**Version**: 2.0
+**Status**: Production MVP deployed on Cloud Run
 **Date**: 2026-05-14
 **Author**: Divyansh Shrivastava
 ---
@@ -159,7 +159,7 @@ These four items must land before ClubOS can be handed to club staff on a hosted
 | Authentication + RBAC | Debt #1 — no auth | Sensitive commercial data (net_sales, conversion_rate, peer rank) cannot be accessible to anyone with a URL | High — requires SSO integration (Okta/Auth0), session management, role definitions (viewer vs. admin) |
 | Automated data ingestion | Debt #2 — manual upload | Monthly analyst manual upload is a single point of failure; a missed upload produces stale priorities with no alert | High — requires API connector to club analytics platform or scheduled DBFS pull; upload validation pipeline before Bronze write |
 | PDF briefing export | Debt #8 — no export | Board meeting presentations require printable output; copy-paste from screen into PowerPoint is error-prone and non-reproducible | Medium — ReportLab or WeasyPrint rendering of Monthly Briefing screen content |
-| Hosted cloud deployment | New — not in V1 scope | Local setup is too high-friction for club staff who are not engineers | High — AWS or Azure hosted instance; CI/CD pipeline; TLS; environment variable management via cloud secrets |
+| Hosted cloud deployment | New — not in V1 scope | Local setup is too high-friction for club staff who are not engineers | ✅ **COMPLETE** — Deployed to GCP Cloud Run with GitHub Actions CI/CD and Workload Identity Federation |
 
 **Q1 acceptance gate:** Club staff (digital business lead, digital analyst) can log in with their work email, view all five screens, and export a PDF briefing — without running any code locally or receiving any technical setup assistance.
 
@@ -205,7 +205,7 @@ These features address the long-term commercial viability of ClubOS as a multi-c
 |---------|---------------------|-----------------|-----------------|
 | Real-time streaming ingestion | Debt #3 + #5 | Replace monthly batch with Databricks Delta Live Tables or Spark Structured Streaming; enables hourly or daily metric refreshes | Very High — streaming architecture, schema changes, new monitoring infrastructure |
 | ML-enhanced signal detection | Debt #9 + analytics depth | Complement business-prior candidate list with ML-discovered correlations; use cross-validation to avoid spurious signals | High — MLflow experiment tracking, Databricks AutoML or custom model, new validation pipeline |
-| Automated priority change alerts | Debt #6 — no alerts | Email or Slack notification when a metric crosses from `warning` to `critical`, or when a new rank-1 priority replaces a previous one | Medium — email service integration (SendGrid/SES), alert rule engine reading `gold_priority_board` diffs |
+| Automated priority change alerts | Debt #6 — no alerts | Email or Slack notification when a metric crosses from `warning` to `critical`, or when a new rank-1 priority replaces a previous one | ✅ **COMPLETE** — Slack webhook integration implemented via `/notifications` endpoints |
 | Collaborative features | New | Comments on priority cards (e.g. "investigated — root cause is checkout UX"), task assignments to team members, resolution tracking | High — requires a database for collaboration state (PostgreSQL), new API endpoints (POST/PATCH), notification system |
 | Tableau integration layer | V1 out-of-scope | Some clubs already use Tableau; provide a Tableau-compatible data source that reads from the same Gold Delta tables | Medium — Tableau Web Data Connector or published Databricks data source |
 | Native mobile app | New | iOS/Android app for executive dashboard (Priority Board + Monthly Briefing); push notifications for critical priorities | Very High — separate codebase (React Native), mobile-specific API endpoints, app store deployment |
@@ -322,7 +322,7 @@ These approaches were considered and formally rejected before implementation beg
 
 | Approach | Why Rejected |
 |----------|-------------|
-| **Tableau / Power BI** | Cannot automatically rank priorities or compute polarity-aware gaps; requires analysts to build new charts every month; does not scale across 52 metrics × 4 assets × 103 months; no recurring decision workflow |
+| **Tableau / Power BI** | Cannot automatically rank priorities or compute polarity-aware gaps; requires analysts to build new charts every month; does not scale across 59 metrics × 4 assets × 103 months; no recurring decision workflow |
 | **Excel macros** | Fragile against column name changes; no web interface for stakeholder self-service; breaks when file structure shifts; cannot support multi-user access |
 | **AI auto-scoring (GPT-4 generates priorities)** | Not auditable; not reproducible; cannot be defended in board meetings; hallucination risk on commercial data; API cost scales with usage; AI cannot be the source of core ranking logic |
 | **Generic BI + manual analyst interpretation** | Does not reduce analyst time; still requires bespoke monthly storytelling; no recurring priority ranking; no automated briefing |
@@ -1357,3 +1357,28 @@ Based on 12 months of data (2025-01 to 2025-12), correlation analysis tested int
 **V1.7 complete — Social media analytics intelligence fully operational**
 
 ---
+
+## V1.9.0 COMPLETE — Dynamic Connector System & Master Wiki Audit
+**Sprint end date:** 2026-05-27
+**Status:** ✅ COMPLETE
+
+**Feature summary:**
+- Built dynamic `BaseConnector` plugin architecture via `connector_service.py`
+- Implemented API connectors for YouTube, Wikipedia, Slack, Adobe Analytics, GA4
+- Added Connector Settings Screen to Frontend (`/connectors`)
+- Added Notification Test endpoints for Slack Alerts
+- Audited `MASTER_WIKI.md` fully to reflect 59 metrics, 66 files, and all recent UI and Backend architectural growth
+
+---
+
+## V2.0.0 COMPLETE — Cloud Run Deployment & Full CI/CD
+**Sprint end date:** 2026-05-27
+**Status:** ✅ COMPLETE
+
+**Feature summary:**
+- Shifted architecture from local MVP to hosted Google Cloud Run `python:3.11-slim` container
+- Setup GitHub Actions CI/CD with Google Workload Identity Federation
+- Handled all environment variable injection for dynamic deployments
+- Stabilized and completed all foundational Project Plan Documentation audits across PRD, TRD, UIUX, APPFLOW, BACKEND_SCHEMA, and IMPLEMENTATION_PLAN
+
+**V2.0.0 complete — ClubOS deployed to production environment**
