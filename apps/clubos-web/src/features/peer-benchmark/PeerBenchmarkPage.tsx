@@ -37,6 +37,68 @@ interface MetricDetail {
   additionalInfo?: Record<string, string | number>;
 }
 
+const BenchmarkTooltip = ({
+  active,
+  payload,
+  label,
+  metricName,
+}: {
+  active?: boolean
+  payload?: any[]
+  label?: string
+  metricName: string
+}) => {
+  if (!active || !payload || payload.length === 0) return null
+
+  // Format month label from YYYY-MM to "Jan 2025"
+  const formatMonth = (m: string) => {
+    if (!m) return m
+    const [year, month] = m.split('-')
+    const months = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec']
+    return `${months[parseInt(month) - 1]} ${year}`
+  }
+
+  const lineLabels: Record<string, string> = {
+    rm: 'Real Madrid',
+    median: 'Peer Median',
+    leader: 'Peer Leader',
+  }
+
+  const lineColors: Record<string, string> = {
+    rm: '#EF4444',
+    median: '#3B82F6',
+    leader: '#22C55E',
+  }
+
+  return (
+    <div className="
+      bg-stone-900 dark:bg-stone-950
+      border border-stone-700
+      rounded-sm px-3 py-2
+      font-mono text-xs
+      shadow-lg
+    ">
+      <p className="text-stone-400 mb-2 uppercase tracking-wider text-[10px]">
+        {formatMonth(label)}
+      </p>
+      {payload.map((entry) => (
+        <div
+          key={entry.dataKey}
+          className="flex items-center justify-between gap-4 mb-1"
+        >
+          <span style={{ color: lineColors[entry.dataKey] }}>
+            {lineLabels[entry.dataKey] ?? entry.dataKey}
+          </span>
+          <span className="text-stone-100 font-medium">
+            {formatMetricValue(metricName, entry.value)}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function PeerBenchmarkPage() {
   const [activeTab, setActiveTab] = useState<"commercial" | "social">("commercial");
   const [loading, setLoading] = useState(true);
@@ -499,13 +561,11 @@ export function PeerBenchmarkPage() {
                 label={{ value: getMetricUnit(selectedMetric.metric), angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#75756F' } }}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(26, 26, 24, 0.95)",
-                  border: "1px solid #434340",
-                  borderRadius: "4px",
-                  fontFamily: "JetBrains Mono, monospace",
-                  fontSize: "11px",
-                }}
+                content={
+                  <BenchmarkTooltip
+                    metricName={selectedMetric?.metric ?? ''}
+                  />
+                }
               />
               <Legend
                 iconType="line"
