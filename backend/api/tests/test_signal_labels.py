@@ -61,15 +61,15 @@ def test_action_statement_changes_based_on_signal_status():
     # Verify statements are different across statuses
     # (They should contain status-specific language)
     if firing_positive_statements:
-        assert any("rising" in s.lower() for s in firing_positive_statements)
+        assert any("rising" in s.lower() or "falling" in s.lower() for s in firing_positive_statements)
     if firing_negative_statements:
-        assert any("declining" in s.lower() for s in firing_negative_statements)
+        assert any("falling" in s.lower() or "rising" in s.lower() for s in firing_negative_statements)
     if neutral_statements:
         assert any("stable" in s.lower() or "monitoring" in s.lower() for s in neutral_statements)
 
 
 def test_firing_positive_action_statement_contains_expected_language():
-    """Firing positive signals should have 'rising' and 'upward' language"""
+    """Firing positive signals should reference source direction and expected rise"""
     result = get_signal_view()
 
     firing_positive_signals = [
@@ -80,12 +80,15 @@ def test_firing_positive_action_statement_contains_expected_language():
     if len(firing_positive_signals) > 0:
         for signal in firing_positive_signals:
             action = signal["action_statement"].lower()
-            assert "rising" in action or "upward" in action
+            # Source direction should match actual trend (rising OR falling)
+            assert "rising" in action or "falling" in action
+            # Outcome should indicate expected rise
+            assert "rise" in action or "upward" in action
             assert "anticipated" in action or "expected" in action or "anticipate" in action
 
 
 def test_firing_negative_action_statement_contains_expected_language():
-    """Firing negative signals should have 'declining' and 'downward' language"""
+    """Firing negative signals should reference source direction and expected decline"""
     result = get_signal_view()
 
     firing_negative_signals = [
@@ -96,7 +99,10 @@ def test_firing_negative_action_statement_contains_expected_language():
     if len(firing_negative_signals) > 0:
         for signal in firing_negative_signals:
             action = signal["action_statement"].lower()
-            assert "declining" in action or "downward" in action
+            # Source direction should match actual trend (rising OR falling)
+            assert "rising" in action or "falling" in action
+            # Outcome should indicate expected decline
+            assert "decline" in action or "downward" in action
             assert "flag" in action or "intervention" in action or "expected" in action
 
 

@@ -169,7 +169,8 @@ def _build_signal_labels(
     target_metric: str,
     target_asset: str,
     lag_months: int,
-    current_status: str
+    current_status: str,
+    source_trend_direction: Optional[str] = None
 ) -> dict[str, Any]:
     """Build driver/outcome labels and causal direction statement for a signal (V1.5.5)"""
 
@@ -188,19 +189,24 @@ def _build_signal_labels(
         f"Source metric is the driver. Target metric is the predicted outcome."
     )
 
+    # Determine source direction verb from actual trend data
+    source_direction = "rising" if source_trend_direction == "up" else "falling"
+
     # Build action statement based on current_status
     if current_status == "firing_positive":
+        outcome_direction = "rise"
         action_statement = (
-            f"SIGNAL ACTIVE — {source_metric} is rising. "
+            f"SIGNAL ACTIVE — {source_metric} is {source_direction}. "
             f"Based on historical patterns, {target_metric} is expected to "
-            f"follow upward in {lag_months} month{'s' if lag_months != 1 else ''}. Recommended: anticipate "
+            f"{outcome_direction} in {lag_months} month{'s' if lag_months != 1 else ''}. Recommended: anticipate "
             f"increased {target_metric} and align commercial plans accordingly."
         )
     elif current_status == "firing_negative":
+        outcome_direction = "decline"
         action_statement = (
-            f"SIGNAL ACTIVE — {source_metric} is declining. "
+            f"SIGNAL ACTIVE — {source_metric} is {source_direction}. "
             f"Based on historical patterns, {target_metric} is expected to "
-            f"follow downward in {lag_months} month{'s' if lag_months != 1 else ''}. Recommended: flag "
+            f"{outcome_direction} in {lag_months} month{'s' if lag_months != 1 else ''}. Recommended: flag "
             f"{target_metric} for early intervention before the lag window closes."
         )
     else:  # neutral or unknown
@@ -366,7 +372,7 @@ def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
 
         # Build driver/outcome labels (V1.5.5)
         signal_labels = _build_signal_labels(
-            source_metric, source_asset, target_metric, target_asset, lag_months, current_status
+            source_metric, source_asset, target_metric, target_asset, lag_months, current_status, source_trend_direction
         )
 
         normalized.append(
@@ -426,7 +432,8 @@ def get_signal_view(signal_type_filter: Optional[str] = None) -> dict[str, Any]:
                 signal["target_metric"],
                 signal["target_asset"],
                 signal["lag_months"],
-                signal.get("current_status", "neutral")
+                signal.get("current_status", "neutral"),
+                signal.get("source_trend_direction")
             )
             signal.update(signal_labels)
 
