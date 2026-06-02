@@ -1579,13 +1579,19 @@ export function PriorityBoardPage() {
 
             {/* Charts Grid */}
             <div className="p-8 space-y-8">
+              {!selectedDetail.historical_values || selectedDetail.historical_values.length === 0 ? (
+                <div className="p-12 text-center font-mono text-sm uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                  No historical data available
+                </div>
+              ) : (
+                <>
               {/* Monthly Values Bar Chart */}
               <div className="bg-white dark:bg-stone-800 border-2 border-ink dark:border-stone-700 rounded-2xl p-6">
                 <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
                   Monthly Values
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={selectedDetail.timeline_data}>
+                  <BarChart data={selectedDetail.historical_values}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                       dataKey="month"
@@ -1597,7 +1603,7 @@ export function PriorityBoardPage() {
                       tickFormatter={(val) => formatMetricValue(selectedDetail.primary_metric, val)}
                     />
                     <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="metric_value" fill="#3b82f6" />
+                    <Bar dataKey="value" fill="#3b82f6" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -1609,9 +1615,9 @@ export function PriorityBoardPage() {
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart
-                    data={selectedDetail.timeline_data.slice(1).map((d: any, i: number) => {
-                      const prevValue = selectedDetail.timeline_data[i].metric_value;
-                      const currValue = d.metric_value;
+                    data={selectedDetail.historical_values.slice(1).map((d: any, i: number) => {
+                      const prevValue = selectedDetail.historical_values[i].value;
+                      const currValue = d.value;
                       const pctChange = prevValue !== 0 ? ((currValue - prevValue) / prevValue) * 100 : 0;
                       return {
                         month: d.month,
@@ -1646,9 +1652,9 @@ export function PriorityBoardPage() {
                     />
                     <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="3 3" />
                     <Bar dataKey="change">
-                      {selectedDetail.timeline_data.slice(1).map((_: any, i: number) => {
-                        const prevValue = selectedDetail.timeline_data[i].metric_value;
-                        const currValue = selectedDetail.timeline_data[i + 1].metric_value;
+                      {selectedDetail.historical_values.slice(1).map((_: any, i: number) => {
+                        const prevValue = selectedDetail.historical_values[i].value;
+                        const currValue = selectedDetail.historical_values[i + 1].value;
                         const pctChange = prevValue !== 0 ? ((currValue - prevValue) / prevValue) * 100 : 0;
                         return <Cell key={i} fill={pctChange >= 0 ? '#10b981' : '#ef4444'} />;
                       })}
@@ -1665,7 +1671,7 @@ export function PriorityBoardPage() {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart
                     data={(() => {
-                      const values = selectedDetail.timeline_data.map((d: any) => d.metric_value);
+                      const values = selectedDetail.historical_values.map((d: any) => d.value);
                       const min = Math.min(...values);
                       const max = Math.max(...values);
                       const range = max - min;
@@ -1702,6 +1708,8 @@ export function PriorityBoardPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              </>
+              )}
             </div>
           </div>
         </div>
