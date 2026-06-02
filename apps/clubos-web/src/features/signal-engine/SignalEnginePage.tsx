@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { getSignals } from "../../lib/api";
 import type { SignalResponse, SignalItem } from "../../types/clubos";
 import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
@@ -500,11 +499,13 @@ export function SignalEnginePage() {
                   )}
 
                   {/* Chevron */}
-                  <ChevronDown
-                    className={`w-5 h-5 text-stone-500 dark:text-stone-400 transition-transform duration-200 ${
+                  <span
+                    className={`text-lg text-stone-500 dark:text-stone-400 transition-transform duration-200 inline-block ${
                       isExpanded ? 'transform rotate-180' : ''
                     }`}
-                  />
+                  >
+                    ▼
+                  </span>
                 </div>
               </div>
 
