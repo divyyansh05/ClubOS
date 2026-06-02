@@ -545,8 +545,8 @@ export function SignalEnginePage() {
                       ? 'text-critical-light dark:text-critical-dark'
                       : 'text-stone-600 dark:text-stone-400'
                   }`}>
-                    {signal.current_status === 'firing_positive' && `▲ SIGNAL ACTIVE — ${signal.source_metric} rising → ${signal.target_metric} expected to rise in ${signal.lag_months} month${signal.lag_months > 1 ? 's' : ''}`}
-                    {signal.current_status === 'firing_negative' && `▼ SIGNAL ACTIVE — ${signal.source_metric} declining → ${signal.target_metric} expected to decline in ${signal.lag_months} month${signal.lag_months > 1 ? 's' : ''}`}
+                    {signal.current_status === 'firing_positive' && `▲ SIGNAL ACTIVE — ${signal.source_metric} ${signal.source_trend_direction === 'up' ? 'rising' : 'falling'} → ${signal.target_metric} expected to rise in ${signal.lag_months} month${signal.lag_months > 1 ? 's' : ''}`}
+                    {signal.current_status === 'firing_negative' && `▼ SIGNAL ACTIVE — ${signal.source_metric} ${signal.source_trend_direction === 'up' ? 'rising' : 'falling'} → ${signal.target_metric} expected to decline in ${signal.lag_months} month${signal.lag_months > 1 ? 's' : ''}`}
                     {signal.current_status === 'neutral' && `— SIGNAL MONITORING — ${signal.source_metric} stable · No directional signal this month`}
                     {signal.current_status === 'unknown' && `— SIGNAL STATUS UNKNOWN — Source metric data unavailable`}
                   </div>
