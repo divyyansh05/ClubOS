@@ -235,6 +235,7 @@ export function PeerBenchmarkPage() {
   }
 
   const latestPoint = benchmark?.points[benchmark.points.length - 1];
+  const lastPlaceClub = clubComparison?.clubs?.[clubComparison.clubs.length - 1];
 
   // Determine border color based on rank
   let borderColor = "border-critical-light dark:border-critical-dark";
@@ -451,7 +452,9 @@ export function PeerBenchmarkPage() {
                   {latestPoint.club_count}
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400">Last Place</div>
-                <div className="font-mono text-sm font-bold mt-1">-</div>
+                <div className="font-mono text-sm font-bold mt-1">
+                  {lastPlaceClub ? formatMetricValue(selectedMetric.metric, lastPlaceClub.value) : "-"}
+                </div>
               </div>
             </div>
           </div>
