@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useEffect, useMemo, useState } from "react";
+import { Cell, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { getBenchmark, getClubComparison, getSocialBenchmark, getSocialBenchmarkTrend, getSocialBenchmarkSummary, getAvailableMetrics, type AvailableMetric } from "../../lib/api";
 import type { BenchmarkResponse, ClubComparisonResponse, SocialBenchmarkResponse, SocialBenchmarkTrendResponse, SocialBenchmarkSummaryResponse } from "../../types/clubos";
 import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
@@ -35,6 +35,22 @@ interface MetricDetail {
   businessContext: string;
   trendData?: Array<{ month: string; value: number }>;
   additionalInfo?: Record<string, string | number>;
+}
+
+const SOCIAL_CLUB_COLORS = [
+  "#E1306C",
+  "#3B82F6",
+  "#22C55E",
+  "#F59E0B",
+  "#8B5CF6",
+  "#06B6D4",
+  "#F97316",
+  "#14B8A6",
+];
+
+function getSocialClubColor(club: string, index: number): string {
+  if (club === "Real Madrid") return "#EF4444";
+  return SOCIAL_CLUB_COLORS[index % SOCIAL_CLUB_COLORS.length];
 }
 
 const BenchmarkTooltip = ({
@@ -114,6 +130,44 @@ export function PeerBenchmarkPage() {
   const [socialTrend, setSocialTrend] = useState<SocialBenchmarkTrendResponse | null>(null);
   const [socialSummary, setSocialSummary] = useState<SocialBenchmarkSummaryResponse | null>(null);
   const [selectedSocialMetric, setSelectedSocialMetric] = useState(SOCIAL_METRICS[0]); // avg_engagement_per_post
+
+  const [isDark, setIsDark] = useState(() =>
+    typeof window !== "undefined"
+      ? document.documentElement.classList.contains("dark")
+      : false
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const chartColors = useMemo(
+    () => ({
+      axis: isDark ? "#A3A39E" : "#5C5C56",
+      grid: isDark ? "#434340" : "#E8E8E5",
+      text: isDark ? "#D1D1CC" : "#1A1A1A",
+      tooltipBg: isDark ? "#2B2B28" : "#FAFAF8",
+      tooltipBorder: isDark ? "#434340" : "#1A1A1A",
+      tooltipText: isDark ? "#F5F5F3" : "#1A1A1A",
+    }),
+    [isDark]
+  );
+
+  const tooltipStyle = useMemo(
+    () => ({
+      backgroundColor: chartColors.tooltipBg,
+      border: `2px solid ${chartColors.tooltipBorder}`,
+      borderRadius: 0,
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: "11px",
+      color: chartColors.tooltipText,
+    }),
+    [chartColors]
+  );
 
   // Load available metrics on mount
   useEffect(() => {
@@ -867,11 +921,20 @@ export function PeerBenchmarkPage() {
                   layout="vertical"
                   margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="club" type="category" width={100} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill={(entry: any) => entry.is_real_madrid ? "#EF4444" : "#3B82F6"} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} horizontal={false} />
+                  <XAxis type="number" stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} />
+                  <YAxis dataKey="club" type="category" width={100} stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    labelStyle={{ color: chartColors.tooltipText }}
+                    itemStyle={{ color: chartColors.tooltipText }}
+                    formatter={(value: number) => [abbreviateNumber(Number(value)), "Value"]}
+                  />
+                  <Bar dataKey="value">
+                    {socialBenchmark.clubs.map((club, index) => (
+                      <Cell key={club.club} fill={getSocialClubColor(club.club, index)} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
               <div className="mt-4 flex items-center gap-6 justify-center font-mono text-xs">
@@ -903,10 +966,16 @@ export function PeerBenchmarkPage() {
                   data={socialTrend.months}
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="month" tickFormatter={(val) => val.substring(5, 7)} />
-                  <YAxis reversed domain={[1, 10]} ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]} />
-                  <Tooltip labelFormatter={(val) => `Month: ${val}`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                  <XAxis dataKey="month" stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} tickFormatter={(val) => val.substring(5, 7)} />
+                  <YAxis reversed domain={[1, 10]} ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]} stroke={chartColors.axis} tick={{ fill: chartColors.text, fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    labelStyle={{ color: chartColors.tooltipText }}
+                    itemStyle={{ color: chartColors.tooltipText }}
+                    labelFormatter={(val) => `Month: ${val}`}
+                    formatter={(value: number) => [`#${value}`, "Rank"]}
+                  />
                   <Legend />
                   <Line
                     type="monotone"

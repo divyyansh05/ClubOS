@@ -71,6 +71,39 @@ def get_club_comparison(asset: str, metric: str) -> dict[str, Any]:
     Get all clubs (RM + peers) for latest month with values and ranks.
     Reads from source Excel files to get individual club data.
     """
+    snapshot_dir = Path(settings.clubos_gold_snapshot_dir) if settings.clubos_gold_snapshot_dir else None
+    comparison_snapshot = snapshot_dir / "gold_club_comparison.csv" if snapshot_dir else None
+
+    if comparison_snapshot and comparison_snapshot.exists():
+        try:
+            df = pd.read_csv(comparison_snapshot)
+            filtered = df[(df["asset_name"] == asset) & (df["metric_name"] == metric)].copy()
+            if not filtered.empty:
+                filtered["month"] = pd.to_datetime(filtered["month"], errors="coerce")
+                latest_month = filtered["month"].max()
+                latest = filtered[filtered["month"] == latest_month].copy()
+                latest = latest.sort_values(["rank", "club"])
+
+                clubs_list = []
+                for _, row in latest.iterrows():
+                    clubs_list.append({
+                        "club": str(row["club"]),
+                        "value": float(row["value"]),
+                        "rank": int(row["rank"]),
+                        "is_real_madrid": bool(row["is_real_madrid"]),
+                    })
+
+                peer_values = [c["value"] for c in clubs_list if not c["is_real_madrid"]]
+                peer_median = float(pd.Series(peer_values).median()) if peer_values else None
+
+                return {
+                    "month": pd.Timestamp(latest_month).strftime("%Y-%m-%d") if pd.notna(latest_month) else None,
+                    "clubs": clubs_list,
+                    "peer_median": peer_median,
+                }
+        except Exception:
+            pass
+
     # Map asset to sheet name
     sheet_map = {
         "main_website": "Main_Website",

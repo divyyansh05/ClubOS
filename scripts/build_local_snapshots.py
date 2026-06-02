@@ -332,6 +332,28 @@ def build_peer_benchmark(internal_df: pd.DataFrame, benchmark_df: pd.DataFrame) 
     ]]
 
 
+def build_club_comparison(internal_df: pd.DataFrame, benchmark_df: pd.DataFrame) -> pd.DataFrame:
+    columns = ["month", "asset_name", "metric_name", "club", "value", "rank", "is_real_madrid"]
+    if internal_df.empty or benchmark_df.empty:
+        return pd.DataFrame(columns=columns)
+
+    rm = internal_df.rename(columns={"metric_value": "value"})[["month", "asset_name", "metric_name", "value"]].copy()
+    rm["club"] = "Real Madrid"
+    rm["is_real_madrid"] = True
+
+    peers = benchmark_df.rename(columns={"metric_value": "value"})[["month", "asset_name", "metric_name", "club", "value"]].copy()
+    peers["is_real_madrid"] = False
+
+    combined = pd.concat([peers, rm], ignore_index=True)
+    combined["polarity"] = combined["metric_name"].map(BENCHMARK_POLARITY).fillna(1).astype(int)
+    combined["adjusted_value"] = combined["value"] * combined["polarity"]
+    combined["rank"] = combined.groupby(["month", "asset_name", "metric_name"])["adjusted_value"].rank(method="min", ascending=False)
+    combined["rank"] = combined["rank"].astype("Int64")
+
+    combined = combined.sort_values(["month", "asset_name", "metric_name", "rank", "club"]).reset_index(drop=True)
+    return combined[columns]
+
+
 def build_signals(internal_df: pd.DataFrame) -> pd.DataFrame:
     cols = [
         "source_asset", "source_metric", "target_asset", "target_metric", "lag_months",
@@ -853,6 +875,10 @@ def main() -> None:
             print(f"Added {len(peer_social)} social benchmark peer rows")
 
     peer = build_peer_benchmark(internal_df[["month", "asset_name", "metric_name", "metric_value"]], benchmark_df[["month", "asset_name", "metric_name", "club", "metric_value"]])
+    club_comparison = build_club_comparison(
+        internal_df[["month", "asset_name", "metric_name", "metric_value"]],
+        benchmark_df[["month", "asset_name", "metric_name", "club", "metric_value"]],
+    )
     signals = build_signals(internal_df[["month", "asset_name", "metric_name", "metric_value"]])
     priority = build_priority_board(kpi_health, peer, signals)
     brief = build_monthly_brief(priority, kpi_health, peer, signals)
@@ -861,6 +887,7 @@ def main() -> None:
     save_csv(quality, output_dir, "silver_data_quality_checks")
     save_csv(kpi_health, output_dir, "gold_kpi_health")
     save_csv(peer, output_dir, "gold_peer_benchmark")
+    save_csv(club_comparison, output_dir, "gold_club_comparison")
     save_csv(signals, output_dir, "gold_signal_relationships")
     save_csv(priority, output_dir, "gold_priority_board")
     save_csv(brief, output_dir, "gold_monthly_brief_inputs")
