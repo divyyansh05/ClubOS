@@ -497,15 +497,6 @@ export function SignalEnginePage() {
                       {signal.source_trend_pct_change > 0 ? '↑' : signal.source_trend_pct_change < 0 ? '↓' : '→'} {Math.abs(signal.source_trend_pct_change).toFixed(1)}%
                     </div>
                   )}
-
-                  {/* Chevron */}
-                  <span
-                    className={`text-lg text-stone-500 dark:text-stone-400 transition-transform duration-200 inline-block ${
-                      isExpanded ? 'transform rotate-180' : ''
-                    }`}
-                  >
-                    ▼
-                  </span>
                 </div>
               </div>
 
