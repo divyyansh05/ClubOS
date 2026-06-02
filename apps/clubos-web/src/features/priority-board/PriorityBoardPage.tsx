@@ -35,6 +35,7 @@ export function PriorityBoardPage() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [nearbyEvents, setNearbyEvents] = useState<EventSchema[]>([]);
   const [seasonalBaseline, setSeasonalBaseline] = useState<any>(null);
+  const [showAnalyticsDashboard, setShowAnalyticsDashboard] = useState(false);
 
   useEffect(() => {
     async function loadPriorities() {
@@ -122,10 +123,12 @@ export function PriorityBoardPage() {
 
   function openAnalyticsDashboard() {
     if (selectedDetail) {
-      // Navigate to Command Center to show ecosystem health
-      navigate('/command-center');
-      closeDetail();
+      setShowAnalyticsDashboard(true);
     }
+  }
+
+  function closeAnalyticsDashboard() {
+    setShowAnalyticsDashboard(false);
   }
 
   function getColorForCategory(category: string): string {
@@ -1537,6 +1540,169 @@ export function PriorityBoardPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Dashboard Modal */}
+      {showAnalyticsDashboard && selectedDetail && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in"
+          onClick={closeAnalyticsDashboard}
+        >
+          <div
+            className="relative glass-modal max-w-6xl w-full max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="border-b-2 border-ink dark:border-stone-700 p-8 sticky top-0 bg-paper dark:bg-stone-900 z-10">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-2">
+                    Analytics Dashboard · {selectedDetail.primary_metric}
+                  </div>
+                  <h2 className="font-headline text-4xl md:text-5xl leading-tight tracking-tight mb-2">
+                    {selectedDetail.primary_metric.replace(/_/g, ' ')}
+                  </h2>
+                  <div className="font-mono text-xs text-stone-600 dark:text-stone-400">
+                    {selectedDetail.asset_name} · {formatMonthYear(selectedDetail.month)}
+                  </div>
+                </div>
+                <button
+                  onClick={closeAnalyticsDashboard}
+                  className="text-2xl leading-none text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Charts Grid */}
+            <div className="p-8 space-y-8">
+              {/* Monthly Values Bar Chart */}
+              <div className="bg-white dark:bg-stone-800 border-2 border-ink dark:border-stone-700 rounded-2xl p-6">
+                <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+                  Monthly Values
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={selectedDetail.timeline_data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      tickFormatter={(val) => formatMonthYear(val).split(' ')[0]}
+                    />
+                    <YAxis
+                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      tickFormatter={(val) => formatMetricValue(selectedDetail.primary_metric, val)}
+                    />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar dataKey="metric_value" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Month-over-Month Change */}
+              <div className="bg-white dark:bg-stone-800 border-2 border-ink dark:border-stone-700 rounded-2xl p-6">
+                <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+                  Month-over-Month Change (%)
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={selectedDetail.timeline_data.slice(1).map((d: any, i: number) => {
+                      const prevValue = selectedDetail.timeline_data[i].metric_value;
+                      const currValue = d.metric_value;
+                      const pctChange = prevValue !== 0 ? ((currValue - prevValue) / prevValue) * 100 : 0;
+                      return {
+                        month: d.month,
+                        change: pctChange
+                      };
+                    })}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      tickFormatter={(val) => formatMonthYear(val).split(' ')[0]}
+                    />
+                    <YAxis
+                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      tickFormatter={(val) => `${val.toFixed(1)}%`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const value = payload[0].value as number;
+                          return (
+                            <div className="bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 px-3 py-2 rounded shadow-lg">
+                              <div className="font-mono text-xs text-stone-600 dark:text-stone-400">
+                                {value > 0 ? '+' : ''}{value.toFixed(1)}%
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="3 3" />
+                    <Bar dataKey="change">
+                      {selectedDetail.timeline_data.slice(1).map((_: any, i: number) => {
+                        const prevValue = selectedDetail.timeline_data[i].metric_value;
+                        const currValue = selectedDetail.timeline_data[i + 1].metric_value;
+                        const pctChange = prevValue !== 0 ? ((currValue - prevValue) / prevValue) * 100 : 0;
+                        return <Cell key={i} fill={pctChange >= 0 ? '#10b981' : '#ef4444'} />;
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Value Distribution Histogram */}
+              <div className="bg-white dark:bg-stone-800 border-2 border-ink dark:border-stone-700 rounded-2xl p-6">
+                <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-4">
+                  Value Distribution
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={(() => {
+                      const values = selectedDetail.timeline_data.map((d: any) => d.metric_value);
+                      const min = Math.min(...values);
+                      const max = Math.max(...values);
+                      const range = max - min;
+                      const binCount = 10;
+                      const binSize = range / binCount;
+
+                      const bins = Array.from({ length: binCount }, (_, i) => ({
+                        range: `${formatMetricValue(selectedDetail.primary_metric, min + i * binSize)}-${formatMetricValue(selectedDetail.primary_metric, min + (i + 1) * binSize)}`,
+                        count: 0
+                      }));
+
+                      values.forEach((v: number) => {
+                        const binIndex = Math.min(Math.floor((v - min) / binSize), binCount - 1);
+                        bins[binIndex].count++;
+                      });
+
+                      return bins;
+                    })()}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="range"
+                      tick={{ fill: '#6b7280', fontSize: 10 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis
+                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      label={{ value: 'Frequency', angle: -90, position: 'insideLeft', style: { fill: '#6b7280', fontSize: 11 } }}
+                    />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#8b5cf6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
         </div>
       )}
