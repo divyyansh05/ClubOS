@@ -439,8 +439,8 @@ export function SignalEnginePage() {
                         ? 'bg-critical-light/20 dark:bg-critical-dark/20 text-critical-light dark:text-critical-dark border border-critical-light dark:border-critical-dark'
                         : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-400 border border-stone-300 dark:border-stone-600'
                     }`}>
-                      {signal.current_status === 'firing_positive' && 'ACTIVE'}
-                      {signal.current_status === 'firing_negative' && 'ACTIVE'}
+                      {signal.current_status === 'firing_positive' && 'OPPORTUNITY'}
+                      {signal.current_status === 'firing_negative' && 'CONCERN'}
                       {signal.current_status === 'neutral' && 'MONITORING'}
                       {signal.current_status === 'unknown' && 'DORMANT'}
                     </span>
