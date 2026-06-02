@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { getSignals } from "../../lib/api";
 import type { SignalResponse, SignalItem } from "../../types/clubos";
 import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
@@ -24,6 +25,11 @@ export function SignalEnginePage() {
   const [selectedSignal, setSelectedSignal] = useState<SignalItem | null>(null);
   const [selectedMetricDetail, setSelectedMetricDetail] = useState<MetricDetail | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "internal" | "social">("all");
+
+  // Collapsible card state - separate for each tab
+  const [expandedAll, setExpandedAll] = useState<Set<string>>(new Set());
+  const [expandedInternal, setExpandedInternal] = useState<Set<string>>(new Set());
+  const [expandedSocial, setExpandedSocial] = useState<Set<string>>(new Set());
 
   function showMetricDetail(detail: MetricDetail) {
     setSelectedMetricDetail(detail);
@@ -136,6 +142,54 @@ export function SignalEnginePage() {
       return colors[index % colors.length];
     }
     return "text-stone-500 dark:text-stone-400";
+  };
+
+  // Get unique signal ID
+  const getSignalId = (signal: SignalItem) => {
+    return `${signal.source_metric}_${signal.target_metric}_${signal.lag_months}`;
+  };
+
+  // Get current tab's expanded state
+  const getCurrentExpandedState = () => {
+    if (activeTab === "internal") return expandedInternal;
+    if (activeTab === "social") return expandedSocial;
+    return expandedAll;
+  };
+
+  // Set current tab's expanded state
+  const setCurrentExpandedState = (newState: Set<string>) => {
+    if (activeTab === "internal") setExpandedInternal(newState);
+    else if (activeTab === "social") setExpandedSocial(newState);
+    else setExpandedAll(newState);
+  };
+
+  // Toggle individual card
+  const toggleCard = (signalId: string) => {
+    const current = getCurrentExpandedState();
+    const next = new Set(current);
+    if (next.has(signalId)) {
+      next.delete(signalId);
+    } else {
+      next.add(signalId);
+    }
+    setCurrentExpandedState(next);
+  };
+
+  // Expand all cards
+  const expandAllCards = () => {
+    const allIds = new Set(filteredSignals.map(s => getSignalId(s)));
+    setCurrentExpandedState(allIds);
+  };
+
+  // Collapse all cards
+  const collapseAllCards = () => {
+    setCurrentExpandedState(new Set());
+  };
+
+  // Check if all cards are expanded
+  const allCardsExpanded = () => {
+    const current = getCurrentExpandedState();
+    return filteredSignals.length > 0 && filteredSignals.every(s => current.has(getSignalId(s)));
   };
 
   return (
@@ -337,6 +391,18 @@ export function SignalEnginePage() {
         </div>
       </div>
 
+      {/* Collapse All / Expand All Control */}
+      {filteredSignals.length > 0 && (
+        <div className="mb-6 flex justify-end">
+          <button
+            onClick={() => allCardsExpanded() ? collapseAllCards() : expandAllCards()}
+            className="px-4 py-2 border border-ink dark:border-stone-700 bg-white dark:bg-stone-900 hover:bg-stone-100 dark:hover:bg-stone-800 font-mono text-xs uppercase tracking-widest transition-colors"
+          >
+            {allCardsExpanded() ? '↑ Collapse All' : '↓ Expand All'}
+          </button>
+        </div>
+      )}
+
       {/* Signal Cards */}
       <div className="grid grid-cols-1 gap-6 mb-12">
         {filteredSignals.length === 0 && (
@@ -350,13 +416,106 @@ export function SignalEnginePage() {
           const borderColor = getSignalBorderColor(signal, index);
           const textColor = getSignalTextColor(signal, index);
           const isActive = signal.validation_status === "active";
+          const signalId = getSignalId(signal);
+          const isExpanded = getCurrentExpandedState().has(signalId);
 
           return (
             <article
               key={signal.signal_id}
-              className={`border-2 ${borderColor} p-8 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-all ${selectedSignal?.signal_id === signal.signal_id ? 'bg-stone-100 dark:bg-stone-800' : ''}`}
-              onClick={() => setSelectedSignal(signal)}
+              className={`border-2 ${borderColor} overflow-hidden transition-all ${selectedSignal?.signal_id === signal.signal_id ? 'bg-stone-100 dark:bg-stone-800' : ''}`}
             >
+              {/* Collapsed Header Row - Always Visible */}
+              <div
+                className="flex items-center justify-between gap-4 p-4 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors"
+                onClick={() => toggleCard(signalId)}
+              >
+                {/* LEFT - Signal Identity */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {/* Status Pill */}
+                  {signal.current_status && (
+                    <span className={`inline-block px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap ${
+                      signal.current_status === 'firing_positive'
+                        ? 'bg-good-light/20 dark:bg-good-dark/20 text-good-light dark:text-good-dark border border-good-light dark:border-good-dark'
+                        : signal.current_status === 'firing_negative'
+                        ? 'bg-critical-light/20 dark:bg-critical-dark/20 text-critical-light dark:text-critical-dark border border-critical-light dark:border-critical-dark'
+                        : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-400 border border-stone-300 dark:border-stone-600'
+                    }`}>
+                      {signal.current_status === 'firing_positive' && 'ACTIVE'}
+                      {signal.current_status === 'firing_negative' && 'ACTIVE'}
+                      {signal.current_status === 'neutral' && 'MONITORING'}
+                      {signal.current_status === 'unknown' && 'DORMANT'}
+                    </span>
+                  )}
+
+                  {/* Source → Target */}
+                  <div className="flex items-center gap-2 font-mono text-sm truncate">
+                    <span className="font-semibold text-ink dark:text-stone-100">{signal.source_metric.replace(/_/g, ' ')}</span>
+                    <span className="text-stone-400 dark:text-stone-600">→</span>
+                    <span className="font-semibold text-ink dark:text-stone-100">{signal.target_metric.replace(/_/g, ' ')}</span>
+                  </div>
+                </div>
+
+                {/* CENTER - Key Numbers */}
+                <div className="flex items-center gap-4">
+                  {/* Strength */}
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400">Strength:</span>
+                    <span className={`font-mono text-sm font-bold ${
+                      Math.abs(signal.strength_score) > 0.75
+                        ? 'text-good-light dark:text-good-dark'
+                        : 'text-warning-light dark:text-warning-dark'
+                    }`}>
+                      {(Math.abs(signal.strength_score) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+
+                  {/* Lag */}
+                  <span className="px-2 py-1 bg-stone-200 dark:bg-stone-700 border border-stone-300 dark:border-stone-600 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink dark:text-stone-100 whitespace-nowrap">
+                    {signal.lag_months} MO LAG
+                  </span>
+
+                  {/* Direction */}
+                  <span className={`px-2 py-1 font-mono text-[10px] font-semibold rounded ${
+                    signal.relationship_direction === 'positive'
+                      ? 'bg-good-light/20 dark:bg-good-dark/20 text-good-light dark:text-good-dark'
+                      : 'bg-critical-light/20 dark:bg-critical-dark/20 text-critical-light dark:text-critical-dark'
+                  }`}>
+                    {signal.relationship_direction === 'positive' ? '↑ Positive' : '↓ Negative'}
+                  </span>
+                </div>
+
+                {/* RIGHT - Trend + Chevron */}
+                <div className="flex items-center gap-3">
+                  {/* Source Trend */}
+                  {signal.source_trend_pct_change !== null && signal.source_trend_pct_change !== undefined && (
+                    <div className={`font-mono text-xs font-semibold ${
+                      signal.source_trend_pct_change > 0
+                        ? 'text-good-light dark:text-good-dark'
+                        : signal.source_trend_pct_change < 0
+                        ? 'text-critical-light dark:text-critical-dark'
+                        : 'text-stone-500 dark:text-stone-400'
+                    }`}>
+                      {signal.source_trend_pct_change > 0 ? '↑' : signal.source_trend_pct_change < 0 ? '↓' : '→'} {Math.abs(signal.source_trend_pct_change).toFixed(1)}%
+                    </div>
+                  )}
+
+                  {/* Chevron */}
+                  <ChevronDown
+                    className={`w-5 h-5 text-stone-500 dark:text-stone-400 transition-transform duration-200 ${
+                      isExpanded ? 'transform rotate-180' : ''
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Divider when expanded */}
+              {isExpanded && (
+                <div className="h-px bg-accent-light dark:bg-accent-dark" />
+              )}
+
+              {/* Expanded Content - Conditionally Rendered */}
+              {isExpanded && (
+                <div className="p-8" onClick={() => setSelectedSignal(signal)}>
               {/* Social Signal Badge (V1.6.2) */}
               {signal.signal_type === "social_to_commercial" && (
                 <div className="mb-4">
@@ -724,6 +883,8 @@ export function SignalEnginePage() {
                     </div>
                   )}
                 </div>
+              )}
+              </div>
               )}
             </article>
           );
