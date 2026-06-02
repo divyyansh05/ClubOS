@@ -94,7 +94,7 @@ export function SignalEnginePage() {
 
   const activeSignals = filteredSignals.filter((s) => s.validation_status === "active");
   const avgLag = filteredSignals.length > 0 ? filteredSignals.reduce((sum, s) => sum + s.lag_months, 0) / filteredSignals.length : 0;
-  const avgStrength = filteredSignals.length > 0 ? filteredSignals.reduce((sum, s) => sum + s.strength_score, 0) / filteredSignals.length : 0;
+  const avgStrength = filteredSignals.length > 0 ? filteredSignals.reduce((sum, s) => sum + Math.abs(s.strength_score), 0) / filteredSignals.length : 0;
   const minLag = filteredSignals.length > 0 ? Math.min(...filteredSignals.map(s => s.lag_months)) : 0;
   const maxLag = filteredSignals.length > 0 ? Math.max(...filteredSignals.map(s => s.lag_months)) : 0;
   const lagDisplay = minLag === maxLag ? `${minLag} month${minLag > 1 ? 's' : ''}` : `${minLag}–${maxLag} months`;
@@ -104,8 +104,8 @@ export function SignalEnginePage() {
   const negativeSignals = filteredSignals.filter((s) => s.relationship_direction === "negative").length;
   const firingSignals = filteredSignals.filter((s) => s.current_status === "firing_positive" || s.current_status === "firing_negative").length;
   const monitoringSignals = filteredSignals.filter((s) => s.current_status === "neutral" || s.current_status === "unknown").length;
-  const minStrength = filteredSignals.length > 0 ? Math.min(...filteredSignals.map(s => s.strength_score)) : 0;
-  const maxStrength = filteredSignals.length > 0 ? Math.max(...filteredSignals.map(s => s.strength_score)) : 0;
+  const minStrength = filteredSignals.length > 0 ? Math.min(...filteredSignals.map(s => Math.abs(s.strength_score))) : 0;
+  const maxStrength = filteredSignals.length > 0 ? Math.max(...filteredSignals.map(s => Math.abs(s.strength_score))) : 0;
 
   // Count signal types (for summary display)
   const internalCount = signals.items.filter((s) => s.signal_type === "internal").length;
@@ -310,8 +310,8 @@ export function SignalEnginePage() {
               businessContext: `Higher strength means more confidence in predictions. A ${(avgStrength * 100).toFixed(0)}% average strength indicates your leading indicators are highly reliable predictors. This means when you see movement in source metrics, you can trust that the predicted changes will likely occur. Lower strength would mean more uncertainty and less actionable signals.`,
               additionalInfo: {
                 "Avg Strength": `${(avgStrength * 100).toFixed(1)}%`,
-                "Strongest Signal": `${(Math.max(...signals.items.map(s => s.strength_score)) * 100).toFixed(0)}%`,
-                "Weakest Signal": `${(Math.min(...signals.items.map(s => s.strength_score)) * 100).toFixed(0)}%`,
+                "Strongest Signal": `${(Math.max(...signals.items.map(s => Math.abs(s.strength_score))) * 100).toFixed(0)}%`,
+                "Weakest Signal": `${(Math.min(...signals.items.map(s => Math.abs(s.strength_score))) * 100).toFixed(0)}%`,
               }
             })}
             className="p-6 border-l-4 border-accent-light dark:border-accent-dark hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors text-left"
@@ -327,7 +327,7 @@ export function SignalEnginePage() {
               <div className="absolute left-[60%] top-0 bottom-0 w-px bg-stone-400 dark:bg-stone-600"></div>
               <div
                 className="absolute top-0 bottom-0 left-[60%] bg-accent-light dark:bg-accent-dark"
-                style={{ width: `${Math.max(0, (avgStrength - 0.60) / 0.40) * 40}%` }}
+                style={{ width: `${Math.max(0, (Math.abs(avgStrength) - 0.60) / 0.40) * 40}%` }}
               ></div>
             </div>
             <div className="font-mono text-xs text-stone-600 dark:text-stone-400">
@@ -420,7 +420,7 @@ export function SignalEnginePage() {
                       Strength
                     </div>
                     <div className={`font-mono text-4xl font-bold ${textColor}`}>
-                      {(signal.strength_score * 100).toFixed(0)}%
+                      {(Math.abs(signal.strength_score) * 100).toFixed(0)}%
                     </div>
                   </div>
                 </div>
@@ -483,7 +483,7 @@ export function SignalEnginePage() {
                     ── {signal.lag_months}-month predictive lag ──▶
                   </div>
                   <div className="ml-4 px-3 py-1 bg-stone-200 dark:bg-stone-700 font-mono text-xs font-semibold">
-                    {(signal.strength_score * 100).toFixed(0)}% validated signal
+                    {(Math.abs(signal.strength_score) * 100).toFixed(0)}% validated signal
                   </div>
                 </div>
 
@@ -529,12 +529,12 @@ export function SignalEnginePage() {
                     e.stopPropagation();
                     showMetricDetail({
                       name: `Signal Strength: ${signal.source_metric} → ${signal.target_metric}`,
-                      value: `${(signal.strength_score * 100).toFixed(0)}%`,
+                      value: `${(Math.abs(signal.strength_score) * 100).toFixed(0)}%`,
                       category: "Statistical Correlation",
-                      explanation: `This signal has a strength score of ${(signal.strength_score * 100).toFixed(0)}%, which measures how reliably changes in ${signal.source_metric} predict changes in ${signal.target_metric}. A score above 60% is considered strong; above 80% is very strong.`,
-                      businessContext: `The ${(signal.strength_score * 100).toFixed(0)}% strength means when you see ${signal.source_metric} change, you can be ${(signal.strength_score * 100).toFixed(0)}% confident that ${signal.target_metric} will change in the same direction ${signal.lag_months} months later. This reliability lets you plan ahead with confidence rather than guessing.`,
+                      explanation: `This signal has a strength score of ${(Math.abs(signal.strength_score) * 100).toFixed(0)}%, which measures how reliably changes in ${signal.source_metric} predict changes in ${signal.target_metric}. A score above 60% is considered strong; above 80% is very strong.`,
+                      businessContext: `The ${(Math.abs(signal.strength_score) * 100).toFixed(0)}% strength means when you see ${signal.source_metric} change, you can be ${(Math.abs(signal.strength_score) * 100).toFixed(0)}% confident that ${signal.target_metric} will change in the ${signal.relationship_direction === 'positive' ? 'same' : 'opposite'} direction ${signal.lag_months} months later. This reliability lets you plan ahead with confidence rather than guessing.`,
                       additionalInfo: {
-                        "Strength Score": `${(signal.strength_score * 100).toFixed(1)}%`,
+                        "Strength Score": `${(Math.abs(signal.strength_score) * 100).toFixed(1)}%`,
                         "Source Metric": signal.source_metric,
                         "Target Metric": signal.target_metric,
                         "Validation Status": signal.validation_status,
@@ -554,7 +554,7 @@ export function SignalEnginePage() {
                       size="sm"
                     />
                   </div>
-                  <div className="font-mono text-lg font-bold text-ink dark:text-stone-100 mb-2">{(signal.strength_score * 100).toFixed(0)}%</div>
+                  <div className="font-mono text-lg font-bold text-ink dark:text-stone-100 mb-2">{(Math.abs(signal.strength_score) * 100).toFixed(0)}%</div>
 
                   {/* Strength Gauge */}
                   <div className="relative h-3 bg-stone-200 dark:bg-stone-700 rounded overflow-hidden mb-1">
@@ -563,11 +563,11 @@ export function SignalEnginePage() {
                     {/* Fill bar starting from 60% */}
                     <div
                       className={`absolute top-0 bottom-0 left-[60%] ${
-                        signal.strength_score > 0.75
+                        Math.abs(signal.strength_score) > 0.75
                           ? 'bg-good-light dark:bg-good-dark'
                           : 'bg-warning-light dark:bg-warning-dark'
                       }`}
-                      style={{ width: `${Math.max(0, (signal.strength_score - 0.60) / 0.40) * 40}%` }}
+                      style={{ width: `${Math.max(0, (Math.abs(signal.strength_score) - 0.60) / 0.40) * 40}%` }}
                     ></div>
                   </div>
                   <div className="flex justify-between font-mono text-[9px] text-stone-500 dark:text-stone-400 mb-1">
@@ -613,14 +613,28 @@ export function SignalEnginePage() {
                         : `A negative relationship means these metrics move in opposite directions. This can indicate trade-offs or inverse dynamics in your business. Understanding this inverse relationship helps you anticipate counterintuitive outcomes and plan accordingly.`,
                       additionalInfo: {
                         "Direction": signal.relationship_direction,
-                        "Strength": `${(signal.strength_score * 100).toFixed(0)}%`,
+                        "Strength": `${(Math.abs(signal.strength_score) * 100).toFixed(0)}%`,
                         "Lag": `${signal.lag_months} months`,
                       }
                     });
                   }}
                   className="p-3 border border-stone-300 dark:border-stone-700 text-center hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition-colors"
                 >
-                  <div className="font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">Direction</div>
+                  <div className="flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1">
+                    <span>Direction</span>
+                    <InfoTooltip
+                      title="Relationship Direction"
+                      definition={signal.relationship_direction === 'positive'
+                        ? `When ${signal.source_metric} increases, ${signal.target_metric} tends to increase in the same direction after ${signal.lag_months} month${signal.lag_months > 1 ? 's' : ''}. This is a direct relationship.`
+                        : `When ${signal.source_metric} increases, ${signal.target_metric} tends to decrease after ${signal.lag_months} month${signal.lag_months > 1 ? 's' : ''}. This is an inverse relationship — the signal is still valid and the expected outcome direction is already accounted for in the recommendation above.`
+                      }
+                      example={signal.relationship_direction === 'positive'
+                        ? `If ${signal.source_metric} rises 10%, expect ${signal.target_metric} to rise proportionally ${signal.lag_months} months later.`
+                        : `If ${signal.source_metric} rises 10%, expect ${signal.target_metric} to fall proportionally ${signal.lag_months} months later (inverse dynamic).`
+                      }
+                      size="sm"
+                    />
+                  </div>
                   <div className={`font-mono text-lg font-bold ${signal.relationship_direction === 'positive' ? 'text-good-light dark:text-good-dark' : 'text-critical-light dark:text-critical-dark'}`}>
                     {signal.relationship_direction === 'positive' ? '↑ Positive' : '↓ Negative'}
                   </div>
@@ -739,7 +753,7 @@ export function SignalEnginePage() {
                     {signal.source_metric} → {signal.target_metric} ({signal.lag_months}mo)
                   </td>
                   <td className="p-3 text-center border border-ink dark:border-stone-700 font-bold">
-                    {signal.strength_score.toFixed(2)}
+                    {Math.abs(signal.strength_score).toFixed(2)}
                   </td>
                   <td className="p-3 text-center border border-ink dark:border-stone-700">
                     1, 2, 3 months
