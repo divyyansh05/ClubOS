@@ -1,4 +1,7 @@
 from typing import Any
+from pathlib import Path
+import pandas as pd
+import json
 
 from app.clients.databricks import DatabricksClient
 from app.config.settings import settings
@@ -61,3 +64,110 @@ def get_benchmark_view(asset: str, metric: str) -> dict[str, Any]:
         "latest_month": latest_month,
         "points": normalized,
     }
+
+
+def get_club_comparison(asset: str, metric: str) -> dict[str, Any]:
+    """
+    Get all clubs (RM + peers) for latest month with values and ranks.
+    Reads from source Excel files to get individual club data.
+    """
+    # Map asset to sheet name
+    sheet_map = {
+        "main_website": "Main_Website",
+        "ecommerce": "eCommerce",
+        "streaming": "Streaming",
+        "fan_app": "Fan_App",
+    }
+
+    sheet_name = sheet_map.get(asset)
+    if not sheet_name:
+        return {"month": None, "clubs": [], "peer_median": None}
+
+    # Locate source files (relative to project root)
+    # Go up from backend/api/app/services to project root
+    project_root = Path(__file__).parents[4]
+    source_dir = project_root / "data" / "source" / "GroupE.pack.english" / "Tema5.data_visualization.dataset"
+    internal_path = source_dir / "Tema5.internal_metrics.dataset.xlsx"
+    benchmark_path = source_dir / "Tema5.benchmark.dataset.xlsx"
+
+    if not internal_path.exists() or not benchmark_path.exists():
+        # Fallback: try to get data from gold_peer_benchmark only
+        rows = _client().read_gold_table("gold_peer_benchmark")
+        filtered = [
+            row for row in rows
+            if str(row.get("asset_name")) == asset and str(row.get("metric_name")) == metric
+        ]
+        if not filtered:
+            return {"month": None, "clubs": [], "peer_median": None}
+
+        latest = sorted(filtered, key=_month_str)[-1]
+        # Can only return RM value since we don't have individual club data
+        return {
+            "month": _month_str(latest),
+            "clubs": [{
+                "club": "Real Madrid",
+                "value": float(latest["rm_value"]),
+                "rank": int(latest["rm_rank"]),
+                "is_real_madrid": True,
+            }],
+            "peer_median": float(latest["peer_median"]),
+        }
+
+    try:
+        # Read RM value from internal metrics
+        internal_df = pd.read_excel(internal_path, sheet_name=sheet_name)
+        latest_month = internal_df['month'].max()
+        internal_latest = internal_df[internal_df['month'] == latest_month]
+
+        if metric not in internal_df.columns:
+            return {"month": None, "clubs": [], "peer_median": None}
+
+        rm_value = float(internal_latest[metric].iloc[0])
+
+        # Read peer values from benchmark
+        benchmark_df = pd.read_excel(benchmark_path, sheet_name=sheet_name)
+        benchmark_latest = benchmark_df[benchmark_df['month'] == latest_month]
+
+        if metric not in benchmark_df.columns:
+            return {"month": None, "clubs": [], "peer_median": None}
+
+        # Combine all clubs
+        clubs_list = []
+        for _, row in benchmark_latest.iterrows():
+            clubs_list.append({
+                "club": str(row['club']),
+                "value": float(row[metric]),
+            })
+
+        clubs_list.append({
+            "club": "Real Madrid",
+            "value": rm_value,
+        })
+
+        # Get polarity from metric dictionary
+        metric_dict_path = project_root / "databricks" / "seeds" / "metric_dictionary.json"
+        polarity = 1
+        if metric_dict_path.exists():
+            with open(metric_dict_path) as f:
+                mdict = json.load(f)
+                polarity = mdict.get(metric, {}).get("polarity", 1)
+
+        # Sort and rank
+        clubs_list.sort(key=lambda x: x["value"], reverse=(polarity == 1))
+        for rank, club in enumerate(clubs_list, 1):
+            club["rank"] = rank
+            club["is_real_madrid"] = club["club"] == "Real Madrid"
+
+        # Compute peer median (excluding RM)
+        peer_values = [c["value"] for c in clubs_list if not c["is_real_madrid"]]
+        peer_median = float(pd.Series(peer_values).median()) if peer_values else None
+
+        return {
+            "month": str(latest_month)[:10],
+            "clubs": clubs_list,
+            "peer_median": peer_median,
+        }
+
+    except Exception:
+        # Fallback to empty response if Excel read fails
+        return {"month": None, "clubs": [], "peer_median": None}

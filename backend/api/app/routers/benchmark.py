@@ -2,13 +2,13 @@ from typing import Optional, List, Dict
 from fastapi import APIRouter, Query
 import pandas as pd
 
-from app.schemas.benchmark import BenchmarkResponse
+from app.schemas.benchmark import BenchmarkResponse, ClubComparisonResponse
 from app.schemas.social_benchmark import (
     SocialBenchmarkResponse,
     SocialBenchmarkTrendResponse,
     SocialBenchmarkSummaryResponse,
 )
-from app.services.benchmark_service import get_benchmark_view
+from app.services.benchmark_service import get_benchmark_view, get_club_comparison
 from app.services.social_benchmark_service import (
     get_social_peer_benchmark,
     get_social_benchmark_trend,
@@ -118,7 +118,21 @@ def social_benchmark_view(
     return SocialBenchmarkResponse(**get_social_peer_benchmark(metric, month_str=month))
 
 
-# Traditional benchmark route (must come after social routes)
+# Club comparison route (must come before /{asset}/{metric} to match /clubs suffix)
+@router.get("/{asset}/{metric}/clubs", response_model=ClubComparisonResponse)
+def club_comparison_view(asset: str, metric: str) -> ClubComparisonResponse:
+    """
+    Get all clubs (Real Madrid + peers) with individual values and ranks for latest month.
+
+    Shows complete club-by-club comparison including:
+    - Individual club values
+    - Rank for each club
+    - Peer median for reference
+    """
+    return ClubComparisonResponse(**get_club_comparison(asset, metric))
+
+
+# Traditional benchmark route (must come after social routes and clubs route)
 @router.get("/{asset}/{metric}", response_model=BenchmarkResponse)
 def benchmark_view(asset: str, metric: str) -> BenchmarkResponse:
     """Get traditional peer benchmark for a commercial metric"""

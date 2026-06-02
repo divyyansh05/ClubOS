@@ -126,6 +126,19 @@ export interface BenchmarkResponse {
   points: BenchmarkPoint[];
 }
 
+export interface ClubEntry {
+  club: string;
+  value: number;
+  rank: number;
+  is_real_madrid: boolean;
+}
+
+export interface ClubComparisonResponse {
+  month: string | null;
+  clubs: ClubEntry[];
+  peer_median: number | null;
+}
+
 export interface PriorityConnection {
   has_connection: boolean;
   metric?: string | null;

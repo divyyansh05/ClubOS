@@ -294,7 +294,16 @@ def build_peer_benchmark(internal_df: pd.DataFrame, benchmark_df: pd.DataFrame) 
     stats = stats[stats["club_count"] >= 5].copy()
     aligned = rm.merge(stats, on=["month", "asset_name", "metric_name"], how="inner")
     aligned["polarity"] = aligned["metric_name"].map(BENCHMARK_POLARITY).fillna(1).astype(int)
-    aligned["peer_leader_value"] = np.where(aligned["polarity"] == -1, aligned["peer_min_value"], aligned["peer_max_value"])
+
+    # FIX: peer_leader_value must include RM in the leader calculation
+    # For polarity +1 (higher is better): leader = max(RM, peer_max)
+    # For polarity -1 (lower is better): leader = min(RM, peer_min)
+    aligned["peer_leader_value"] = np.where(
+        aligned["polarity"] == -1,
+        np.minimum(aligned["rm_value"], aligned["peer_min_value"]),
+        np.maximum(aligned["rm_value"], aligned["peer_max_value"])
+    )
+
     aligned["raw_gap_to_peer_median"] = aligned["rm_value"] - aligned["peer_median"]
     aligned["gap_to_peer_median"] = aligned["polarity"] * (aligned["rm_value"] - aligned["peer_median"])
     aligned["gap_to_leader"] = aligned["polarity"] * (aligned["rm_value"] - aligned["peer_leader_value"])

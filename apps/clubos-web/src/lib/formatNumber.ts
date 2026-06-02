@@ -95,7 +95,8 @@ export function formatMetricValue(
     'video_progress_50_rate', 'video_progress_25_rate',
     'video_play_rate', 'engagement_rate', 'instagram_engagement_rate',
     'international_engagement_ratio', 'pct_android',
-    'recurrence', 'video_recurrence',
+    'video_recurrence',  // Only video_recurrence is a percentage
+    // NOTE: 'recurrence' (fan_app/main_website) is NOT a percentage - it's average visits per user
   ])
 
   // Currency metrics (euros)
@@ -111,7 +112,9 @@ export function formatMetricValue(
   if (RATE_METRICS.has(metricName)) {
     // If value is clearly already a percentage (>1), don't multiply
     const isRawRate = value <= 1.0
-    return formatPercent(value, isRawRate)
+    // Use 2 decimals for conversion_rate and streamers_rate for precision
+    const decimals = (metricName === 'conversion_rate' || metricName === 'streamers_rate') ? 2 : 1
+    return formatPercent(value, isRawRate, decimals)
   }
 
   if (CURRENCY_METRICS.has(metricName)) {

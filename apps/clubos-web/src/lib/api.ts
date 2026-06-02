@@ -4,6 +4,7 @@ import type {
   HealthSummary,
   AssetHealthBreakdown,
   BenchmarkResponse,
+  ClubComparisonResponse,
   SignalResponse,
   BriefingResponse,
   SocialSummary,
@@ -74,6 +75,10 @@ export async function getAssetHealthBreakdown(): Promise<AssetHealthBreakdown> {
 
 export async function getBenchmark(asset: string, metric: string): Promise<BenchmarkResponse> {
   return fetchJson<BenchmarkResponse>(`/benchmark/${asset}/${metric}`);
+}
+
+export async function getClubComparison(asset: string, metric: string): Promise<ClubComparisonResponse> {
+  return fetchJson<ClubComparisonResponse>(`/benchmark/${asset}/${metric}/clubs`);
 }
 
 export interface AvailableMetric {

@@ -21,3 +21,16 @@ class BenchmarkResponse(BaseModel):
     metric: str
     latest_month: Optional[str] = None
     points: list[BenchmarkPoint]
+
+
+class ClubEntry(BaseModel):
+    club: str
+    value: float
+    rank: int
+    is_real_madrid: bool
+
+
+class ClubComparisonResponse(BaseModel):
+    month: Optional[str] = None
+    clubs: list[ClubEntry]
+    peer_median: Optional[float] = None

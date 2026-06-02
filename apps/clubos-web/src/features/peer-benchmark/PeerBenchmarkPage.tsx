@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { getBenchmark, getSocialBenchmark, getSocialBenchmarkTrend, getSocialBenchmarkSummary, getAvailableMetrics, type AvailableMetric } from "../../lib/api";
-import type { BenchmarkResponse, SocialBenchmarkResponse, SocialBenchmarkTrendResponse, SocialBenchmarkSummaryResponse } from "../../types/clubos";
+import { getBenchmark, getClubComparison, getSocialBenchmark, getSocialBenchmarkTrend, getSocialBenchmarkSummary, getAvailableMetrics, type AvailableMetric } from "../../lib/api";
+import type { BenchmarkResponse, ClubComparisonResponse, SocialBenchmarkResponse, SocialBenchmarkTrendResponse, SocialBenchmarkSummaryResponse } from "../../types/clubos";
 import { MetricDetailModal } from "../../components/ui/MetricDetailModal";
 import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { ScreenGuide } from "../../components/ui/ScreenGuide";
@@ -104,6 +104,7 @@ export function PeerBenchmarkPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [benchmark, setBenchmark] = useState<BenchmarkResponse | null>(null);
+  const [clubComparison, setClubComparison] = useState<ClubComparisonResponse | null>(null);
   const [availableMetrics, setAvailableMetrics] = useState<AvailableMetric[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<{ asset: string; metric: string; label: string } | null>(null);
   const [selectedMetricDetail, setSelectedMetricDetail] = useState<MetricDetail | null>(null);
@@ -149,8 +150,12 @@ export function PeerBenchmarkPage() {
       try {
         setLoading(true);
         if (activeTab === "commercial" && selectedMetric) {
-          const data = await getBenchmark(selectedMetric.asset, selectedMetric.metric);
-          setBenchmark(data);
+          const [benchData, clubData] = await Promise.all([
+            getBenchmark(selectedMetric.asset, selectedMetric.metric),
+            getClubComparison(selectedMetric.asset, selectedMetric.metric),
+          ]);
+          setBenchmark(benchData);
+          setClubComparison(clubData);
         } else {
           const [benchData, trendData, summaryData] = await Promise.all([
             getSocialBenchmark(selectedSocialMetric.metric),
@@ -717,6 +722,73 @@ export function PeerBenchmarkPage() {
           </table>
         </div>
       </section>
+
+      {/* Club Comparison Table */}
+      {clubComparison && clubComparison.clubs.length > 0 && (
+        <section className="mb-12">
+          <h2 className="font-headline text-3xl mb-6 pb-2 border-b-2 border-ink dark:border-stone-700">
+            Club Comparison — {clubComparison.month?.substring(0, 7) || 'Latest'}
+          </h2>
+
+          <div className="border border-ink dark:border-stone-700">
+            <table className="w-full data-table border-ink dark:border-stone-700 font-mono text-sm border-collapse">
+              <thead>
+                <tr className="bg-stone-100 dark:bg-stone-800">
+                  <th className="text-center p-4 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Rank</th>
+                  <th className="text-left p-4 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Club</th>
+                  <th className="text-right p-4 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">Value</th>
+                  <th className="text-right p-4 font-semibold uppercase text-xs tracking-widest border border-ink dark:border-stone-700">vs Median</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clubComparison.clubs.map((club) => {
+                  const vsMedian = clubComparison.peer_median
+                    ? club.value - clubComparison.peer_median
+                    : 0;
+                  const isNegativePolarity = selectedMetric.metric === "bounce_rate";
+                  const isGood = isNegativePolarity
+                    ? (vsMedian < 0)
+                    : (vsMedian > 0);
+
+                  return (
+                    <tr
+                      key={club.club}
+                      className={`${club.is_real_madrid ? 'bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-600' : ''} hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors`}
+                    >
+                      <td className="p-4 text-center border border-ink dark:border-stone-700">
+                        <span className={`inline-block px-3 py-1 rounded ${
+                          club.rank === 1
+                            ? 'bg-good-light/20 dark:bg-good-dark/20 text-good-light dark:text-good-dark font-bold'
+                            : club.rank <= 2
+                            ? 'bg-info-light/20 dark:bg-info-dark/20 text-info-light dark:text-info-dark'
+                            : 'text-stone-600 dark:text-stone-400'
+                        }`}>
+                          #{club.rank}
+                        </span>
+                      </td>
+                      <td className={`p-4 border border-ink dark:border-stone-700 ${club.is_real_madrid ? 'font-bold text-ink dark:text-stone-100' : ''}`}>
+                        {club.club}
+                        {club.is_real_madrid && <span className="ml-2 text-yellow-600 dark:text-yellow-400">★</span>}
+                      </td>
+                      <td className="p-4 text-right font-bold border border-ink dark:border-stone-700">
+                        {formatMetricValue(selectedMetric.metric, club.value)}
+                      </td>
+                      <td className={`p-4 text-right font-bold border border-ink dark:border-stone-700 ${
+                        isGood
+                          ? 'text-good-light dark:text-good-dark'
+                          : 'text-critical-light dark:text-critical-dark'
+                      }`}>
+                        {vsMedian > 0 ? '+' : ''}
+                        {formatMetricValue(selectedMetric.metric, Math.abs(vsMedian))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* End Commercial Tab */}
         </>
