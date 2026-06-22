@@ -85,3 +85,11 @@ logs/
 *.tmp
 artifacts/demo/*.png
 artifacts/demo/*.pdf
+
+# ── CLUBOS 2.0 ────────────────────────────────────────────
+var/
+.env.v2
+.langsmith/
+clubos2/**/__pycache__/
+tests_v2/**/__pycache__/
+

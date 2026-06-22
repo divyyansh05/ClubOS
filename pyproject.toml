@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clubos2"
+version = "0.1.0"
+description = "ClubOS 2.0 — the agentic AI layer on top of ClubOS v1"
+requires-python = ">=3.11"
+dependencies = []  # empty — runtime deps live in optional groups so v1 install is unaffected
+
+[project.optional-dependencies]
+v2-runtime = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic>=2.0",
+  "pydantic-settings",
+  "anthropic",
+  "openai",
+  "langchain",
+  "langchain-core",
+  "langchain-anthropic",
+  "langchain-openai",
+  "langchain-community",
+  "langgraph",
+  "langsmith",
+  "chromadb",
+  "rank-bm25",
+  "sentence-transformers",
+  "httpx",
+  "python-dotenv",
+  "sqlalchemy",
+  "duckdb",
+  "duckdb-engine",
+  "pyyaml"
+]
+v2-dev = [
+  "ruff",
+  "mypy",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov"
+]
+v2-eval = [
+  "ragas"
+]
+
+[tool.setuptools.packages.find]
+include = ["clubos2*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+files = ["clubos2"]            # scope mypy to v2 only; do not touch v1
+strict = true
+python_version = "3.11"
+
+[[tool.mypy.overrides]]
+module = "rank_bm25.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests_v2"]        # v2 tests only; v1 tests run separately from BACKEND/api/
+asyncio_mode = "auto"
