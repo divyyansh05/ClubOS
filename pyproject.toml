@@ -32,7 +32,8 @@ v2-runtime = [
   "sqlalchemy",
   "duckdb",
   "duckdb-engine",
-  "pyyaml"
+  "pyyaml",
+  "mcp"
 ]
 v2-dev = [
   "ruff",
