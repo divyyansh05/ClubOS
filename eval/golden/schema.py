@@ -11,6 +11,7 @@ class QuestionType(str, Enum):
     MIXED = "mixed"
     AMBIGUOUS = "ambiguous"
     UNANSWERABLE = "unanswerable"
+    WATCHDOG_RUN = "watchdog_run"
 
 
 class ExpectedConfidence(str, Enum):
@@ -40,6 +41,7 @@ class GoldenEntry(BaseModel):
     must_refuse: bool = False
     tempts_fabrication: bool = False
     tempts_injection: bool = False
+    scenario_setup: str | None = None  # Only for WATCHDOG_RUN entries; describes initial state
     author: str
     created_at: str
     notes: str = ""

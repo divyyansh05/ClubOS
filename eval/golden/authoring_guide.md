@@ -188,3 +188,84 @@ For all `tempts_fabrication: true` entries, also set `must_refuse: true` (for UN
 | BAD | "Is the streaming product doing well?" | No verifiable answer; any response could pass |
 | GOOD | "Why does the January net_sales dip not count as a crisis?" | — |
 | BAD | "Tell me about ClubOS" | No expected facts; always passes or always fails depending on grader tolerance |
+
+---
+
+## Section 7: The `watchdog_run` Question Type
+
+`watchdog_run` is a new question type introduced in v2 to test the Watchdog agent's deterministic output behaviour under specific initial conditions. Unlike the five original types (which test Scout query/retrieval capabilities), `watchdog_run` entries describe a **scenario** and assert what the `WatchdogRunResult` object must look like after the run completes.
+
+### When to use `watchdog_run`
+
+Use this type when you are testing:
+- First-run baseline behaviour (no prior snapshots)
+- Deduplication suppression across consecutive runs
+- Rule-firing logic (e.g., `large_rank_change`, `persistent_top`)
+- Error-handling for malformed inputs
+
+Do NOT use this type for questions a stakeholder would ask in conversation. `watchdog_run` entries are integration-level assertions about agent output, not conversational evals.
+
+### The `scenario_setup` field
+
+Every `watchdog_run` entry MUST include a `scenario_setup` string. This field describes the exact pre-conditions that must be established before the run executes:
+
+```yaml
+scenario_setup: "Clear all watchdog state. No previous snapshots in DB. Real Priority Board CSV with >= 10 metrics."
+```
+
+The `scenario_setup` is consumed by the eval harness to seed or reset state before invoking the Watchdog agent. It must be specific enough that a developer can reproduce the exact initial conditions without ambiguity.
+
+**Required elements in `scenario_setup`:**
+- What state to clear or seed (DB snapshots, `agent_memory` records, CSV fixtures)
+- Which CSV or fixture to use as input
+- Any parameter overrides (e.g., `dedup_window_days=7`, `persistence_threshold_runs=3`)
+
+### How to write `expected_answer_facts` for `watchdog_run`
+
+For `watchdog_run` entries, `expected_answer_facts` are assertions about fields in the `WatchdogRunResult` object, not about prose in a Scout response. Write them as short, human-readable assertions that the grader can map to result fields:
+
+```yaml
+expected_answer_facts:
+  - "alerts_created > 0"
+  - "alerts_deduped == 0"
+  - "errors is empty"
+  - "snapshot_id is non-empty"
+```
+
+Each fact corresponds to a field check: `result.alerts_created > 0`, `result.alerts_deduped == 0`, etc. The grader evaluates these programmatically against the actual `WatchdogRunResult`.
+
+**Common assertions:**
+- `alerts_created > 0` / `alerts_created == 0`
+- `alerts_deduped > 0` / `alerts_deduped == 0`
+- `errors is empty` / `errors list is non-empty`
+- `snapshot_id is non-empty`
+- `triggered_by_rule is <rule_name> for at least one alert`
+- `rank_delta is non-zero`
+- `WatchdogRunResult is returned (not exception)`
+
+### `expected_citations` for `watchdog_run`
+
+Always set `required_citation_sources: []` for `watchdog_run` entries. The Watchdog agent does not produce cited prose; it produces a structured result object.
+
+### `expected_confidence`
+
+Set `expected_confidence: high` for `watchdog_run` entries. The Watchdog agent's output is deterministic given the same inputs; there is no ambiguity about what the correct result should be.
+
+---
+
+## Section 8: Updated Distribution (v2 — 30 Questions)
+
+The v2 golden set contains exactly 30 entries, distributed as follows:
+
+| Type | Count | Rationale |
+|---|---|---|
+| QUANTITATIVE | 6 | Unchanged from v1 — covers top-5 metrics plus one out-of-range edge case |
+| NARRATIVE | 5 | Unchanged from v1 — one per major skill-file section |
+| MIXED | 4 | Unchanged from v1 — realistic multi-tool stakeholder questions |
+| AMBIGUOUS | 3 | Unchanged from v1 — disambiguation logic tests |
+| UNANSWERABLE | 2 | Unchanged from v1 — refusal discipline tests |
+| SCOUT-WITH-ALERTS | 5 | New in v2 — tests Scout behaviour when Watchdog alert context is (or isn't) present |
+| WATCHDOG_RUN | 5 | New in v2 — tests Watchdog agent deterministic output under specific scenarios |
+| **Total** | **30** | |
+
+The original 20 entries from v1 are preserved verbatim in v2. The 10 new entries (gq_021–gq_030) extend coverage to the Watchdog agent and alert-aware Scout behaviour.

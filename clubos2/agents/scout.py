@@ -195,8 +195,51 @@ async def assemble_context(
     return "\n\n".join(context_parts)
 
 
+async def _enrich_with_alerts(
+    context_parts: list[str],  # mutable list being built for LLM context
+    metric_names: list[str],
+    alerts_repo,
+) -> None:
+    """Inject recent Watchdog alerts for queried metrics into context."""
+    from datetime import datetime, timedelta
+    since = datetime.utcnow() - timedelta(days=7)
+
+    for metric_name in metric_names:
+        try:
+            recent_alerts = await alerts_repo.list_recent(
+                limit=3,
+                since=since,
+                metric_name=metric_name,
+            )
+            if recent_alerts:
+                context_parts.append(_format_alerts_block(metric_name, recent_alerts))
+        except Exception as e:
+            logger.warning("Failed to fetch alerts for %s: %s", metric_name, e)
+
+
+def _format_alerts_block(metric_name: str, alerts) -> str:
+    """Format alerts as a context block for Scout."""
+    lines = [f"=== RECENT ALERTS FOR {metric_name} ===", "[source: watchdog_alerts]"]
+    for alert in alerts:
+        alert_type_val = alert.alert_type.value if hasattr(alert.alert_type, "value") else str(alert.alert_type)
+        severity_val = alert.severity.value if hasattr(alert.severity, "value") else str(alert.severity)
+        lines.append(
+            f"- {alert.created_at.strftime('%Y-%m-%d')} — "
+            f"alert_type: {alert_type_val}, severity: {severity_val}, "
+            f"rank: {alert.current_rank} (rule: {alert.triggered_by_rule})"
+        )
+        if hasattr(alert, 'triggered_by_rule'):
+            reason = f"  Rule fired: {alert.triggered_by_rule}"
+            lines.append(reason)
+    return "\n".join(lines)
+
+
 @traced(name="scout:run", run_type="chain")
-async def run_scout(input: ScoutInput) -> ScoutAnswer:
+async def run_scout(
+    input: ScoutInput,
+    *,
+    enable_alert_context: bool = True,
+) -> ScoutAnswer:
     """Main entry point. Implements the Scout pipeline."""
     # 1. Semantic layer pre-check
     terms = extract_terms(input.question)
@@ -234,6 +277,27 @@ async def run_scout(input: ScoutInput) -> ScoutAnswer:
 
     # 4. Assemble context
     context_block = await assemble_context(metrics_results, knowledge_results, ambiguities)
+
+    # Phase 3: Alert context enrichment (non-breaking, skipped silently on any failure)
+    alerts_were_used = False
+    metric_names_queried = list({m.metric_name for m in matched_metrics})
+    if enable_alert_context:
+        alerts_repo = None
+        try:
+            from clubos2.watchdog.alerts_repo import AlertsRepository
+            alerts_repo = AlertsRepository()
+        except Exception as e:
+            logger.warning("Could not init alerts_repo, skipping alert context: %s", e)
+
+        if alerts_repo:
+            try:
+                alert_context_parts: list[str] = []
+                await _enrich_with_alerts(alert_context_parts, metric_names_queried, alerts_repo)
+                if alert_context_parts:
+                    context_block = context_block + "\n\n" + "\n\n".join(alert_context_parts)
+                    alerts_were_used = True
+            except Exception as e:
+                logger.warning("Alert context enrichment failed, continuing: %s", e)
 
     # 5. Call LLM via gateway with Pydantic validation and retry
     system_prompt = _load_scout_prompt()
@@ -274,7 +338,17 @@ async def run_scout(input: ScoutInput) -> ScoutAnswer:
         raise TypeError("LLM Gateway returned invalid answer type.")
 
     # 6. Override metrics_queried and chunks_retrieved with real counts
-    ans.metrics_queried = list({m.metric_name for m in matched_metrics})
+    ans.metrics_queried = metric_names_queried
+
+    # Add watchdog_alerts citation if alert context was injected
+    if alerts_were_used:
+        from clubos2.agents.scout_schemas import Citation
+        ans.citations.append(
+            Citation(
+                claim="Recent Watchdog alerts surfaced in context",
+                source="watchdog_alerts",
+            )
+        )
     ans.chunks_retrieved = len(knowledge_results)
     # retrieved_contexts = metric values + peer data + knowledge chunks + full context block
     # The full context_block is included so the fabrication scorer can verify ALL numbers

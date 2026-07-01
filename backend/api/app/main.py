@@ -15,7 +15,7 @@ print(f"[STARTUP] CLUBOS_SNAPSHOT_DIR: {os.environ.get('CLUBOS_SNAPSHOT_DIR', 'N
 print(f"[STARTUP] CLUBOS_FRONTEND_DIST: {os.environ.get('CLUBOS_FRONTEND_DIST', 'NOT SET')}", flush=True)
 
 from app.clients.databricks import SnapshotAccessError
-from app.routers import analytics, benchmark, briefing, config, connectors, events, health, priorities, refresh, signals, social, notifications, ai_query
+from app.routers import analytics, benchmark, briefing, config, connectors, events, health, priorities, refresh, signals, social, notifications, ai_query, watchdog
 
 print("[STARTUP] All imports successful", flush=True)
 
@@ -56,6 +56,7 @@ app.include_router(connectors.router, prefix="/api", tags=["connectors"])
 app.include_router(notifications.router, prefix="/api")
 app.include_router(config.router, tags=["config"])
 app.include_router(ai_query.router)
+app.include_router(watchdog.router)
 
 
 @app.exception_handler(SnapshotAccessError)
