@@ -234,11 +234,50 @@ def _format_alerts_block(metric_name: str, alerts) -> str:
     return "\n".join(lines)
 
 
+def format_investigations_for_context(invs: list) -> str:
+    """Format completed investigation findings as a Scout context block."""
+    lines = ["=== RELATED PAST INVESTIGATIONS ===\n[source: investigations]"]
+    for inv in invs:
+        date_str = inv.started_at.strftime("%Y-%m-%d") if hasattr(inv.started_at, "strftime") else str(inv.started_at)[:10]
+        lines.append(
+            f"- {date_str} (alert {inv.alert_id}, confidence: {inv.confidence}):"
+        )
+        lines.append(f"  Cause: {inv.cause_hypothesis}")
+        if inv.evidence_summary:
+            truncated = inv.evidence_summary[:200]
+            if len(inv.evidence_summary) > 200:
+                truncated += "..."
+            lines.append(f"  Evidence: {truncated}")
+    return "\n".join(lines)
+
+
+async def _enrich_with_investigations(
+    context_parts: list[str],
+    metric_names: list[str],
+    investigations_repo,
+) -> None:
+    """Inject completed past investigations for queried metrics into context."""
+    from clubos2.investigator.schema import InvestigationStatus
+
+    for metric_name in metric_names:
+        try:
+            completed_invs = await investigations_repo.list_recent(
+                limit=3,
+                metric_name=metric_name,
+                status=InvestigationStatus.COMPLETED,
+            )
+            if completed_invs:
+                context_parts.append(format_investigations_for_context(completed_invs))
+        except Exception as e:
+            logger.warning("Failed to fetch investigations for %s: %s", metric_name, e)
+
+
 @traced(name="scout:run", run_type="chain")
 async def run_scout(
     input: ScoutInput,
     *,
     enable_alert_context: bool = True,
+    enable_investigation_context: bool = True,
 ) -> ScoutAnswer:
     """Main entry point. Implements the Scout pipeline."""
     # 1. Semantic layer pre-check
@@ -299,6 +338,26 @@ async def run_scout(
             except Exception as e:
                 logger.warning("Alert context enrichment failed, continuing: %s", e)
 
+    # Phase 4: Investigation context enrichment (non-breaking, skipped silently on any failure)
+    investigations_were_used = False
+    if enable_investigation_context:
+        investigations_repo = None
+        try:
+            from clubos2.investigator.repo import InvestigationRepository
+            investigations_repo = InvestigationRepository()
+        except Exception as e:
+            logger.warning("Could not init investigations_repo, skipping investigation context: %s", e)
+
+        if investigations_repo:
+            try:
+                inv_context_parts: list[str] = []
+                await _enrich_with_investigations(inv_context_parts, metric_names_queried, investigations_repo)
+                if inv_context_parts:
+                    context_block = context_block + "\n\n" + "\n\n".join(inv_context_parts)
+                    investigations_were_used = True
+            except Exception as e:
+                logger.warning("Investigation context enrichment failed, continuing: %s", e)
+
     # 5. Call LLM via gateway with Pydantic validation and retry
     system_prompt = _load_scout_prompt()
     messages = [
@@ -347,6 +406,15 @@ async def run_scout(
             Citation(
                 claim="Recent Watchdog alerts surfaced in context",
                 source="watchdog_alerts",
+            )
+        )
+    # Add investigations citation if investigation context was injected
+    if investigations_were_used:
+        from clubos2.agents.scout_schemas import Citation
+        ans.citations.append(
+            Citation(
+                claim="Past completed investigations surfaced in context",
+                source="investigations",
             )
         )
     ans.chunks_retrieved = len(knowledge_results)
