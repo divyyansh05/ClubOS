@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -19,18 +20,31 @@ logger = logging.getLogger("clubos.agents.scout")
 
 
 def _load_scout_prompt() -> str:
-    """Helper to locate and read prompts/scout_v1.md system prompt."""
+    """Helper to locate and read the Scout system prompt.
+
+    Version is resolved from GatewaySettings.scout_prompt_version (set via SCOUT_PROMPT_VERSION
+    in .env.v2) with a fallback to the SCOUT_PROMPT_VERSION environment variable, defaulting
+    to 'v1' if neither is set. The resolved filename is e.g. 'scout_v3.md'.
+    """
+    try:
+        from clubos2.gateway.client import GatewaySettings
+        _s = GatewaySettings()
+        version = getattr(_s, "scout_prompt_version", None) or os.environ.get("SCOUT_PROMPT_VERSION", "v1")
+    except Exception:
+        version = os.environ.get("SCOUT_PROMPT_VERSION", "v1")
+
+    filename = f"scout_{version}.md"
     current = Path(__file__).resolve().parent
     for parent in [current] + list(current.parents):
-        path = parent / "prompts" / "scout_v1.md"
+        path = parent / "prompts" / filename
         if path.exists():
             with open(path, encoding="utf-8") as f:
                 return f.read()
-    fallback_path = Path("./prompts/scout_v1.md")
+    fallback_path = Path("./prompts") / filename
     if fallback_path.exists():
         with open(fallback_path, encoding="utf-8") as f:
             return f.read()
-    raise FileNotFoundError("Could not find prompts/scout_v1.md system prompt file.")
+    raise FileNotFoundError(f"Could not find prompts/{filename} system prompt file.")
 
 
 def extract_terms(question: str) -> list[str]:
@@ -143,6 +157,19 @@ async def assemble_context(
             block.append(f"  Polarity: {polarity}")
         if seasonal_note:
             block.append(f"  Seasonal note: {seasonal_note}")
+        # Include peer context if available — enables peer comparison answers
+        peer_ranks = [r.peer_rank for r in rows if r.peer_rank is not None]
+        peer_gaps = [r.peer_gap_to_median for r in rows if r.peer_gap_to_median is not None]
+        peer_counts = [r.peer_club_count for r in rows if r.peer_club_count is not None]
+        if peer_ranks and peer_gaps:
+            latest_rank = peer_ranks[0]
+            latest_gap = peer_gaps[0]
+            latest_count = peer_counts[0] if peer_counts else "?"
+            gap_sign = "+" if latest_gap >= 0 else ""
+            block.append(
+                f"  Peer context (most recent): rank {latest_rank} of {latest_count} clubs, "
+                f"gap to peer median {gap_sign}{latest_gap:.6f}"
+            )
 
         metric_blocks.append("\n".join(block))
 
@@ -177,7 +204,14 @@ async def run_scout(input: ScoutInput) -> ScoutAnswer:
     ambiguities = detect_ambiguity(input.question)
 
     # 2 & 3. Tool plan & Parallel Execution
-    metric_tasks = [query_metrics(m.metric_name) for m in matched_metrics]
+    async def _safe_query(metric_name: str) -> list[MetricRow]:
+        try:
+            return await query_metrics(metric_name)
+        except Exception as e:
+            logger.warning(f"Metric query skipped for '{metric_name}': {e}")
+            return []
+
+    metric_tasks = [_safe_query(m.metric_name) for m in matched_metrics]
     knowledge_task = search_knowledge(input.question, k=5)
 
     # Execute all tools in parallel
@@ -188,6 +222,15 @@ async def run_scout(input: ScoutInput) -> ScoutAnswer:
         metrics_results.extend(res_list)
 
     knowledge_results: list[KnowledgeChunk] = results[-1]
+
+    # Sanitise retrieved chunks for prompt injection patterns
+    from clubos2.guardrails.injection_defence import sanitise_for_injection
+    _, knowledge_results, injection_detections = sanitise_for_injection(knowledge_results)
+    if injection_detections:
+        logger.warning(
+            "Injection patterns detected in retrieved content",
+            extra={"detections": [d.model_dump() for d in injection_detections]},
+        )
 
     # 4. Assemble context
     context_block = await assemble_context(metrics_results, knowledge_results, ambiguities)
@@ -233,5 +276,30 @@ async def run_scout(input: ScoutInput) -> ScoutAnswer:
     # 6. Override metrics_queried and chunks_retrieved with real counts
     ans.metrics_queried = list({m.metric_name for m in matched_metrics})
     ans.chunks_retrieved = len(knowledge_results)
+    # retrieved_contexts = metric values + peer data + knowledge chunks + full context block
+    # The full context_block is included so the fabrication scorer can verify ALL numbers
+    # the LLM had access to (including peer gaps, seasonal notes, etc.)
+    metric_context_texts = [
+        f"{m.metric_name} {m.month}: {m.value} "
+        + (f"peer_rank={m.peer_rank} peer_gap={m.peer_gap_to_median} " if m.peer_rank is not None else "")
+        + f"[{m.source}]"
+        for m in metrics_results
+    ]
+    ans.retrieved_contexts = metric_context_texts + [chunk.text for chunk in knowledge_results] + [context_block]
+
+    # Post-LLM guardrail: block ungrounded numbers
+    from clubos2.guardrails.no_fabricated_numbers import check_no_fabricated_numbers
+    _guardrail_mode = os.getenv("GUARDRAIL_FABRICATION_MODE", "warn")
+    guarded = await check_no_fabricated_numbers(
+        ans,
+        question=input.question,
+        mode=_guardrail_mode,
+    )
+    if guarded.violations:
+        logger.warning(
+            "Scout output guardrail triggered",
+            extra={"violations": [v.model_dump() for v in guarded.violations]},
+        )
+    ans = guarded.answer
 
     return ans

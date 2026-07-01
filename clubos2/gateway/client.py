@@ -32,6 +32,8 @@ class GatewaySettings(BaseSettings):
     default_routing_model: str = Field(default="gpt-4o-mini")
     default_reasoning_model: str = Field(default="gpt-4o")
     default_temperature: float = Field(default=0.0)
+    guardrail_fabrication_mode: str = "warn"  # 'warn' | 'block'
+    scout_prompt_version: str = Field(default="v1")
 
 
 class ModelTier(Enum):

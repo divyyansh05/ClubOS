@@ -31,6 +31,10 @@ class ScoutAnswer(BaseModel):
     assumptions_made: list[str] = Field(default_factory=list)
     metrics_queried: list[str] = Field(default_factory=list)
     chunks_retrieved: int = 0
+    retrieved_contexts: list[str] = Field(
+        default_factory=list,
+        description="Verbatim text of retrieved chunks, for eval scoring",
+    )
 
     def has_uncited_numbers(self) -> bool:
         """Stub for guardrail check in Phase 1.5 — detects numbers in answer not in citations."""

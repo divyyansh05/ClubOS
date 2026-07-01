@@ -74,6 +74,7 @@ async def test_run_scout_happy_path(
             Citation(
                 claim="Streaming daily active users are 85,420",
                 source="data/gold_snapshots/gold_kpi_health.csv",
+                quote="streaming_daily_users 2025-11-01: 85,420",
             )
         ],
         confidence=Confidence.HIGH,

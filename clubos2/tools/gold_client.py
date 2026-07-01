@@ -58,7 +58,7 @@ class GoldClient:
     to a direct ``metric_name`` column match.
     """
 
-    KNOWN_ASSETS = {"ecommerce", "streaming", "fan_app", "main_website", "social_media"}
+    KNOWN_ASSETS = {"ecommerce", "streaming", "fan_app", "main_website", "social_media", "web"}
 
     def __init__(self, settings: GoldClientSettings | None = None) -> None:
         self.settings = settings or GoldClientSettings()
@@ -122,6 +122,7 @@ class GoldClient:
                 except Exception:
                     sev_inputs = {}
 
+                peer_ctx = js_data.get("peer_context") or {}
                 rows.append(
                     {
                         "month": str(row["month"]),
@@ -139,6 +140,9 @@ class GoldClient:
                         "rolling_12m_avg": None,
                         "source": source_file,
                         "compound_metric_name": metric_name,
+                        "peer_rank": peer_ctx.get("peer_rank"),
+                        "peer_club_count": peer_ctx.get("peer_club_count"),
+                        "peer_gap_to_median": peer_ctx.get("gap_to_peer_median"),
                     }
                 )
             return rows
@@ -242,7 +246,13 @@ class GoldClient:
             if metric_name.startswith(prefix):
                 raw = metric_name[len(prefix) :]
                 return asset, raw
-        # No known asset prefix — try direct match
+        # Also try asset as suffix (e.g. conversion_rate_ecommerce → ecommerce asset)
+        for asset in sorted(self.KNOWN_ASSETS, key=len, reverse=True):
+            suffix = "_" + asset
+            if metric_name.endswith(suffix):
+                raw = metric_name[: -len(suffix)]
+                return asset, raw
+        # No known asset prefix or suffix — try direct match
         return None, metric_name
 
 

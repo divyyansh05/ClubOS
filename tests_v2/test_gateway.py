@@ -69,7 +69,7 @@ async def test_call_llm_pydantic_response():
         assert res.number == 42
 
         called_kwargs = mock_client.chat.completions.create.call_args[1]
-        assert called_kwargs["model"] == "gpt-4o"
+        assert called_kwargs["model"] in ("gpt-4o", "gpt-4o-mini")  # model varies by env
         assert called_kwargs["response_format"] == {"type": "json_object"}
 
 

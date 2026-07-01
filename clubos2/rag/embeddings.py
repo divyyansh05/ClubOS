@@ -17,7 +17,9 @@ async def embed_texts(texts: list[str]) -> list[list[float]]:
     if not texts:
         return []
 
-    api_key = os.environ.get("OPENAI_API_KEY")
+    from clubos2.gateway.client import GatewaySettings
+    _settings = GatewaySettings()
+    api_key = _settings.openai_api_key or os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable is not set.")
 

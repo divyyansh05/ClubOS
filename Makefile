@@ -1,4 +1,4 @@
-.PHONY: v2-setup v2-lint v2-typecheck v2-test v2-ingest v2-seed
+.PHONY: v2-setup v2-lint v2-typecheck v2-test v2-ingest v2-seed v2-eval-run v2-eval v2-eval-full v2-eval-report v2-ci-gate
 
 v2-setup:
 	pip install -e ".[v2-runtime,v2-dev]"
@@ -17,3 +17,18 @@ v2-ingest:
 
 v2-seed:
 	python -m clubos2.semantic_layer.seed
+
+v2-eval-run:
+	python -m clubos2.eval.runner --golden v1 --prompt-version v1
+
+v2-eval:
+	python -m clubos2.eval.pipeline --golden v1 --prompt-version v4 --skip-ragas
+
+v2-eval-full:
+	python -m clubos2.eval.pipeline --golden v1 --prompt-version v4
+
+v2-eval-report:
+	python -m clubos2.eval.reporter --run-id $(RUN_ID)
+
+v2-ci-gate:
+	python scripts/v2_ci_gate.py

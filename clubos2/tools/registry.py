@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from clubos2.guardrails.source_required import requires_source
 from clubos2.observability.tracing import traced
 from clubos2.tools.errors import MetricNotFoundError
 
@@ -27,6 +28,9 @@ class MetricRow(BaseModel):
     month: str
     polarity: str
     source: str  # always populated — what table this came from
+    peer_rank: int | None = None
+    peer_club_count: int | None = None
+    peer_gap_to_median: float | None = None
 
 
 class KnowledgeChunk(BaseModel):
@@ -219,6 +223,7 @@ def _resolve_metric(metric_name: str) -> tuple[Any | None, str]:
 
 
 @traced(name="tool:query_metrics", run_type="tool")
+@requires_source
 async def query_metrics(metric_name: str, month: str | None = None) -> list[MetricRow]:
     """Return metric values from the Gold layer for a validated metric.
 
@@ -286,6 +291,9 @@ async def query_metrics(metric_name: str, month: str | None = None) -> list[Metr
                 month=str(row.get("month", month or "")),
                 polarity=polarity,
                 source=str(row.get("source", "DATA/gold_snapshots/gold_kpi_health.csv")),
+                peer_rank=row.get("peer_rank"),
+                peer_club_count=row.get("peer_club_count"),
+                peer_gap_to_median=row.get("peer_gap_to_median"),
             )
         )
 
@@ -293,6 +301,7 @@ async def query_metrics(metric_name: str, month: str | None = None) -> list[Metr
 
 
 @traced(name="tool:search_knowledge", run_type="tool")
+@requires_source
 async def search_knowledge(query: str, k: int = 5) -> list[KnowledgeChunk]:
     """Retrieve the top-k most relevant knowledge chunks for a query.
 
