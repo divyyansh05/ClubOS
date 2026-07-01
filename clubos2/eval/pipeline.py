@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from eval.golden.loader import load_golden_set
+from eval.golden.schema import QuestionType
 
 logger = logging.getLogger("clubos.eval.pipeline")
 
@@ -44,6 +45,20 @@ async def run_full_eval(
             ragas = None
 
     logger.info("Scoring complete")
+
+    # Step 2b: Run investigation scenarios for INVESTIGATION entries
+    investigation_entries = [e for e in gs.entries if e.question_type == QuestionType.INVESTIGATION]
+    investigation_results = []
+    for entry in investigation_entries:
+        from clubos2.eval.investigator_scorer import run_investigation_scenario
+        result = await run_investigation_scenario(entry)
+        investigation_results.append(result)
+
+    if investigation_results:
+        logger.info(
+            f"Investigation scenarios complete: {sum(1 for r in investigation_results if r.overall_pass)}"
+            f"/{len(investigation_results)} passed"
+        )
 
     # Step 3: Generate report
     report = generate_report(eval_run, ragas, fabrication, behavioural, gs)
