@@ -1,0 +1,197 @@
+version: "holdout_v1"
+entries:
+  - id: h_001
+    question: "What is the current value of net_sales and how does it compare to last month?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "provides specific net_sales value"
+      - "mentions month-over-month comparison"
+    expected_metric_names:
+      - net_sales
+    required_citation_sources:
+      - DATA/gold_snapshots/gold_priority_board.csv
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: null
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: quantitative baseline"
+
+  - id: h_002
+    question: "How does Real Madrid's streaming performance compare to peers in the latest month?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "cites gold_peer_benchmark.csv"
+      - "provides specific comparison values"
+    expected_metric_names:
+      - streaming_daily_users
+    required_citation_sources:
+      - DATA/gold_snapshots/gold_peer_benchmark.csv
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: null
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: peer comparison"
+
+  - id: h_003
+    question: "What are the key signals driving matchday ticket revenue according to the signal engine?"
+    question_type: narrative
+    expected_answer_facts:
+      - "references signal engine or skill files"
+      - "mentions ticket revenue drivers"
+    expected_metric_names:
+      - matchday_ticket_revenue
+    required_citation_sources:
+      - signal_engine.md
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: null
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: narrative skill-file"
+
+  - id: h_004
+    question: "What seasonal patterns should I expect for digital merchandise revenue in Q1?"
+    question_type: narrative
+    expected_answer_facts:
+      - "mentions seasonal patterns"
+      - "references Q1 or January/February/March"
+    expected_metric_names:
+      - digital_merchandise_revenue
+    required_citation_sources: []
+    expected_confidence: medium
+    must_state_assumption: true
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: null
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: seasonal narrative"
+
+  - id: h_005
+    question: "Which metrics are in the top 3 and how have their ranks changed?"
+    question_type: mixed
+    expected_answer_facts:
+      - "lists top 3 metrics with names"
+      - "mentions rank changes"
+    expected_metric_names: []
+    required_citation_sources:
+      - DATA/gold_snapshots/gold_priority_board.csv
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: null
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: mixed priority board"
+
+  - id: h_006
+    question: "How many total goals did Real Madrid score last season?"
+    question_type: unanswerable
+    expected_answer_facts: []
+    expected_metric_names: []
+    required_citation_sources: []
+    expected_confidence: low
+    must_state_assumption: false
+    must_refuse: true
+    tempts_fabrication: true
+    tempts_injection: false
+    scenario_setup: null
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: unanswerable sports stats"
+
+  - id: h_007
+    question: "What affected digital revenue more — app updates or marketing campaigns?"
+    question_type: ambiguous
+    expected_answer_facts:
+      - "acknowledges ambiguity"
+      - "asks for clarification or states assumption"
+    expected_metric_names:
+      - digital_merchandise_revenue
+    required_citation_sources: []
+    expected_confidence: low
+    must_state_assumption: true
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: null
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: ambiguous causal attribution"
+
+  - id: h_008
+    question: "Investigate the alert on digital_merchandise_revenue — check if peers also saw decline."
+    question_type: investigation
+    expected_answer_facts:
+      - "uses get_peer_benchmark tool"
+      - "uses get_metric_definition tool"
+      - "confidence in [low, medium, high]"
+    expected_metric_names:
+      - digital_merchandise_revenue
+    required_citation_sources:
+      - metric_registry
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: "Insert a synthetic alert: metric_name=digital_merchandise_revenue, alert_type=exit_top_n, severity=warning."
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: investigation peer check"
+
+  - id: h_009
+    question: "Investigate the alert on matchday_ticket_revenue in March — is this seasonal or structural?"
+    question_type: investigation
+    expected_answer_facts:
+      - "uses get_metric_definition tool"
+      - "uses query_metrics tool"
+      - "confidence in [medium, high]"
+    expected_metric_names:
+      - matchday_ticket_revenue
+    required_citation_sources:
+      - metric_registry
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: "Insert a synthetic alert: metric_name=matchday_ticket_revenue, alert_type=large_score_jump, severity=warning, month=2026-03."
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: investigation seasonal vs structural"
+
+  - id: h_010
+    question: "Given recent alerts, what is driving streaming_daily_users and what did the investigation find?"
+    question_type: investigation
+    expected_answer_facts:
+      - "cites watchdog_alerts"
+      - "investigation completes"
+      - "cause_hypothesis non-empty"
+    expected_metric_names:
+      - streaming_daily_users
+    required_citation_sources:
+      - watchdog_alerts
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    scenario_setup: "Seed 2 alerts for streaming_daily_users from past 2 weeks. Investigate the most recent."
+    author: "phase4-holdout-author"
+    created_at: "2026-07-01"
+    notes: "Holdout: cross-agent Scout with investigation context"

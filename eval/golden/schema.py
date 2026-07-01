@@ -12,6 +12,7 @@ class QuestionType(str, Enum):
     AMBIGUOUS = "ambiguous"
     UNANSWERABLE = "unanswerable"
     WATCHDOG_RUN = "watchdog_run"
+    INVESTIGATION = "investigation"
 
 
 class ExpectedConfidence(str, Enum):
