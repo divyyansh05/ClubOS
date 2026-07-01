@@ -7,8 +7,13 @@ from uuid import uuid4
 from pydantic import BaseModel
 
 from eval.golden.schema import GoldenEntry
-from clubos2.investigator.orchestrator import run_investigation
-from clubos2.investigator.agent_schemas import InvestigatorInput
+
+try:
+    from clubos2.investigator.orchestrator import run_investigation
+    from clubos2.investigator.agent_schemas import InvestigatorInput
+except ImportError:
+    run_investigation = None  # type: ignore[assignment]
+    InvestigatorInput = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -294,6 +299,18 @@ async def run_investigation_scenario(entry: GoldenEntry) -> InvestigationScenari
             facts_failed=entry.expected_answer_facts,
             overall_pass=False,
             notes=[f"Scenario setup failed: {e}"],
+        )
+
+    if run_investigation is None or InvestigatorInput is None:
+        return InvestigationScenarioResult(
+            entry_id=entry.id,
+            scenario_recreated=True,
+            investigation_result=None,
+            expected_facts=entry.expected_answer_facts,
+            facts_satisfied=[],
+            facts_failed=entry.expected_answer_facts,
+            overall_pass=False,
+            notes=["Investigator orchestrator not yet available"],
         )
 
     metric = entry.expected_metric_names[0] if entry.expected_metric_names else "streaming_daily_users"

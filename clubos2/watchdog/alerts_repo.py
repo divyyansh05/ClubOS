@@ -124,3 +124,13 @@ class AlertsRepository:
 
     async def acknowledge(self, alert_id: str, by_user: str) -> WatchdogAlertRead:
         return await asyncio.to_thread(self._acknowledge_sync, alert_id, by_user)
+
+    def _get_by_id_sync(self, alert_id: str):
+        from clubos2.watchdog.alerts_schema import WatchdogAlertORM
+        with get_session() as session:
+            orm = session.get(WatchdogAlertORM, alert_id)
+            return self._to_read(orm) if orm else None
+
+    async def get_by_id(self, alert_id: str):
+        """Fetch a single alert by ID, or None if not found."""
+        return await asyncio.to_thread(self._get_by_id_sync, alert_id)
