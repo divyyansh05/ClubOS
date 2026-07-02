@@ -8,7 +8,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-async def run_holdout_eval(scout_prompt_version: str = "v1") -> Path:
+async def run_holdout_eval(scout_prompt_version: str | None = None) -> Path:
     """Run all holdout questions through the same scoring pipeline as the visible set.
 
     Output is written to eval/reports/holdout/holdout_{timestamp}.md and a JSON sidecar.
@@ -18,6 +18,11 @@ async def run_holdout_eval(scout_prompt_version: str = "v1") -> Path:
     """
     from eval.golden.loader import load_holdout_set
     from clubos2.eval.pipeline import run_full_eval
+
+    if scout_prompt_version is None:
+        from clubos2.gateway.client import GatewaySettings
+        scout_prompt_version = GatewaySettings().scout_prompt_version
+        logger.info(f"Eval pipeline using scout_prompt_version={scout_prompt_version}")
 
     holdout = load_holdout_set()
     logger.info(f"Running holdout eval on {len(holdout.entries)} questions")

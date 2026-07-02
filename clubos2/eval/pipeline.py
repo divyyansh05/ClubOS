@@ -12,11 +12,16 @@ logger = logging.getLogger("clubos.eval.pipeline")
 
 async def run_full_eval(
     golden_version: str = "v1",
-    scout_prompt_version: str = "v1",
+    scout_prompt_version: str | None = None,
     output_dir: str = "eval/reports",
     skip_ragas: bool = False,
 ) -> Path:
     """Orchestrate: runner -> (RAGAS) -> fabrication -> behavioural -> reporter."""
+    from clubos2.gateway.client import GatewaySettings
+    if scout_prompt_version is None:
+        scout_prompt_version = GatewaySettings().scout_prompt_version
+    logger.info(f"Eval pipeline using scout_prompt_version={scout_prompt_version}")
+
     from clubos2.eval.runner import run_eval
     from clubos2.eval.ragas_scorer import score_with_ragas
     from clubos2.eval.fabrication_scorer import score_fabrication_batch
@@ -78,7 +83,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run full ClubOS 2.0 eval pipeline")
     parser.add_argument("--golden", default="v1")
-    parser.add_argument("--prompt-version", default="v1")
+    parser.add_argument("--prompt-version", default=None)
     parser.add_argument("--output-dir", default="eval/reports")
     parser.add_argument("--skip-ragas", action="store_true", default=False,
                         help="Skip RAGAS LLM-judged scoring (deterministic layers only)")

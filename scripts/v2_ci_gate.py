@@ -32,10 +32,16 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description="ClubOS 2.0 CI gate")
     parser.add_argument("--baseline", default="eval/reports/baseline.json")
     parser.add_argument("--golden", default="v1")
-    parser.add_argument("--prompt-version", default="v1")
+    parser.add_argument("--prompt-version", default=None)
     parser.add_argument("--skip-ragas", action="store_true", default=False,
                         help="Skip RAGAS scoring (null RAGAS values skip regression checks)")
     args = parser.parse_args()
+
+    prompt_version = args.prompt_version
+    if prompt_version is None:
+        from clubos2.gateway.client import GatewaySettings
+        prompt_version = GatewaySettings().scout_prompt_version
+    print(f"CI gate running against scout_prompt_version={prompt_version}")
 
     baseline_path = Path(args.baseline)
     if not baseline_path.exists():
@@ -60,7 +66,7 @@ async def main() -> None:
 
     report_path = await run_full_eval(
         golden_version=args.golden,
-        scout_prompt_version=args.prompt_version,
+        scout_prompt_version=prompt_version,
         skip_ragas=args.skip_ragas,
     )
     current_json_path = report_path.with_suffix(".json")

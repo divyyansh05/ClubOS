@@ -50,10 +50,14 @@ def get_current_langsmith_trace_url() -> str | None:
 
 async def run_eval(
     golden_set_version: str = "v1",
-    scout_prompt_version: str = "v1",
+    scout_prompt_version: str | None = None,
     parallel: int = 3,
     save_to: str | None = None,
 ) -> EvalRun:
+    if scout_prompt_version is None:
+        from clubos2.gateway.client import GatewaySettings
+        scout_prompt_version = GatewaySettings().scout_prompt_version
+        logger.info(f"Eval pipeline using scout_prompt_version={scout_prompt_version}")
     gs = load_golden_set(golden_set_version)
     run_id = f"eval_{datetime.utcnow().isoformat().replace(':', '-')}"
     semaphore = asyncio.Semaphore(parallel)
@@ -112,7 +116,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run ClubOS 2.0 eval against golden set")
     parser.add_argument("--golden", default="v1")
-    parser.add_argument("--prompt-version", default="v1")
+    parser.add_argument("--prompt-version", default=None)
     parser.add_argument("--parallel", type=int, default=3)
     args = parser.parse_args()
 

@@ -29,9 +29,13 @@ def _load_scout_prompt() -> str:
     try:
         from clubos2.gateway.client import GatewaySettings
         _s = GatewaySettings()
-        version = getattr(_s, "scout_prompt_version", None) or os.environ.get("SCOUT_PROMPT_VERSION", "v1")
+        version = getattr(_s, "scout_prompt_version", None) or os.environ.get("SCOUT_PROMPT_VERSION", "v4")
     except Exception:
-        version = os.environ.get("SCOUT_PROMPT_VERSION", "v1")
+        logger.warning(
+            "GatewaySettings failed to load. Falling back to scout_prompt_version=v4. "
+            "This fallback should never fire in production — check SCOUT_PROMPT_VERSION env config."
+        )
+        version = os.environ.get("SCOUT_PROMPT_VERSION", "v4")
 
     filename = f"scout_{version}.md"
     current = Path(__file__).resolve().parent
