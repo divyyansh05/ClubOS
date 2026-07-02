@@ -1,4 +1,4 @@
-.PHONY: v2-setup v2-lint v2-typecheck v2-test v2-ingest v2-seed v2-eval-run v2-eval v2-eval-full v2-eval-report v2-ci-gate v2-watchdog-run v2-watchdog-eval v2-phase3-demo
+.PHONY: v2-setup v2-lint v2-typecheck v2-test v2-ingest v2-seed v2-eval-run v2-eval v2-eval-full v2-eval-report v2-ci-gate v2-watchdog-run v2-watchdog-eval v2-phase3-demo v2-eval-holdout
 
 v2-setup:
 	pip install -e ".[v2-runtime,v2-dev]"
@@ -41,3 +41,6 @@ v2-watchdog-eval:
 
 v2-phase3-demo:
 	bash scripts/v2_demo_phase3.sh
+
+v2-eval-holdout:
+	python -m clubos2.eval.holdout_runner
