@@ -8,6 +8,7 @@
 .env.production.local
 .env.*
 !.env.example
+!.env.v2.example
 !.env.production
 # Note: .env.production is SAFE to commit (no secrets,
 # only sets VITE_API_BASE_URL= which is intentionally empty)
