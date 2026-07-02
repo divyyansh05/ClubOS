@@ -33,7 +33,15 @@ class GatewaySettings(BaseSettings):
     default_reasoning_model: str = Field(default="gpt-4o")
     default_temperature: float = Field(default=0.0)
     guardrail_fabrication_mode: str = "warn"  # 'warn' | 'block'
-    scout_prompt_version: str = Field(default="v1")
+    scout_prompt_version: str = Field(
+        default="v4",
+        description=(
+            "Active Scout prompt version. Must match the version used to generate "
+            "eval/reports/baseline.json — CI gate comparisons are meaningless if "
+            "these diverge. Update this default when promoting a new prompt version "
+            "after baseline re-establishment."
+        ),
+    )
 
 
 class ModelTier(Enum):
