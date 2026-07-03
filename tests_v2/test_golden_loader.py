@@ -26,11 +26,12 @@ def test_all_ids_unique():
 
 
 def test_citation_sources_format():
+    VALID = ("gold.", "skills.", "metric_registry", "watchdog_alerts", "investigations", "web_search:")
     gs = load_golden_set("v1")
     for entry in gs.entries:
         for src in entry.required_citation_sources:
-            assert src.endswith(".csv") or src.endswith(".md") or "::" in src, (
-                f"Bad source format in {entry.id}: {src}"
+            assert any(src.startswith(p) for p in VALID), (
+                f"Non-canonical source in {entry.id}: {src!r}"
             )
 
 

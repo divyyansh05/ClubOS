@@ -9,7 +9,7 @@ entries:
     expected_metric_names:
       - net_sales
     required_citation_sources:
-      - DATA/gold_snapshots/gold_priority_board.csv
+      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -29,7 +29,7 @@ entries:
     expected_metric_names:
       - streaming_daily_users
     required_citation_sources:
-      - DATA/gold_snapshots/gold_peer_benchmark.csv
+      - "gold.peer_benchmark"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -49,7 +49,7 @@ entries:
     expected_metric_names:
       - matchday_ticket_revenue
     required_citation_sources:
-      - signal_engine.md
+      - "skills.signal_engine"
     expected_confidence: medium
     must_state_assumption: false
     must_refuse: false
@@ -87,7 +87,7 @@ entries:
       - "mentions rank changes"
     expected_metric_names: []
     required_citation_sources:
-      - DATA/gold_snapshots/gold_priority_board.csv
+      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false

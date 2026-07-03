@@ -75,7 +75,7 @@ def chunk_markdown_by_section(path: str) -> list[Chunk]:
     Intro text before the first ## heading belongs to the 'Overview' section.
     If a section exceeds 800 tokens, it is split at paragraph boundaries.
     """
-    source = os.path.basename(path)
+    source = "skills." + os.path.splitext(os.path.basename(path))[0]
     with open(path, encoding="utf-8") as f:
         content = f.read()
 

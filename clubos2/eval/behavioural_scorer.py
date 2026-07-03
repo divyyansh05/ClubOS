@@ -5,6 +5,30 @@ from pydantic import BaseModel
 from clubos2.eval.runner import EvalRun, RunResult
 from eval.golden.schema import GoldenEntry, GoldenSet
 
+VALID_SOURCE_PREFIXES = (
+    "gold.",
+    "skills.",
+    "metric_registry",
+    "watchdog_alerts",
+    "investigations",
+    "web_search:",
+)
+
+
+def _assert_canonical_source(source: str, context: str) -> None:
+    """Hard-fail if a source is not in canonical form.
+
+    Called for both expected (golden set) and actual (Scout output) sources.
+    Fails loud so non-canonical sources cannot silently pass tests.
+    See docs/eval_methodology.md for the canonical source policy.
+    """
+    if not source.startswith(VALID_SOURCE_PREFIXES):
+        raise ValueError(
+            f"Non-canonical source in {context}: {source!r}. "
+            f"Expected prefix from {VALID_SOURCE_PREFIXES}. "
+            "Fix at emission — do not add a mapping here."
+        )
+
 
 class BehaviouralScore(BaseModel):
     entry_id: str
@@ -62,10 +86,14 @@ def score_behaviour(result: RunResult, entry: GoldenEntry) -> BehaviouralScore:
 
     # Citation check: applies when required_citation_sources is populated
     expected_sources = set(entry.required_citation_sources)
+    for src in expected_sources:
+        _assert_canonical_source(src, f"golden set expected_citation_sources for {entry.id}")
     actual_sources = set(
         c.source
         for c in (result.scout_answer.citations if result.scout_answer else [])
     )
+    for src in actual_sources:
+        _assert_canonical_source(src, f"scout_answer.citations for {result.entry_id}")
     coverage = (
         len(expected_sources & actual_sources) / len(expected_sources)
         if expected_sources

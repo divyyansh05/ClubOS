@@ -99,7 +99,7 @@ class GoldClient:
         filtered_pb = df_pb[mask].copy()
 
         if not filtered_pb.empty:
-            source_file = str(self.gold_dir / "gold_priority_board.csv")
+            source_file = "gold.priority_board"
             if month:
                 filtered_pb = filtered_pb[filtered_pb["month"] == month]
                 if filtered_pb.empty:
@@ -162,7 +162,7 @@ class GoldClient:
                 f"not found in gold_priority_board.csv or gold_kpi_health.csv."
             )
 
-        source_file = str(self.gold_dir / "gold_kpi_health.csv")
+        source_file = "gold.metrics_monthly"
         if month:
             filtered_kh = filtered_kh[filtered_kh["month"] == month]
             if filtered_kh.empty:

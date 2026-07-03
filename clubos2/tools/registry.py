@@ -47,7 +47,7 @@ METRIC_FIXTURES = [
         value=85420.0,
         month="2025-11-01",
         polarity="higher_is_better",
-        source="data/gold_snapshots/gold_priority_board.csv",
+        source="gold.priority_board",
     ),
     MetricRow(
         metric_name="conversion_rate_ecommerce",
@@ -55,7 +55,7 @@ METRIC_FIXTURES = [
         value=0.024,
         month="2025-11-01",
         polarity="higher_is_better",
-        source="data/gold_snapshots/gold_priority_board.csv",
+        source="gold.priority_board",
     ),
     MetricRow(
         metric_name="post_match_engagement",
@@ -63,7 +63,7 @@ METRIC_FIXTURES = [
         value=4.2,
         month="2025-11-01",
         polarity="higher_is_better",
-        source="data/gold_snapshots/gold_priority_board.csv",
+        source="gold.priority_board",
     ),
 ]
 
@@ -290,7 +290,7 @@ async def query_metrics(metric_name: str, month: str | None = None) -> list[Metr
                 value=value,
                 month=str(row.get("month", month or "")),
                 polarity=polarity,
-                source=str(row.get("source", "DATA/gold_snapshots/gold_kpi_health.csv")),
+                source=str(row.get("source", "gold.metrics_monthly")),
                 peer_rank=row.get("peer_rank"),
                 peer_club_count=row.get("peer_club_count"),
                 peer_gap_to_median=row.get("peer_gap_to_median"),

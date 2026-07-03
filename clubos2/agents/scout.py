@@ -179,7 +179,7 @@ async def assemble_context(
 
     chunk_blocks = []
     for c in chunks:
-        chunk_blocks.append(f'[source: {c.source}::{c.section}]\n"{c.text}"')
+        chunk_blocks.append(f'[source: {c.source}]\n"{c.text}"')
 
     ambiguity_blocks = []
     for a in ambiguities:

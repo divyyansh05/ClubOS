@@ -43,7 +43,7 @@ def test_chunk_markdown_by_section(tmp_path):
     # Verify metadata and sections
     assert chunks[0].section == "Purpose"
     assert "purpose paragraph" in chunks[0].text
-    assert chunks[0].metadata["source"] == "test_screen.md"
+    assert chunks[0].metadata["source"] == "skills.test_screen"
     assert chunks[0].metadata["section"] == "Purpose"
 
     assert chunks[1].section == "Metrics on this screen"

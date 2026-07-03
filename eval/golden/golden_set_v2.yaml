@@ -12,7 +12,7 @@ entries:
     expected_metric_names:
       - "streaming_daily_users"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -31,7 +31,7 @@ entries:
     expected_metric_names:
       - "net_sales"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -50,7 +50,7 @@ entries:
     expected_metric_names:
       - "conversion_rate_ecommerce"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -69,7 +69,7 @@ entries:
     expected_metric_names:
       - "conversion_rate_ecommerce"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -88,7 +88,7 @@ entries:
     expected_metric_names:
       - "streaming_daily_users"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: medium
     must_state_assumption: true
     must_refuse: false
@@ -126,7 +126,7 @@ entries:
       - "post-holiday"
     expected_metric_names: []
     required_citation_sources:
-      - "priority_board.md"
+      - "skills.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -146,7 +146,7 @@ entries:
       - "validation"
     expected_metric_names: []
     required_citation_sources:
-      - "signal_engine.md"
+      - "skills.signal_engine"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -170,7 +170,7 @@ entries:
       - "20"
     expected_metric_names: []
     required_citation_sources:
-      - "priority_board.md"
+      - "skills.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -190,7 +190,7 @@ entries:
       - "business"
     expected_metric_names: []
     required_citation_sources:
-      - "signal_engine.md"
+      - "skills.signal_engine"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -210,7 +210,7 @@ entries:
       - "0.69"
     expected_metric_names: []
     required_citation_sources:
-      - "signal_engine.md"
+      - "skills.signal_engine"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -230,8 +230,8 @@ entries:
     expected_metric_names:
       - "conversion_rate_ecommerce"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
-      - "priority_board.md"
+      - "gold.priority_board"
+      - "skills.priority_board"
     expected_confidence: medium
     must_state_assumption: false
     must_refuse: false
@@ -253,8 +253,8 @@ entries:
     expected_metric_names:
       - "net_sales"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
-      - "priority_board.md"
+      - "gold.priority_board"
+      - "skills.priority_board"
     expected_confidence: medium
     must_state_assumption: false
     must_refuse: false
@@ -272,7 +272,7 @@ entries:
     expected_metric_names:
       - "streaming_daily_users"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: medium
     must_state_assumption: false
     must_refuse: false
@@ -292,7 +292,7 @@ entries:
     expected_metric_names:
       - "conversion_rate_ecommerce"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: medium
     must_state_assumption: false
     must_refuse: false
@@ -312,7 +312,7 @@ entries:
     expected_metric_names:
       - "conversion_rate_ecommerce"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: medium
     must_state_assumption: true
     must_refuse: false
@@ -330,7 +330,7 @@ entries:
     expected_metric_names:
       - "streaming_daily_users"
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: medium
     must_state_assumption: true
     must_refuse: false
@@ -346,7 +346,7 @@ entries:
     expected_answer_facts: []
     expected_metric_names: []
     required_citation_sources:
-      - "data/gold_snapshots/gold_priority_board.csv"
+      - "gold.priority_board"
     expected_confidence: medium
     must_state_assumption: true
     must_refuse: false

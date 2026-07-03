@@ -77,7 +77,7 @@ def test_unanswerable_refused_correctly():
 def test_unanswerable_not_refused():
     entry = _make_entry("gq_019", QuestionType.UNANSWERABLE, must_refuse=True)
     result = _make_result("gq_019", confidence=Confidence.HIGH, citations=[
-        Citation(claim="Player earns €50M", source="data/gold.csv")
+        Citation(claim="Player earns €50M", source="gold.priority_board")
     ])
     score = score_behaviour(result, entry)
     assert score.refusal_correct is False
@@ -95,11 +95,11 @@ def test_ambiguous_assumption_stated():
 def test_quantitative_correct_citation():
     entry = _make_entry(
         "gq_001",
-        required_citation_sources=["data/gold_snapshots/gold_priority_board.csv"],
+        required_citation_sources=["gold.priority_board"],
     )
     result = _make_result(
         "gq_001",
-        citations=[Citation(claim="Value is 85420", source="data/gold_snapshots/gold_priority_board.csv")],
+        citations=[Citation(claim="Value is 85420", source="gold.priority_board")],
     )
     score = score_behaviour(result, entry)
     assert score.citation_correct is True
@@ -108,11 +108,11 @@ def test_quantitative_correct_citation():
 def test_quantitative_wrong_citation():
     entry = _make_entry(
         "gq_001",
-        required_citation_sources=["data/gold_snapshots/gold_priority_board.csv"],
+        required_citation_sources=["gold.priority_board"],
     )
     result = _make_result(
         "gq_001",
-        citations=[Citation(claim="Value is X", source="some_other_file.csv")],
+        citations=[Citation(claim="Value is X", source="gold.metrics_monthly")],
     )
     score = score_behaviour(result, entry)
     assert score.citation_correct is False
@@ -120,8 +120,8 @@ def test_quantitative_wrong_citation():
 
 
 def test_aggregate_behaviour():
-    entry1 = _make_entry("gq_001", required_citation_sources=["data/gold.csv"])
-    result1 = _make_result("gq_001", citations=[Citation(claim="x", source="data/gold.csv")])
+    entry1 = _make_entry("gq_001", required_citation_sources=["gold.priority_board"])
+    result1 = _make_result("gq_001", citations=[Citation(claim="x", source="gold.priority_board")])
     score1 = score_behaviour(result1, entry1)
 
     entry2 = _make_entry("gq_019", QuestionType.UNANSWERABLE, must_refuse=True)

@@ -89,7 +89,8 @@ async def ingest_skills(force_rebuild: bool = False) -> IngestReport:
             chunks_total += len(file_chunks)
 
             # Query existing database state for this file
-            existing = collection.get(where={"source": filename})
+            canonical_source = "skills." + os.path.splitext(filename)[0]
+            existing = collection.get(where={"source": canonical_source})
             existing_ids = existing.get("ids", [])
             existing_metadatas = existing.get("metadatas", []) or []
 

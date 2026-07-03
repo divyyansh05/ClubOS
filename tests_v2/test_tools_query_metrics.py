@@ -35,7 +35,7 @@ def _seed_registry(db_url: str) -> None:
 
 @pytest.mark.asyncio
 async def test_query_metrics_returns_real_data(tmp_path):
-    """streaming_daily_users should return rows from gold_kpi_health.csv."""
+    """streaming_daily_users should return rows with canonical gold.priority_board source."""
     db_url = f"duckdb:///{tmp_path}/test_semantic.duckdb"
     _seed_registry(db_url)
 
@@ -59,13 +59,14 @@ async def test_query_metrics_returns_real_data(tmp_path):
     row = rows[0]
     assert row.metric_name == "streaming_daily_users"
     assert row.value > 0, "metric_value should be non-zero"
-    assert row.source.endswith(".csv"), f"source must be a CSV path, got: {row.source}"
-    assert "gold_priority_board" in row.source, f"Wrong source CSV: {row.source}"
+    VALID = ("gold.", "skills.", "metric_registry", "watchdog_alerts", "investigations", "web_search:")
+    assert any(row.source.startswith(p) for p in VALID), f"Non-canonical source: {row.source}"
+    assert row.source == "gold.priority_board", f"Expected gold.priority_board, got: {row.source}"
 
 
 @pytest.mark.asyncio
 async def test_query_metrics_source_is_real_csv_path(tmp_path):
-    """MetricRow.source must be the actual CSV file path, not a placeholder."""
+    """MetricRow.source must be canonical (gold.<table>), not a file path."""
     db_url = f"duckdb:///{tmp_path}/test_semantic.duckdb"
     _seed_registry(db_url)
 
@@ -79,12 +80,11 @@ async def test_query_metrics_source_is_real_csv_path(tmp_path):
 
         rows = await query_metrics("ecommerce_net_sales")
 
+    VALID = ("gold.", "skills.", "metric_registry", "watchdog_alerts", "investigations", "web_search:")
     for row in rows:
-        assert row.source != "placeholder", "source must not be a placeholder"
-        assert (
-            os.path.sep in row.source or "/" in row.source
-        ), f"source should be a file path, got: {row.source}"
-        assert row.source.endswith(".csv")
+        assert any(row.source.startswith(p) for p in VALID), (
+            f"Non-canonical source: {row.source!r}"
+        )
 
 
 @pytest.mark.asyncio
