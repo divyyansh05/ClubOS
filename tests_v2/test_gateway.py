@@ -113,38 +113,6 @@ async def test_call_llm_validation_error():
                 response_model=SimpleResponse,
             )
 
-
-@pytest.mark.asyncio
-async def test_call_llm_anthropic_fallback():
-    """Verify that Anthropic provider logic executes correctly when selected in settings."""
-    mock_client = MagicMock()
-    mock_response = MagicMock()
-    mock_content = MagicMock()
-    mock_content.text = "Anthropic reply"
-    mock_response.content = [mock_content]
-    mock_response.usage = MagicMock()
-    mock_response.usage.input_tokens = 12
-    mock_response.usage.output_tokens = 8
-
-    mock_client.messages.create = AsyncMock(return_value=mock_response)
-
-    custom_settings = GatewaySettings(
-        default_provider="anthropic", default_routing_model="claude-haiku-4-5"
-    )
-
-    with (
-        patch("clubos2.gateway.client.GatewaySettings", return_value=custom_settings),
-        patch("clubos2.gateway.client.get_anthropic_client", return_value=mock_client),
-    ):
-        res = await call_llm(
-            messages=[{"role": "user", "content": "Ask Anthropic"}], tier=ModelTier.ROUTING
-        )
-        assert res == "Anthropic reply"
-        mock_client.messages.create.assert_called_once()
-        called_kwargs = mock_client.messages.create.call_args[1]
-        assert called_kwargs["model"] == "claude-haiku-4-5"
-
-
 @pytest.mark.asyncio
 async def test_call_llm_vertex_error():
     """Verify that Vertex AI provider raises a not implemented exception."""

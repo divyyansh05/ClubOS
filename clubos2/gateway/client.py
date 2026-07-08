@@ -8,27 +8,37 @@ import time
 from enum import Enum
 from typing import Any, TypeVar
 
-import anthropic
 import openai
+from openai import APIConnectionError, APITimeoutError, RateLimitError
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 logger = logging.getLogger("clubos.gateway")
 
-# Type variable for structured output validation
 T = TypeVar("T", bound=BaseModel)
+
+_RETRYABLE = (RateLimitError, APITimeoutError, APIConnectionError)
 
 
 class GatewaySettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env.v2", extra="ignore")
 
     openai_api_key: str = Field(default="")
-    anthropic_api_key: str | None = Field(default=None)
     vertex_api_key: str | None = Field(default=None)
     vertex_project_id: str | None = Field(default=None)
     vertex_location: str | None = Field(default=None)
 
     default_provider: str = Field(default="openai")
+    scout_model: str = Field(default="gpt-4o-mini")
+    investigator_model: str = Field(default="gpt-4o")
+    ragas_judge_model: str = Field(default="gpt-4o-mini")
+    # Legacy aliases kept for pipeline code that reads these directly
     default_routing_model: str = Field(default="gpt-4o-mini")
     default_reasoning_model: str = Field(default="gpt-4o")
     default_temperature: float = Field(default=0.0)
@@ -71,18 +81,23 @@ PRICING = {
         "input": 2.50 / 1_000_000,
         "output": 10.00 / 1_000_000,
     },
-    "claude-haiku-4-5": {
-        "input": 1.00 / 1_000_000,
-        "output": 5.00 / 1_000_000,
-    },
-    "claude-sonnet-4-6": {
-        "input": 3.00 / 1_000_000,
-        "output": 15.00 / 1_000_000,
-    },
 }
 
 _openai_client: openai.AsyncOpenAI | None = None
-_anthropic_client: anthropic.AsyncAnthropic | None = None
+
+
+def _validate_openai_key() -> None:
+    key = GatewaySettings().openai_api_key or os.environ.get("OPENAI_API_KEY", "")
+    if not key or key.strip() == "":
+        raise RuntimeError(
+            "OPENAI_API_KEY is not set. Check .env.v2 file exists and contains "
+            "OPENAI_API_KEY=... — see .env.v2.example for reference."
+        )
+    if not key.startswith("sk-"):
+        raise RuntimeError(
+            f"OPENAI_API_KEY appears malformed (does not start with 'sk-'). "
+            f"First 10 chars: {key[:10]!r}"
+        )
 
 
 def get_openai_client() -> openai.AsyncOpenAI:
@@ -98,19 +113,6 @@ def get_openai_client() -> openai.AsyncOpenAI:
     return _openai_client
 
 
-def get_anthropic_client() -> anthropic.AsyncAnthropic:
-    global _anthropic_client
-    if _anthropic_client is None:
-        settings = GatewaySettings()
-        api_key = settings.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise GatewayError(
-                "Anthropic API key is missing. Set ANTHROPIC_API_KEY in environment or .env.v2"
-            )
-        _anthropic_client = anthropic.AsyncAnthropic(api_key=api_key)
-    return _anthropic_client
-
-
 def clean_json_text(text: str) -> str:
     """Strips markdown code fences and whitespace from response strings."""
     text = text.strip()
@@ -118,6 +120,32 @@ def clean_json_text(text: str) -> str:
     if match:
         text = match.group(1).strip()
     return text
+
+
+@retry(
+    stop=stop_after_attempt(4),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
+    retry=retry_if_exception_type(_RETRYABLE),
+    reraise=True,
+    before_sleep=lambda rs: logger.warning(
+        f"OpenAI transient error (attempt {rs.attempt_number}), retrying in {rs.next_action.sleep:.1f}s"  # type: ignore[union-attr]
+    ),
+)
+async def _chat_with_retry(client: openai.AsyncOpenAI, **kwargs: Any) -> Any:
+    return await client.chat.completions.create(**kwargs)
+
+
+@retry(
+    stop=stop_after_attempt(4),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
+    retry=retry_if_exception_type(_RETRYABLE),
+    reraise=True,
+    before_sleep=lambda rs: logger.warning(
+        f"OpenAI embedding transient error (attempt {rs.attempt_number}), retrying in {rs.next_action.sleep:.1f}s"  # type: ignore[union-attr]
+    ),
+)
+async def _embed_with_retry(client: openai.AsyncOpenAI, **kwargs: Any) -> Any:
+    return await client.embeddings.create(**kwargs)
 
 
 async def call_llm(
@@ -136,7 +164,6 @@ async def call_llm(
     provider = settings.default_provider.lower()
     temp = temperature if temperature is not None else settings.default_temperature
 
-    # Select the model based on tier
     if tier == ModelTier.ROUTING:
         model_name = settings.default_routing_model
     else:
@@ -144,16 +171,6 @@ async def call_llm(
 
     if provider == "openai":
         return await _call_openai(
-            messages=messages,
-            model_name=model_name,
-            tier=tier,
-            response_model=response_model,
-            temperature=temp,
-            max_tokens=max_tokens,
-            system=system,
-        )
-    elif provider == "anthropic":
-        return await _call_anthropic(
             messages=messages,
             model_name=model_name,
             tier=tier,
@@ -216,7 +233,7 @@ async def _call_openai(
     start_time = time.perf_counter()
     try:
         client = get_openai_client()
-        response = await client.chat.completions.create(**api_kwargs)
+        response = await _chat_with_retry(client, **api_kwargs)
     except Exception as e:
         raise GatewayError(f"OpenAI completion request failed: {str(e)}") from e
 
@@ -226,7 +243,6 @@ async def _call_openai(
     prompt_tokens = response.usage.prompt_tokens if response.usage else 0
     completion_tokens = response.usage.completion_tokens if response.usage else 0
 
-    # Pricing calculation
     pricing = PRICING.get(model_name, {"input": 0.0, "output": 0.0})
     try:
         cost = (prompt_tokens * pricing["input"]) + (completion_tokens * pricing["output"])
@@ -248,91 +264,6 @@ async def _call_openai(
         except Exception as e:
             logger.warning(
                 f"OpenAI structured output validation failed for {response_model.__name__}: {e}"
-            )
-            raise GatewayValidationError(
-                f"Failed to validate response against Pydantic schema {response_model.__name__}. "
-                f"Raw content: {content}"
-            ) from e
-
-    return content
-
-
-async def _call_anthropic(
-    messages: list[dict[str, Any]],
-    model_name: str,
-    tier: ModelTier,
-    response_model: type[T] | None,
-    temperature: float,
-    max_tokens: int,
-    system: str | None,
-) -> T | str:
-    anthropic_messages = []
-    system_parts = []
-
-    if system:
-        system_parts.append(system)
-
-    for msg in messages:
-        if msg.get("role") == "system":
-            system_parts.append(msg.get("content", ""))
-        else:
-            anthropic_messages.append({"role": msg.get("role"), "content": msg.get("content")})
-
-    if response_model:
-        schema = json.dumps(response_model.model_json_schema())
-        schema_instruction = (
-            f"\n\nYou must respond with ONLY a valid JSON object matching this schema: {schema}. "
-            "Do not include any other text, markdown, or code fences."
-        )
-        system_parts.append(schema_instruction)
-
-    anthropic_system = "\n\n".join(system_parts) if system_parts else None
-
-    api_kwargs: dict[str, Any] = {
-        "model": model_name,
-        "messages": anthropic_messages,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
-    if anthropic_system:
-        api_kwargs["system"] = anthropic_system
-
-    start_time = time.perf_counter()
-    try:
-        client = get_anthropic_client()
-        response = await client.messages.create(**api_kwargs)
-    except Exception as e:
-        raise GatewayError(f"Anthropic completion request failed: {str(e)}") from e
-
-    latency_ms = int((time.perf_counter() - start_time) * 1000)
-
-    content = response.content[0].text if response.content else ""
-    prompt_tokens = response.usage.input_tokens if response.usage else 0
-    completion_tokens = response.usage.output_tokens if response.usage else 0
-
-    # Pricing calculation
-    pricing = PRICING.get(model_name, {"input": 0.0, "output": 0.0})
-    try:
-        cost = (prompt_tokens * pricing["input"]) + (completion_tokens * pricing["output"])
-        cost_str = f"${cost:.6f}"
-    except Exception:
-        cost = 0.0
-        cost_str = "$0.000000"
-
-    logger.info(
-        f"LLM Call (Anthropic): model={model_name}, tier={tier.value}, "
-        f"input_tokens={prompt_tokens}, output_tokens={completion_tokens}, "
-        f"latency_ms={latency_ms}, cost_usd={cost_str}"
-        + (f", response_model={response_model.__name__}" if response_model else "")
-    )
-
-    if response_model:
-        cleaned_content = clean_json_text(content)
-        try:
-            return response_model.model_validate_json(cleaned_content)
-        except Exception as e:
-            logger.warning(
-                f"Anthropic structured output validation failed for {response_model.__name__}: {e}"
             )
             raise GatewayValidationError(
                 f"Failed to validate response against Pydantic schema {response_model.__name__}. "

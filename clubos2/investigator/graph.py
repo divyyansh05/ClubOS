@@ -2,11 +2,12 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 
+from clubos2.gateway.client import GatewaySettings
 from clubos2.investigator.state import InvestigatorState
 from clubos2.investigator.tools import INVESTIGATOR_TOOLS
 
@@ -20,9 +21,9 @@ def load_system_prompt() -> str:
 
 
 def build_llm():
-    """Build Claude bound with Investigator tools for LangGraph."""
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-6",
+    """Build the Investigator LLM bound with tools for LangGraph."""
+    llm = ChatOpenAI(
+        model=GatewaySettings().investigator_model,
         temperature=0,
         max_tokens=4096,
     )
