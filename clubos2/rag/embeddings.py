@@ -2,10 +2,32 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Any
 
-from openai import AsyncOpenAI
+from openai import APIConnectionError, APITimeoutError, AsyncOpenAI, RateLimitError
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 logger = logging.getLogger("clubos.rag.embeddings")
+
+_RETRYABLE = (RateLimitError, APITimeoutError, APIConnectionError)
+
+
+@retry(
+    stop=stop_after_attempt(4),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
+    retry=retry_if_exception_type(_RETRYABLE),
+    reraise=True,
+    before_sleep=lambda rs: logger.warning(
+        f"OpenAI embedding transient error (attempt {rs.attempt_number}), retrying"
+    ),
+)
+async def _embed_with_retry(client: AsyncOpenAI, **kwargs: Any) -> Any:
+    return await client.embeddings.create(**kwargs)
 
 
 async def embed_texts(texts: list[str]) -> list[list[float]]:
@@ -41,7 +63,8 @@ async def embed_texts(texts: list[str]) -> list[list[float]]:
                 text = text[:32000]
             clean_batch.append(text)
 
-        response = await client.embeddings.create(
+        response = await _embed_with_retry(
+            client,
             input=clean_batch,
             model="text-embedding-3-small",
         )
