@@ -118,5 +118,19 @@ A residual TPM rate-limit error (gpt-4o, 30k tokens/min tier) may cause 1
 question to error out in a run even after all 4 retries. This is treated as
 acceptable if: (a) variance across the 3 runs remains ≤ 2pp, (b) the erroring
 question was already a behavioral failure in error-free runs, and (c) the
-fabrication count remains 0/20. Upgrade to a higher TPM tier or add inter-run
-sleep to eliminate this residual.
+fabrication count remains 0/20. The inter-question sleep (below) addresses
+this for normal eval runs.
+
+## Inter-question pacing (OpenAI Tier 1)
+
+The eval runner sleeps 2 seconds between questions by default. This keeps the
+20-question eval under OpenAI's 30k TPM limit on gpt-4o Tier 1. On higher
+tiers (Tier 3+ gives 800k TPM), pacing can be disabled via
+`--inter-question-sleep 0` or the `v2-eval-fast` Makefile target.
+
+The pacing is scoped to the eval runner ONLY. Production Scout and Investigator
+requests are not throttled.
+
+Trigger to reduce or remove pacing:
+- OpenAI tier upgrade (verified via billing dashboard)
+- Eval runs consistently completing with total_errors=0 at faster pacing

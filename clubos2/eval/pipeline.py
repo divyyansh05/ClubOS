@@ -15,6 +15,7 @@ async def run_full_eval(
     scout_prompt_version: str | None = None,
     output_dir: str = "eval/reports",
     skip_ragas: bool = False,
+    inter_question_sleep_seconds: float = 2.0,
 ) -> Path:
     """Orchestrate: runner -> (RAGAS) -> fabrication -> behavioural -> reporter."""
     from clubos2.gateway.client import GatewaySettings
@@ -31,7 +32,11 @@ async def run_full_eval(
     logger.info(f"Starting full eval: golden={golden_version}, prompt={scout_prompt_version}, skip_ragas={skip_ragas}")
 
     # Step 1: Run the golden set through Scout
-    eval_run = await run_eval(golden_version, scout_prompt_version)
+    eval_run = await run_eval(
+        golden_version,
+        scout_prompt_version,
+        inter_question_sleep_seconds=inter_question_sleep_seconds,
+    )
     logger.info(f"Scout run complete: {eval_run.run_id}, {eval_run.total_errors} errors")
 
     # Step 2: Score in parallel where possible
@@ -87,7 +92,21 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", default="eval/reports")
     parser.add_argument("--skip-ragas", action="store_true", default=False,
                         help="Skip RAGAS LLM-judged scoring (deterministic layers only)")
+    parser.add_argument(
+        "--inter-question-sleep",
+        type=float,
+        default=2.0,
+        help="Seconds to sleep between eval questions (throttle for OpenAI Tier 1 TPM). Default 2.0. Set to 0 to disable.",
+    )
     args = parser.parse_args()
 
-    path = asyncio.run(run_full_eval(args.golden, args.prompt_version, args.output_dir, args.skip_ragas))
+    path = asyncio.run(
+        run_full_eval(
+            args.golden,
+            args.prompt_version,
+            args.output_dir,
+            args.skip_ragas,
+            inter_question_sleep_seconds=args.inter_question_sleep,
+        )
+    )
     print(f"Report written to: {path}")

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import argparse
 import asyncio
 import json
 import logging
@@ -8,7 +9,10 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-async def run_holdout_eval(scout_prompt_version: str | None = None) -> Path:
+async def run_holdout_eval(
+    scout_prompt_version: str | None = None,
+    inter_question_sleep_seconds: float = 2.0,
+) -> Path:
     """Run all holdout questions through the same scoring pipeline as the visible set.
 
     Output is written to eval/reports/holdout/holdout_{timestamp}.md and a JSON sidecar.
@@ -45,7 +49,12 @@ async def run_holdout_eval(scout_prompt_version: str | None = None) -> Path:
         "entries": [],
     }
 
-    for entry in holdout.entries:
+    # Pace eval requests to stay under 30k TPM on gpt-4o Tier 1.
+    # Sleep between questions gives OpenAI's rate limiter time to reset the per-minute window.
+    # Set to 0.0 (or --inter-question-sleep 0) if OpenAI tier is upgraded (Tier 3+ gives 800k TPM).
+    for i, entry in enumerate(holdout.entries):
+        if i > 0 and inter_question_sleep_seconds > 0:
+            await asyncio.sleep(inter_question_sleep_seconds)
         try:
             result = await _score_holdout_entry(entry, scout_prompt_version)
             results["entries"].append(result)
@@ -134,3 +143,23 @@ def compare_visible_vs_holdout(
         "delta": delta,
         "warnings": warnings,
     }
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run ClubOS 2.0 holdout eval set")
+    parser.add_argument("--prompt-version", default=None)
+    parser.add_argument(
+        "--inter-question-sleep",
+        type=float,
+        default=2.0,
+        help="Seconds to sleep between eval questions (throttle for OpenAI Tier 1 TPM). Default 2.0. Set to 0 to disable.",
+    )
+    args = parser.parse_args()
+
+    result = asyncio.run(
+        run_holdout_eval(
+            scout_prompt_version=args.prompt_version,
+            inter_question_sleep_seconds=args.inter_question_sleep,
+        )
+    )
+    print(f"Holdout report: {result}")

@@ -53,6 +53,7 @@ async def run_eval(
     scout_prompt_version: str | None = None,
     parallel: int = 3,
     save_to: str | None = None,
+    inter_question_sleep_seconds: float = 2.0,
 ) -> EvalRun:
     if scout_prompt_version is None:
         from clubos2.gateway.client import GatewaySettings
@@ -89,7 +90,14 @@ async def run_eval(
                     error=str(e),
                 )
 
-    results = list(await asyncio.gather(*[run_one(e) for e in gs.entries]))
+    # Pace eval requests to stay under 30k TPM on gpt-4o Tier 1.
+    # Sleep between questions gives OpenAI's rate limiter time to reset the per-minute window.
+    # Set to 0.0 (or --inter-question-sleep 0) if OpenAI tier is upgraded (Tier 3+ gives 800k TPM).
+    results: list[RunResult] = []
+    for i, entry in enumerate(gs.entries):
+        if i > 0 and inter_question_sleep_seconds > 0:
+            await asyncio.sleep(inter_question_sleep_seconds)
+        results.append(await run_one(entry))
 
     eval_run = EvalRun(
         run_id=run_id,
@@ -118,6 +126,12 @@ if __name__ == "__main__":
     parser.add_argument("--golden", default="v1")
     parser.add_argument("--prompt-version", default=None)
     parser.add_argument("--parallel", type=int, default=3)
+    parser.add_argument(
+        "--inter-question-sleep",
+        type=float,
+        default=2.0,
+        help="Seconds to sleep between eval questions (throttle for OpenAI Tier 1 TPM). Default 2.0. Set to 0 to disable.",
+    )
     args = parser.parse_args()
 
     result = asyncio.run(
@@ -125,6 +139,7 @@ if __name__ == "__main__":
             golden_set_version=args.golden,
             scout_prompt_version=args.prompt_version,
             parallel=args.parallel,
+            inter_question_sleep_seconds=args.inter_question_sleep,
         )
     )
     print(f"Run complete: {result.run_id}")
