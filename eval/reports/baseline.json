@@ -1,8 +1,8 @@
 {
-  "run_id": "eval_2026-07-08T19-04-04.037638",
-  "timestamp": "2026-07-08T19:06:11.168035",
+  "run_id": "eval_2026-07-08T20-04-58.066268",
+  "timestamp": "2026-07-08T20:07:27.881113",
   "golden_set_version": "v1",
-  "scout_prompt_version": "v5",
+  "scout_prompt_version": "v6",
   "total_questions": 20,
   "total_errors": 0,
   "ragas_avg_faithfulness": null,
@@ -17,10 +17,10 @@
   },
   "behavioural_summary": {
     "total": 20,
-    "overall_pass_rate": 0.85,
+    "overall_pass_rate": 0.9,
     "refusal_correct_rate": 1.0,
-    "citation_correct_rate": 0.95,
-    "average_citation_coverage": 0.975
+    "citation_correct_rate": 1.0,
+    "average_citation_coverage": 1.0
   },
   "per_entry": [
     {
@@ -52,7 +52,7 @@
       "question": "What was the net_sales value for eCommerce in November 2025?",
       "question_type": "quantitative",
       "overall_pass": true,
-      "answer_preview": "The net sales value for eCommerce in November 2025 was 4,161,275.12 [source: gold.priority_board].",
+      "answer_preview": "The net_sales value for eCommerce in November 2025 was 4,161,275.12 [source: gold.priority_board].",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -124,7 +124,7 @@
       "question": "What has been the trend for streaming_daily_users over the last available months? Is it going up or down?",
       "question_type": "quantitative",
       "overall_pass": false,
-      "answer_preview": "The trend for streaming_daily_users over the last available months shows an increase. In November 2025, the number of daily active users was 31,762.76, which increased to 37,463.87 in December 2025, a",
+      "answer_preview": "The trend for streaming_daily_users over the last available months shows an increase. In November 2025, the number was 31,762.76, which increased to 37,463.87 in December 2025, and further increased t",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -150,7 +150,7 @@
       "question": "What was the streaming_daily_users value for December 2022?",
       "question_type": "quantitative",
       "overall_pass": true,
-      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover streaming daily users from January 2024 to January 2026. To answer this, I would need data specifically f",
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover streaming_daily_users values for various months in 2024, 2025, and January 2026, but not for December 202",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -174,7 +174,7 @@
       "question": "What does the seasonal Z-score correction account for in the Priority Board scoring system?",
       "question_type": "narrative",
       "overall_pass": true,
-      "answer_preview": "The seasonal Z-score correction in the Priority Board scoring system accounts for the standard post-holiday sales drops in January. Specifically, it adjusts for the typical 12-18% drop in eCommerce ne",
+      "answer_preview": "The seasonal Z-score correction in the Priority Board scoring system accounts for the typical post-holiday dip in eCommerce net sales, which usually drop by 12-18% in January. This adjustment ensures ",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -222,7 +222,7 @@
       "question": "How does the 5-component scoring formula work in the Priority Board? What are the weights?",
       "question_type": "narrative",
       "overall_pass": true,
-      "answer_preview": "The 5-component scoring formula used in the Priority Board calculates the Priority Score, which ranges from 0.00 to 1.00. The weights for each component are fixed as follows: severity (30), persistenc",
+      "answer_preview": "The 5-component scoring formula used in the Priority Board calculates the Priority Score, which ranges from 0.00 to 1.00. The formula uses fixed weights for each component: 30 for severity, 25 for per",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -246,7 +246,7 @@
       "question": "What three validation criteria must a relationship pass to become a published signal in the ClubOS Signal Engine?",
       "question_type": "narrative",
       "overall_pass": true,
-      "answer_preview": "A relationship must pass three validation criteria to become a published signal in the ClubOS Signal Engine: 1) Statistical strength with a Pearson correlation coefficient $r \\ge 0.60$, 2) Temporal pr",
+      "answer_preview": "For a relationship to become a published signal in the ClubOS Signal Engine, it must pass three validation criteria: 1) Statistical strength, with a Pearson correlation coefficient of $r \\ge 0.60$; 2)",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -270,7 +270,7 @@
       "question": "Why is unique_visitors_web considered a leading indicator for net_sales in eCommerce?",
       "question_type": "narrative",
       "overall_pass": true,
-      "answer_preview": "Unique visitors to the web are considered a leading indicator for net sales in eCommerce because there is a validated correlation between these metrics. Specifically, there is a 69% correlation coeffi",
+      "answer_preview": "Unique_visitors_web is considered a leading indicator for net_sales in eCommerce because there is a validated correlation between these two metrics. Specifically, unique web visitors lead net sales by",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -293,8 +293,8 @@
       "entry_id": "gq_012",
       "question": "What is the current conversion_rate_ecommerce and is it a problem this month given seasonal and peer context?",
       "question_type": "mixed",
-      "overall_pass": false,
-      "answer_preview": "The current eCommerce conversion rate for January 2026 is 0.0078755 [source: gold.priority_board]. This rate is relatively low compared to the peer median, with a gap of -0.004662, ranking 4th out of ",
+      "overall_pass": true,
+      "answer_preview": "The current eCommerce conversion rate for January 2026 is 0.0078755 [source: gold.priority_board]. This rate is relatively low compared to previous months and is ranked 4th out of 5 clubs, with a gap ",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -308,10 +308,8 @@
         "fabricated_rate": 0.0
       },
       "behavioural": {
-        "overall_pass": false,
-        "failures": [
-          "Missing citations: ['skills.priority_board']"
-        ]
+        "overall_pass": true,
+        "failures": []
       },
       "error": null
     },
@@ -344,7 +342,7 @@
       "question": "What is the streaming_daily_users value this month, and why might it have changed from the previous month?",
       "question_type": "mixed",
       "overall_pass": true,
-      "answer_preview": "The streaming_daily_users value for January 2026 is 67,457.62 [source: gold.priority_board]. The increase from December 2025, which had 37,463.87 streaming daily users, could be attributed to seasonal",
+      "answer_preview": "The streaming_daily_users value for January 2026 is 67,457.62 [source: gold.priority_board]. This represents an increase from December 2025, where the value was 37,463.87 [source: gold.priority_board]",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -368,7 +366,7 @@
       "question": "How does our eCommerce conversion rate compare to peer clubs, and what should we focus on first based on the Priority Board logic?",
       "question_type": "mixed",
       "overall_pass": true,
-      "answer_preview": "As of the most recent data, Real Madrid's eCommerce conversion rate ranks 4th out of 5 clubs, with a gap to the peer median of -0.004662 [source: gold.priority_board]. According to the Priority Board ",
+      "answer_preview": "Real Madrid's eCommerce conversion rate ranks 4th out of 5 clubs, with a gap to the peer median of -0.004662 [source: gold.priority_board]. According to the Priority Board logic, the eCommerce convers",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -392,7 +390,7 @@
       "question": "How is conversion rate doing this month?",
       "question_type": "ambiguous",
       "overall_pass": true,
-      "answer_preview": "The eCommerce conversion rate for January 2026 is 0.0078755 [source: gold.priority_board].",
+      "answer_preview": "The eCommerce conversion rate for January 2026 is 0.0078755, which is a decrease from previous months. This metric is marked as a high priority on the Priority Board due to its low score [source: gold",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -440,7 +438,7 @@
       "question": "How are visits performing?",
       "question_type": "ambiguous",
       "overall_pass": false,
-      "answer_preview": "Web visits have shown fluctuations over the years. As of November 2025, the total number of web visits was approximately 12,988,371 [source: gold.priority_board]. This is a decrease from June 2023, wh",
+      "answer_preview": "Web visits have shown fluctuations over the years. As of November 2025, the total number of web visits was 12,988,371, which ranks 2nd among 5 clubs, with a gap to the peer median of 6,994,424.75 [sou",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,
@@ -490,7 +488,7 @@
       "question": "What was streaming_daily_users in March 2015?",
       "question_type": "unanswerable",
       "overall_pass": true,
-      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover streaming daily users from March 2024 to January 2026. To answer this, I would need data specifically for",
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover streaming daily users from January 2024 to January 2026. To answer this, I would need data specifically f",
       "trace_url": null,
       "ragas": {
         "faithfulness": null,

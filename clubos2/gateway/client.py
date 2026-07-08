@@ -44,7 +44,7 @@ class GatewaySettings(BaseSettings):
     default_temperature: float = Field(default=0.0)
     guardrail_fabrication_mode: str = "warn"  # 'warn' | 'block'
     scout_prompt_version: str = Field(
-        default="v5",
+        default="v6",
         description=(
             "Active Scout prompt version. Must match the version used to generate "
             "eval/reports/baseline.json — CI gate comparisons are meaningless if "

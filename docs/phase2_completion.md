@@ -60,6 +60,29 @@ Variance: **0.0pp** (perfect stability). Median-of-3 promoted to `baseline.json`
 
 New baseline: **behavioural_pass_rate = 0.850** (up from 0.80 at Phase 2 exit).
 
+## Scout v6 baseline (2026-07-08)
+
+Prompt iterated from v5 → v6. Added mandatory tool-sequencing rule:
+- Mixed questions: MUST call both `query_metrics` AND `search_knowledge`
+- Narrative questions: MUST call `search_knowledge` (required for citation, not just information)
+- Quantitative questions: `search_knowledge` remains optional
+- Unanswerable questions: MUST NOT invent data
+
+3 back-to-back runs, `golden_set_v1`, `scout_prompt_v6`, `--skip-ragas --inter-question-sleep 2`:
+
+| Run | Behavioural | Fabrication | Errors |
+|-----|-------------|-------------|--------|
+| 1   | 0.900       | 0/20        | 0      |
+| 2   | 0.900       | 0/20        | 0      |
+| 3   | 0.900       | 0/20        | 0      |
+
+Variance: **0.0pp**. Median-of-3 promoted to `baseline.json`.
+
+Entry changes (v5 → v6):
+- `gq_012`: FAIL → PASS (was missing `skills.priority_board` citation on mixed question)
+
+New baseline: **behavioural_pass_rate = 0.900** (up from 0.850 on v5, up from 0.80 at Phase 2 exit).
+
 ### Root causes of baseline gaps (not defects in the eval harness)
 
 1. **Missing citations on mixed/quantitative questions (gq_001, gq_012)** — Scout v4 does not always cite `gold_priority_board.csv` when answering mixed questions that combine metric lookup and priority context. Prompt v5 target.
