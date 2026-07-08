@@ -100,3 +100,23 @@ Zero is shippable; non-zero is not.
 - After a significant prompt architecture change (not just wording tweaks)
 
 For routine prompt iteration, deterministic-only is sufficient.
+
+## Baseline stability threshold
+
+Behavioural pass rate is measured as median-of-3 back-to-back deterministic
+runs. Individual run variance up to 2pp is treated as sampling noise from
+LLM tie-breaking on greedy decode. The CI gate compares median-vs-median,
+with regression tolerance of 5pp.
+
+Reproducibility requires:
+1. OpenAI-only stack (OPENAI_API_KEY validated at startup via `_validate_openai_key()`)
+2. Retry-with-backoff on all external API calls (tenacity, 4 attempts, 2-30s exponential)
+3. All golden set metrics present in metric_registry (cross-check via seed.py)
+4. Canonical source form enforced at emission (see commit e5b419c)
+
+A residual TPM rate-limit error (gpt-4o, 30k tokens/min tier) may cause 1
+question to error out in a run even after all 4 retries. This is treated as
+acceptable if: (a) variance across the 3 runs remains ≤ 2pp, (b) the erroring
+question was already a behavioral failure in error-free runs, and (c) the
+fabrication count remains 0/20. Upgrade to a higher TPM tier or add inter-run
+sleep to eliminate this residual.

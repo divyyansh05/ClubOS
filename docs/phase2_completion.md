@@ -29,6 +29,37 @@ Run on `golden_set_v1` with `scout_prompt_v4` — baseline saved at `eval/report
 - Average latency per question: **~7,100 ms** (deterministic scorers sub-second; Scout calls dominate)
 - Total eval run latency: **~90 seconds** (--skip-ragas, parallel=3 semaphore)
 
+## Post-canonical-source-fix baseline (2026-07-08)
+
+Re-established after fixing three environmental noise sources that contaminated
+the Phase 3/4 variance investigation:
+
+1. **Missing metric registry entries** — 3 metrics referenced in golden set
+   (`matchday_ticket_revenue`, `digital_merchandise_revenue`, `social_media_followers`)
+   were not in the DB. Added to seed.py; registry now at 62 entries.
+2. **Anthropic artifacts removed** — Investigator was using `ChatAnthropic` /
+   `claude-sonnet-4-6`. Replaced with `ChatOpenAI` / `gpt-4o`. Gateway cleaned
+   of all Anthropic client code. OPENAI_API_KEY startup validation added.
+3. **Retry logic added** — Tenacity 4-attempt exponential backoff (2-30s) on
+   all OpenAI chat and embedding calls prevents transient 429s from counting
+   as question failures.
+
+3 back-to-back runs, `golden_set_v1`, `scout_prompt_v5`, `--skip-ragas`:
+
+| Run | Behavioural | Fabrication | Errors |
+|-----|-------------|-------------|--------|
+| 1   | 0.850       | 0/20        | 0      |
+| 2   | 0.850       | 0/20        | 0      |
+| 3   | 0.850       | 0/20        | 1†     |
+
+† Run 3 gq_012 hit a persistent TPM rate limit (gpt-4o, 30k TPM) that exhausted
+all 4 retry attempts. gq_012 was a behavioral failure in runs 1 and 2 anyway
+(missing citations). The error replaced a behavioral failure — pass rate unchanged.
+
+Variance: **0.0pp** (perfect stability). Median-of-3 promoted to `baseline.json`.
+
+New baseline: **behavioural_pass_rate = 0.850** (up from 0.80 at Phase 2 exit).
+
 ### Root causes of baseline gaps (not defects in the eval harness)
 
 1. **Missing citations on mixed/quantitative questions (gq_001, gq_012)** — Scout v4 does not always cite `gold_priority_board.csv` when answering mixed questions that combine metric lookup and priority context. Prompt v5 target.
