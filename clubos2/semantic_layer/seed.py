@@ -651,7 +651,32 @@ STUB_METRICS: list[dict[str, Any]] = [
         "polarity": "positive",
         "unit": "users",
     },
-    # Social (4)
+    # Social (7)
+    {
+        "metric_name": "social_media_followers",
+        "business_name": "Social Media Total Followers",
+        "definition": "Total count of followers across all official social media channels.",
+        "platform": "social",
+        "polarity": "positive",
+        "unit": "count",
+    },
+    # Matchday / Revenue (2)
+    {
+        "metric_name": "matchday_ticket_revenue",
+        "business_name": "Matchday Ticket Revenue",
+        "definition": "Total revenue generated from matchday ticket sales, including season tickets and single-match purchases.",
+        "platform": "matchday",
+        "polarity": "positive",
+        "unit": "EUR",
+    },
+    {
+        "metric_name": "digital_merchandise_revenue",
+        "business_name": "Digital Merchandise Revenue",
+        "definition": "Total revenue from digital merchandise sales including licensed digital products and NFTs.",
+        "platform": "ecommerce",
+        "polarity": "positive",
+        "unit": "EUR",
+    },
     {
         "metric_name": "total_engagement",
         "business_name": "Social Total Engagement",
