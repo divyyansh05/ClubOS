@@ -161,6 +161,42 @@ class AgentMemoryRepository:
             self._count_within_sync, agent_name, subject_key, within
         )
 
+    def _list_in_period_sync(
+        self,
+        period_start: datetime,
+        period_end: datetime,
+        subject_key_prefix: str | None = None,
+        limit: int = 200,
+    ) -> list[AgentMemoryRead]:
+        with get_session() as session:
+            q = (
+                session.query(AgentMemoryORM)
+                .filter(
+                    AgentMemoryORM.occurred_at >= period_start,
+                    AgentMemoryORM.occurred_at <= period_end,
+                )
+                .order_by(AgentMemoryORM.occurred_at.desc())
+            )
+            if subject_key_prefix:
+                q = q.filter(AgentMemoryORM.subject_key.like(f"{subject_key_prefix}%"))
+            return [self._to_read(r) for r in q.limit(limit).all()]
+
+    async def list_in_period(
+        self,
+        period_start: datetime,
+        period_end: datetime,
+        subject_key_prefix: str | None = None,
+        limit: int = 200,
+    ) -> list[AgentMemoryRead]:
+        """List memory entries with occurred_at in [period_start, period_end].
+
+        Optionally filter to entries whose subject_key starts with subject_key_prefix.
+        Used by Briefer input assembly to pull recurring-pattern context.
+        """
+        return await asyncio.to_thread(
+            self._list_in_period_sync, period_start, period_end, subject_key_prefix, limit
+        )
+
     async def remember_top_n_presence(
         self,
         metric_names: list[str],
