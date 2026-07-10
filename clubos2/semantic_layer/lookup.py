@@ -214,3 +214,21 @@ def get_disambiguation_rule(metric_name: str) -> str | None:
     """Direct lookup of the disambiguation_rule field."""
     metric = lookup_metric(metric_name)
     return metric.disambiguation_rule if metric else None
+
+
+def get_all_metrics(
+    platform: str | None = None,
+    polarity: str | None = None,
+) -> list[MetricRegistryRead]:
+    """Return all metrics from the registry cache, with optional filters.
+
+    Args:
+        platform: Filter by platform (website, ecommerce, streaming, social, app, fan_app, matchday).
+        polarity: Filter by polarity (positive, negative, neutral).
+    """
+    results = list(_REGISTRY_CACHE.values())
+    if platform:
+        results = [m for m in results if m.platform and platform.lower() in m.platform.lower()]
+    if polarity:
+        results = [m for m in results if m.polarity and polarity.lower() in m.polarity.lower()]
+    return sorted(results, key=lambda m: m.metric_name)

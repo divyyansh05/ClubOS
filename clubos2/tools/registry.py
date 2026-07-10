@@ -18,6 +18,7 @@ __all__ = [
     "KnowledgeChunk",
     "query_metrics",
     "search_knowledge",
+    "list_all_metrics",
 ]
 
 
@@ -348,10 +349,47 @@ async def get_benchmark(metric_name: str, peers: list[str] | None = None) -> dic
     )
 
 
+@traced(name="tool:list_all_metrics", run_type="tool")
+async def list_all_metrics(
+    filter_by_platform: str | None = None,
+    filter_by_polarity: str | None = None,
+) -> list[dict[str, Any]]:
+    """List all metrics currently tracked by ClubOS.
+
+    Use this for meta-questions like 'what metrics do you track?' or
+    'do you have data on X?' — always retrieve the list rather than guessing.
+
+    Args:
+        filter_by_platform: Optional platform filter (website, ecommerce, streaming, social, app, fan_app).
+        filter_by_polarity: Optional polarity filter (positive, negative, neutral).
+
+    Returns:
+        List of metric rows, each tagged with source='metric_registry'.
+    """
+    from clubos2.semantic_layer.lookup import get_all_metrics
+
+    metrics = get_all_metrics(
+        platform=filter_by_platform,
+        polarity=filter_by_polarity,
+    )
+    return [
+        {
+            "metric_name": m.metric_name,
+            "business_name": m.business_name,
+            "definition": m.definition,
+            "platform": m.platform,
+            "unit": m.unit,
+            "source": "metric_registry",
+        }
+        for m in metrics
+    ]
+
+
 # Registry mapping tool names to functions (needed for agent execution)
 TOOL_REGISTRY: dict[str, Callable[..., Coroutine[Any, Any, Any]]] = {
     "query_metrics": query_metrics,
     "search_knowledge": search_knowledge,
     "get_signal": get_signal,
     "get_benchmark": get_benchmark,
+    "list_all_metrics": list_all_metrics,
 }
