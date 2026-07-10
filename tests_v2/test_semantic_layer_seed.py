@@ -15,12 +15,12 @@ def test_seed_basic_population(tmp_path):
 
     # Run seed
     rows_processed = run_seed(dry_run=False, database_url=test_db_url)
-    assert rows_processed == 62
+    assert rows_processed == 76
 
     with get_session(test_db_url) as session:
         # Check that we have exactly 62 rows in the table
         total_rows = session.query(MetricRegistry).count()
-        assert total_rows == 62
+        assert total_rows == 76
 
 
 def test_seed_curated_metrics_non_null(tmp_path):
@@ -94,13 +94,13 @@ def test_seed_idempotency(tmp_path):
     run_seed(dry_run=False, database_url=test_db_url)
     with get_session(test_db_url) as session:
         count_first = session.query(MetricRegistry).count()
-        assert count_first == 62
+        assert count_first == 76
 
     # Run seed a second time
     run_seed(dry_run=False, database_url=test_db_url)
     with get_session(test_db_url) as session:
         count_second = session.query(MetricRegistry).count()
-        assert count_second == 62
+        assert count_second == 76
 
 
 def test_net_sales_seasonal_note(tmp_path):
