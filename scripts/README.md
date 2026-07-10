@@ -1,4 +1,28 @@
-# ClubOS Scheduled Scripts
+# ClubOS Scripts
+
+## discover_gold_metrics.py
+
+Scans Gold-layer CSV files and prints a JSON array of all metric compound names.
+
+```bash
+python scripts/discover_gold_metrics.py > docs/gold_metrics_inventory.json
+```
+
+Run this whenever Gold files change (new platform added, new metric column). The output feeds the CI coverage test.
+
+## diff_gold_vs_registry.py
+
+Compares the Gold inventory against `metric_registry`. Reports which registry metrics fail to resolve to Gold data via GoldClient.
+
+```bash
+python scripts/diff_gold_vs_registry.py
+```
+
+Writes `docs/registry_gap_analysis.json`.
+
+---
+
+# Scheduled Scripts
 
 ## scheduled_monthly_briefing.py
 
