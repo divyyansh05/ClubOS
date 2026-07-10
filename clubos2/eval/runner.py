@@ -11,9 +11,21 @@ from pydantic import BaseModel
 from clubos2.agents.scout import run_scout
 from clubos2.agents.scout_schemas import ScoutAnswer, ScoutInput
 from eval.golden.loader import load_golden_set
-from eval.golden.schema import GoldenEntry, GoldenSet
+from eval.golden.schema import GoldenEntry, GoldenSet, QuestionType
 
 logger = logging.getLogger("clubos.eval.runner")
+
+# Only these types are run through Scout. Other types (watchdog_run, investigation,
+# supervisor_routing, briefer_run) have dedicated scorers in the pipeline.
+_SCOUT_RUNNABLE_TYPES = {
+    QuestionType.QUANTITATIVE,
+    QuestionType.NARRATIVE,
+    QuestionType.MIXED,
+    QuestionType.AMBIGUOUS,
+    QuestionType.UNANSWERABLE,
+    QuestionType.WATCHDOG_RUN,
+    QuestionType.INVESTIGATION,
+}
 
 
 class RunResult(BaseModel):
@@ -60,6 +72,7 @@ async def run_eval(
         scout_prompt_version = GatewaySettings().scout_prompt_version
         logger.info(f"Eval pipeline using scout_prompt_version={scout_prompt_version}")
     gs = load_golden_set(golden_set_version)
+    scout_entries = [e for e in gs.entries if e.question_type in _SCOUT_RUNNABLE_TYPES]
     run_id = f"eval_{datetime.utcnow().isoformat().replace(':', '-')}"
     semaphore = asyncio.Semaphore(parallel)
 
@@ -94,7 +107,7 @@ async def run_eval(
     # Sleep between questions gives OpenAI's rate limiter time to reset the per-minute window.
     # Set to 0.0 (or --inter-question-sleep 0) if OpenAI tier is upgraded (Tier 3+ gives 800k TPM).
     results: list[RunResult] = []
-    for i, entry in enumerate(gs.entries):
+    for i, entry in enumerate(scout_entries):
         if i > 0 and inter_question_sleep_seconds > 0:
             await asyncio.sleep(inter_question_sleep_seconds)
         results.append(await run_one(entry))

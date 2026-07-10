@@ -269,3 +269,118 @@ The v2 golden set contains exactly 30 entries, distributed as follows:
 | **Total** | **30** | |
 
 The original 20 entries from v1 are preserved verbatim in v2. The 10 new entries (gq_021–gq_030) extend coverage to the Watchdog agent and alert-aware Scout behaviour.
+
+---
+
+## Section 9: The `supervisor_routing` Question Type (v4)
+
+`supervisor_routing` entries test the hybrid supervisor's dispatch decisions — whether the deterministic classifier routes a query to the right agent, and whether complex queries correctly fall through to the LangGraph supervisor.
+
+### When to use `supervisor_routing`
+
+Use this type when testing:
+- Classifier precision (does "what is metric X" route to Scout with high confidence?)
+- Briefer dispatch (does "monthly summary" reach the Briefer?)
+- Investigator dispatch (does "why did alert alrt_X fire" extract the alert_id and route correctly?)
+- LangGraph fallthrough (does a complex or ambiguous query correctly reach the supervisor?)
+
+### The `scenario_setup` field
+
+For most `supervisor_routing` entries, `scenario_setup` is minimal (e.g., "metric must exist in registry"). For entries that test the investigator dispatch path, seed the specific alert in `watchdog_alerts` so `get_by_id` returns it.
+
+### How to write `expected_answer_facts` for `supervisor_routing`
+
+Facts are assertions about fields in `SupervisorResponse`. Write them as short strings the scorer can parse:
+
+```yaml
+expected_answer_facts:
+  - "dispatch_path=direct_scout"
+  - "classification.agent=scout"
+  - "classification.confidence=high"
+  - "error is null"
+```
+
+Supported patterns:
+- `dispatch_path=<value>` — exact match on `result.dispatch_path`
+- `classification.agent=<value>` — agent field in classification dict
+- `classification.confidence=<value>` — confidence field
+- `classification.extracted_params contains alert_id=<value>` — param extraction
+- `plan.steps>=<N>` — number of steps in the LangGraph plan (for langgraph_supervisor path)
+- `error is null` — no error field in response
+- `dispatch_path in [<v1>, <v2>]` — acceptable set of values (for ambiguous queries)
+
+---
+
+## Section 10: The `briefer_run` Question Type (v4)
+
+`briefer_run` entries test the Briefer agent's end-to-end output — whether it correctly assembles source material, generates a coherent briefing, persists it, and respects the dedup cache.
+
+### When to use `briefer_run`
+
+Use this type when testing:
+- Normal monthly briefing generation
+- Dedup cache hit (same scope_key within freshness window returns was_cached=True)
+- force_regenerate bypass
+- Empty-period handling ("no investigations occurred" briefing)
+- Metric-focus filtering (only the target metric's investigations appear)
+- Incident recap focused on a single alert
+- Confidence language differentiation (high vs medium vs low)
+- Anti-fabrication (no invented themes connecting unrelated investigations)
+
+### The `scenario_setup` field
+
+Every `briefer_run` entry MUST include a `scenario_setup` string describing the exact DB state to seed before running. This includes:
+- Investigations to insert (metric_name, confidence, completed status)
+- Alerts to seed if relevant
+- Any pre-existing briefings to insert (for cache-hit tests)
+- The `scope_key` and `briefing_type` to use for the `BriefingInput`
+
+### How to write `expected_answer_facts` for `briefer_run`
+
+Facts are assertions about fields in `BriefingRunResult` or `BriefingContent`:
+
+```yaml
+expected_answer_facts:
+  - "status=completed"
+  - "was_cached=false"
+  - "executive_summary is non-empty"
+  - "investigations_referenced list length >= 3"
+  - "citations list non-empty"
+```
+
+Supported patterns:
+- `status=<value>` — completed / cached / failed
+- `was_cached=<true|false>`
+- `executive_summary is non-empty` — non-empty string check
+- `briefing_id matches first call` — same ID as prior cached entry
+- `briefing_id does not match prior cached briefing_id` — new ID generated
+- `investigations_referenced list length >= N`
+- `investigations_referenced list is empty`
+- `alerts_referenced list non-empty`
+- `citations list non-empty`
+- `scope_key=<value>` — exact scope_key match
+- `scope_key starts with <prefix>`
+- `metrics_covered contains <metric_name>`
+- `body_markdown contains <phrase>` — substring check on markdown body
+- `error is null`
+
+---
+
+## Section 11: Updated Distribution (v4 — 60 Visible Questions)
+
+The v4 golden set contains exactly 60 visible entries, distributed as follows:
+
+| Type | Count | Rationale |
+|---|---|---|
+| QUANTITATIVE | 7 | Covers top metrics plus edge cases |
+| NARRATIVE | 7 | Skill-file retrieval including Phase 3 additions |
+| MIXED | 5 | Multi-tool stakeholder queries |
+| AMBIGUOUS | 3 | Disambiguation logic tests |
+| UNANSWERABLE | 3 | Refusal discipline tests |
+| WATCHDOG_RUN | 5 | Watchdog deterministic output scenarios |
+| INVESTIGATION | 10 | Investigator end-to-end scenarios (new in v3) |
+| SUPERVISOR_ROUTING | 10 | Classifier + dispatch path decisions (new in v4) |
+| BRIEFER_RUN | 10 | Briefer end-to-end output + cache behaviour (new in v4) |
+| **Total** | **60** | |
+
+Holdout set stays at 10 entries (`holdout_set_v1.yaml`). Do not add holdout entries until Phase 6.

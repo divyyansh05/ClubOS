@@ -30,7 +30,7 @@ def load_holdout_set(version: str = "v1") -> GoldenSet:
     holdout = GoldenSet.model_validate(data)
 
     # Sanity check: no ID overlap
-    visible = load_golden_set("v3")
+    visible = load_golden_set("v4")
     visible_ids = {e.id for e in visible.entries}
     holdout_ids = {e.id for e in holdout.entries}
     overlap = visible_ids & holdout_ids

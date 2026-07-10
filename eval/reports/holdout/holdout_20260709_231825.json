@@ -1,0 +1,88 @@
+{
+  "timestamp": "20260709_231825",
+  "total": 10,
+  "entries": [
+    {
+      "id": "h_001",
+      "type": "quantitative",
+      "status": "answered",
+      "answer_length": 342,
+      "num_citations": 4
+    },
+    {
+      "id": "h_002",
+      "type": "quantitative",
+      "status": "answered",
+      "answer_length": 404,
+      "num_citations": 4
+    },
+    {
+      "id": "h_003",
+      "type": "narrative",
+      "status": "answered",
+      "answer_length": 385,
+      "num_citations": 2
+    },
+    {
+      "id": "h_004",
+      "type": "narrative",
+      "status": "answered",
+      "answer_length": 465,
+      "num_citations": 3
+    },
+    {
+      "id": "h_005",
+      "type": "mixed",
+      "status": "answered",
+      "answer_length": 339,
+      "num_citations": 0
+    },
+    {
+      "id": "h_006",
+      "type": "unanswerable",
+      "status": "answered",
+      "answer_length": 295,
+      "num_citations": 1
+    },
+    {
+      "id": "h_007",
+      "type": "ambiguous",
+      "status": "answered",
+      "answer_length": 606,
+      "num_citations": 2
+    },
+    {
+      "id": "h_008",
+      "type": "investigation",
+      "status": "fail",
+      "facts_satisfied": [],
+      "facts_failed": [
+        "uses get_peer_benchmark tool",
+        "uses get_metric_definition tool",
+        "confidence in [low, medium, high]"
+      ]
+    },
+    {
+      "id": "h_009",
+      "type": "investigation",
+      "status": "fail",
+      "facts_satisfied": [],
+      "facts_failed": [
+        "uses get_metric_definition tool",
+        "uses query_metrics tool",
+        "confidence in [medium, high]"
+      ]
+    },
+    {
+      "id": "h_010",
+      "type": "investigation",
+      "status": "fail",
+      "facts_satisfied": [],
+      "facts_failed": [
+        "cites watchdog_alerts",
+        "investigation completes",
+        "cause_hypothesis non-empty"
+      ]
+    }
+  ]
+}

@@ -22,10 +22,12 @@ def load_system_prompt() -> str:
 
 def build_llm():
     """Build the Investigator LLM bound with tools for LangGraph."""
+    settings = GatewaySettings()
     llm = ChatOpenAI(
-        model=GatewaySettings().investigator_model,
+        model=settings.investigator_model,
         temperature=0,
         max_tokens=4096,
+        api_key=settings.openai_api_key or None,
     )
     return llm.bind_tools(INVESTIGATOR_TOOLS)
 
@@ -72,10 +74,10 @@ def should_continue(state: InvestigatorState) -> str:
     return "end"
 
 
-def tool_node_wrapper(state: InvestigatorState) -> dict:
+async def tool_node_wrapper(state: InvestigatorState) -> dict:
     """Execute tools and track tool calls + reasoning trace."""
     base_tool_node = ToolNode(INVESTIGATOR_TOOLS)
-    result = base_tool_node.invoke(state)
+    result = await base_tool_node.ainvoke(state)
 
     last_ai_msg = state["messages"][-1]
     new_tools_called = list(state["tools_called"])

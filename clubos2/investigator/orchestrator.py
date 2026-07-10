@@ -81,11 +81,7 @@ async def run_investigation(input: InvestigatorInput) -> InvestigationRunResult:
     )
     investigation_id = investigation.investigation_id
 
-    # 3. Build graph with checkpointer
-    checkpointer = get_checkpointer()
-    graph = build_graph(checkpointer=checkpointer)
-
-    # 4. Run the graph
+    # 3–4. Build graph with async checkpointer and run
     initial_state: InvestigatorState = {
         "alert_id": input.alert_id,
         "metric_name": input.metric_name,
@@ -101,7 +97,9 @@ async def run_investigation(input: InvestigatorInput) -> InvestigationRunResult:
     config = {"configurable": {"thread_id": investigation_id}}
 
     try:
-        final_state = await graph.ainvoke(initial_state, config=config)
+        async with get_checkpointer() as checkpointer:
+            graph = build_graph(checkpointer=checkpointer)
+            final_state = await graph.ainvoke(initial_state, config=config)
     except Exception as e:
         latency = time.perf_counter() - started_at
         logger.exception(f"Investigation {investigation_id} crashed")

@@ -70,8 +70,40 @@ async def run_full_eval(
             f"/{len(investigation_results)} passed"
         )
 
+    # Step 2c: Run supervisor routing scenarios
+    supervisor_entries = [e for e in gs.entries if e.question_type == QuestionType.SUPERVISOR_ROUTING]
+    supervisor_results = []
+    for entry in supervisor_entries:
+        from clubos2.eval.supervisor_scorer import run_supervisor_scenario
+        result = await run_supervisor_scenario(entry)
+        supervisor_results.append(result)
+
+    if supervisor_results:
+        logger.info(
+            f"Supervisor routing scenarios complete: {sum(1 for r in supervisor_results if r.overall_pass)}"
+            f"/{len(supervisor_results)} passed"
+        )
+
+    # Step 2d: Run briefer scenarios
+    briefer_entries = [e for e in gs.entries if e.question_type == QuestionType.BRIEFER_RUN]
+    briefer_results = []
+    for entry in briefer_entries:
+        from clubos2.eval.briefer_scorer import run_briefer_scenario
+        result = await run_briefer_scenario(entry)
+        briefer_results.append(result)
+
+    if briefer_results:
+        logger.info(
+            f"Briefer scenarios complete: {sum(1 for r in briefer_results if r.overall_pass)}"
+            f"/{len(briefer_results)} passed"
+        )
+
     # Step 3: Generate report
-    report = generate_report(eval_run, ragas, fabrication, behavioural, gs)
+    report = generate_report(
+        eval_run, ragas, fabrication, behavioural, gs,
+        supervisor_results=supervisor_results or None,
+        briefer_results=briefer_results or None,
+    )
     output_path = Path(output_dir) / f"{eval_run.run_id}.md"
     render_markdown(report, output_path)
 

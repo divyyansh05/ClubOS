@@ -1,22 +1,22 @@
 from __future__ import annotations
-import sqlite3
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncIterator
 
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 
-def get_checkpointer(path: str | None = None) -> SqliteSaver:
-    """Returns a configured SqliteSaver for the Investigator graph.
+@asynccontextmanager
+async def get_checkpointer(path: str | None = None) -> AsyncIterator[AsyncSqliteSaver]:
+    """Async context manager yielding an AsyncSqliteSaver for the Investigator graph.
 
-    Args:
-        path: Override default path. None = ./var/clubos_investigator_checkpoints.sqlite.
-
-    The checkpointer persists graph state at every node transition. If an investigation
-    is interrupted, the next call with the same thread_id resumes from last checkpoint.
+    Usage:
+        async with get_checkpointer() as checkpointer:
+            graph = build_graph(checkpointer=checkpointer)
+            ...
     """
     if path is None:
         path = "./var/clubos_investigator_checkpoints.sqlite"
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-
-    conn = sqlite3.connect(path, check_same_thread=False)
-    return SqliteSaver(conn)
+    async with AsyncSqliteSaver.from_conn_string(path) as saver:
+        yield saver

@@ -13,6 +13,8 @@ class QuestionType(str, Enum):
     UNANSWERABLE = "unanswerable"
     WATCHDOG_RUN = "watchdog_run"
     INVESTIGATION = "investigation"
+    SUPERVISOR_ROUTING = "supervisor_routing"  # tests classifier + dispatch path decisions
+    BRIEFER_RUN = "briefer_run"                # tests Briefer end-to-end output
 
 
 class ExpectedConfidence(str, Enum):

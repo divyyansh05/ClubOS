@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -112,6 +113,22 @@ async def run_watchdog(
         # Step 7: persist alerts
         persisted = await alerts_repo.create_batch(to_persist)
         alert_ids = [a.alert_id for a in persisted]
+
+        # Step 7b: auto-trigger Investigator for critical alerts (fire-and-forget)
+        from clubos2.watchdog.alerts_schema import AlertSeverity as _AS
+        for _alert in persisted:
+            if _alert.severity in (_AS.CRITICAL.value, _AS.CRITICAL):
+                try:
+                    from clubos2.investigator.orchestrator import run_investigation
+                    from clubos2.investigator.agent_schemas import InvestigatorInput
+                    asyncio.create_task(run_investigation(InvestigatorInput(
+                        alert_id=_alert.alert_id,
+                        metric_name=_alert.metric_name,
+                        triggered_by="watchdog:auto_trigger",
+                    )))
+                    logger.info(f"Auto-triggered Investigator for critical alert {_alert.alert_id}")
+                except Exception as _e:
+                    logger.warning(f"Failed to auto-trigger Investigator for {_alert.alert_id}: {_e}")
 
         # Step 8a: record alert_fired memories (for dedup on future runs)
         for alert in persisted:

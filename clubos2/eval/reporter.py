@@ -31,6 +31,10 @@ class EvalReport(BaseModel):
     fabrication_summary: dict
     behavioural_summary: dict
 
+    # Phase 5 new scorer aggregates (None when no entries of that type)
+    supervisor_routing_pass_rate: float | None = None
+    briefer_run_pass_rate: float | None = None
+
     # Per-entry details
     per_entry: list[dict]
 
@@ -41,6 +45,8 @@ def generate_report(
     fabrication: list[FabricationScore],
     behavioural: list[BehaviouralScore],
     golden_set: GoldenSet,
+    supervisor_results: list | None = None,
+    briefer_results: list | None = None,
 ) -> EvalReport:
     """Combine all scores into a single report object."""
     fab_summary = aggregate_fabrication(fabrication)
@@ -100,6 +106,17 @@ def generate_report(
             "error": result.error,
         })
 
+    sup_pass_rate = (
+        sum(1 for r in supervisor_results if r.overall_pass) / len(supervisor_results)
+        if supervisor_results
+        else None
+    )
+    brf_pass_rate = (
+        sum(1 for r in briefer_results if r.overall_pass) / len(briefer_results)
+        if briefer_results
+        else None
+    )
+
     return EvalReport(
         run_id=eval_run.run_id,
         timestamp=eval_run.timestamp,
@@ -112,6 +129,8 @@ def generate_report(
         ragas_avg_answer_relevance=ragas_avg_ans,
         fabrication_summary=fab_summary,
         behavioural_summary=behav_summary,
+        supervisor_routing_pass_rate=sup_pass_rate,
+        briefer_run_pass_rate=brf_pass_rate,
         per_entry=per_entry,
     )
 

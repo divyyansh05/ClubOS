@@ -4,23 +4,23 @@ import tempfile
 import pytest
 
 
-def test_get_checkpointer_creates_file():
+@pytest.mark.asyncio
+async def test_get_checkpointer_creates_file():
     from clubos2.investigator.checkpointer import get_checkpointer
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "test_checkpoints.sqlite")
-        cp = get_checkpointer(path=db_path)
+        async with get_checkpointer(path=db_path) as cp:
+            # AsyncSqliteSaver creates the file when the context is entered
+            assert cp is not None
         assert os.path.exists(db_path)
-        cp.conn.close()
 
 
-def test_get_checkpointer_default_path_creates_var_dir():
+@pytest.mark.asyncio
+async def test_get_checkpointer_default_path_creates_var_dir():
     from clubos2.investigator.checkpointer import get_checkpointer
-    # Default path is ./var/clubos_investigator_checkpoints.sqlite
-    # Just verify it returns a SqliteSaver without error
-    cp = get_checkpointer()
-    from langgraph.checkpoint.sqlite import SqliteSaver
-    assert isinstance(cp, SqliteSaver)
-    cp.conn.close()
+    from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+    async with get_checkpointer() as cp:
+        assert isinstance(cp, AsyncSqliteSaver)
 
 
 @pytest.mark.asyncio
