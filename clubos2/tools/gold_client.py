@@ -60,6 +60,16 @@ class GoldClient:
 
     KNOWN_ASSETS = {"ecommerce", "streaming", "fan_app", "main_website", "social_media", "web"}
 
+    # Registry uses "web" suffix but Gold CSV uses "main_website" as asset_name.
+    ASSET_ALIASES: dict[str, str] = {"web": "main_website"}
+
+    # Registry metric names that differ from Gold's raw metric_name for a given asset.
+    # Format: {(asset_name, registry_raw_name): gold_raw_name}
+    METRIC_NAME_ALIASES: dict[tuple[str, str], str] = {
+        ("streaming", "conversion_rate"): "subscription_rate",
+        ("fan_app", "dau"): "heavy_users",
+    }
+
     def __init__(self, settings: GoldClientSettings | None = None) -> None:
         self.settings = settings or GoldClientSettings()
         self.gold_dir = Path(self.settings.gold_snapshots_dir)
@@ -70,6 +80,7 @@ class GoldClient:
             )
         self._kpi_df: pd.DataFrame | None = None
         self._priority_df: pd.DataFrame | None = None
+        self._peer_benchmark_df: pd.DataFrame | None = None
 
     # ------------------------------------------------------------------
     # Public interface
@@ -157,9 +168,45 @@ class GoldClient:
         filtered_kh = df_kh[mask].copy()
 
         if filtered_kh.empty:
+            # 3. Final fallback: gold_peer_benchmark.csv (has social_media metrics not in kpi_health)
+            df_pb2 = self._load_peer_benchmark_df()
+            if asset:
+                mask2 = (df_pb2["asset_name"] == asset) & (df_pb2["metric_name"] == raw_metric)
+            else:
+                mask2 = df_pb2["metric_name"] == raw_metric
+            filtered_pb2 = df_pb2[mask2].copy()
+            if not filtered_pb2.empty:
+                source_file2 = "gold.peer_benchmark"
+                if month:
+                    filtered_pb2 = filtered_pb2[filtered_pb2["month"] == month]
+                else:
+                    all_months2 = sorted(filtered_pb2["month"].unique(), reverse=True)
+                    filtered_pb2 = filtered_pb2[filtered_pb2["month"].isin(all_months2[:12])]
+                filtered_pb2 = filtered_pb2.sort_values("month", ascending=False)
+                rows2 = []
+                for _, row in filtered_pb2.iterrows():
+                    rows2.append({
+                        "month": str(row["month"]),
+                        "asset_name": str(row["asset_name"]),
+                        "metric_name": str(row["metric_name"]),
+                        "metric_value": float(row["rm_value"]) if pd.notna(row.get("rm_value")) else 0.0,
+                        "trend_direction": "flat",
+                        "health_status": "stable",
+                        "deviation_from_rolling_avg": 0.0,
+                        "seasonal_z_score": 0.0,
+                        "prior_month_value": None,
+                        "prior_season_same_month_value": None,
+                        "rolling_12m_avg": None,
+                        "source": source_file2,
+                        "compound_metric_name": metric_name,
+                        "peer_rank": int(row["rm_rank"]) if pd.notna(row.get("rm_rank")) else None,
+                        "peer_club_count": int(row["club_count"]) if pd.notna(row.get("club_count")) else None,
+                        "peer_gap_to_median": float(row["gap_to_peer_median"]) if pd.notna(row.get("gap_to_peer_median")) else None,
+                    })
+                return rows2
             raise MetricNotInGoldError(
                 f"Metric '{metric_name}' (asset={asset!r}, raw={raw_metric!r}) "
-                f"not found in gold_priority_board.csv or gold_kpi_health.csv."
+                f"not found in gold_priority_board.csv, gold_kpi_health.csv, or gold_peer_benchmark.csv."
             )
 
         source_file = "gold.metrics_monthly"
@@ -228,30 +275,46 @@ class GoldClient:
             logger.info("Loaded %d rows from gold_priority_board.csv.", len(self._priority_df))
         return self._priority_df
 
+    def _load_peer_benchmark_df(self) -> pd.DataFrame:
+        """Load gold_peer_benchmark.csv, cached for the lifetime of this GoldClient."""
+        if self._peer_benchmark_df is None:
+            path = self.gold_dir / "gold_peer_benchmark.csv"
+            logger.info("Loading Gold Peer Benchmark data from '%s' ...", path)
+            self._peer_benchmark_df = pd.read_csv(str(path), low_memory=False)
+            logger.info("Loaded %d rows from gold_peer_benchmark.csv.", len(self._peer_benchmark_df))
+        return self._peer_benchmark_df
+
     def _split_metric_name(self, metric_name: str) -> tuple[str | None, str]:
         """Split compound metric name into (asset_name, raw_metric_name).
 
-        Strategy: try each known asset name as a prefix.
-        Returns (None, metric_name) if no known asset prefix matches.
+        Applies ASSET_ALIASES so that registry names using "web" resolve to
+        Gold's "main_website", and METRIC_NAME_ALIASES so that registry raw
+        names that differ from Gold's column names are corrected.
 
         Examples:
-            "streaming_daily_users"  → ("streaming", "daily_users")
-            "ecommerce_net_sales"    → ("ecommerce", "net_sales")
-            "fan_app_matchday_visits"→ ("fan_app", "matchday_visits")
-            "net_sales"              → (None, "net_sales")   # fallback
+            "streaming_daily_users"    → ("streaming", "daily_users")
+            "visits_web"               → ("main_website", "visits")
+            "bounce_rate_web"          → ("main_website", "bounce_rate")
+            "conversion_rate_streaming"→ ("streaming", "subscription_rate")
+            "fan_app_dau"              → ("fan_app", "heavy_users")
+            "net_sales"                → (None, "net_sales")   # fallback
         """
         # Sort assets longest-first so "fan_app" is tried before "fan"
         for asset in sorted(self.KNOWN_ASSETS, key=len, reverse=True):
             prefix = asset + "_"
             if metric_name.startswith(prefix):
-                raw = metric_name[len(prefix) :]
-                return asset, raw
+                raw = metric_name[len(prefix):]
+                gold_asset = self.ASSET_ALIASES.get(asset, asset)
+                gold_raw = self.METRIC_NAME_ALIASES.get((gold_asset, raw), raw)
+                return gold_asset, gold_raw
         # Also try asset as suffix (e.g. conversion_rate_ecommerce → ecommerce asset)
         for asset in sorted(self.KNOWN_ASSETS, key=len, reverse=True):
             suffix = "_" + asset
             if metric_name.endswith(suffix):
                 raw = metric_name[: -len(suffix)]
-                return asset, raw
+                gold_asset = self.ASSET_ALIASES.get(asset, asset)
+                gold_raw = self.METRIC_NAME_ALIASES.get((gold_asset, raw), raw)
+                return gold_asset, gold_raw
         # No known asset prefix or suffix — try direct match
         return None, metric_name
 

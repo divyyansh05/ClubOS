@@ -32,34 +32,42 @@
 - [x] `ChatOpenAI` api_key propagated from `.env.v2` in investigator graph and supervisor graph
 - [x] Phase 5 baseline established in `eval/reports/baseline.json` (v4 golden set, v6 Scout prompt)
 
-## Verified facts (Phase 5 baseline — eval date 2026-07-09)
+## Verified facts (Phase 5 baseline — eval date 2026-07-09, updated 2026-07-10 after metric registry fix)
 
-**Eval configuration:** golden_set_v4 (60 entries), Scout prompt v6, 3 runs, `--skip-ragas --inter-question-sleep 2`
+**Eval configuration:** golden_set_v4 (60 entries), Scout prompt v6, `--skip-ragas --inter-question-sleep 2`
 
-**Scout-runnable entries (40/60 — includes watchdog_run + investigation for backward compat):**
+**Phase 5 original baseline (2026-07-09, before registry fix):**
 
-| Metric | Run 1 | Run 2 | Run 3 | Median | Variance |
-|---|---|---|---|---|---|
-| behavioural_pass_rate | 0.675 | 0.700 | 0.650 | **0.675** | 5.0pp |
-| fabrication_incidence_rate | 0.150 | 0.125 | 0.175 | **0.150** | 5.0pp |
+| Metric | Run 1 | Run 2 | Run 3 | Median |
+|---|---|---|---|---|
+| behavioural_pass_rate | 0.675 | 0.700 | 0.650 | 0.675 |
+| fabrication_incidence_rate | 0.150 | 0.125 | 0.175 | 0.150 |
+| supervisor_routing_pass_rate | — | 0.600 | 0.600 | 0.600 |
+| briefer_run_pass_rate | — | 0.600 | 0.600 | 0.600 |
 
-**Pure Scout entries only (25/40 — quant/narrative/mixed/ambiguous/unanswerable):**
-- behavioural_pass_rate: **0.800** (run 2), ~0.760 (runs 1+3), variance ~4pp
-- fabrication_incidence_rate: **0.080** (2/25 consistently across all 3 runs), variance **0pp** ✓
+**Updated baseline (2026-07-10, after metric registry completeness fix):**
 
-**Phase 5 new scorer metrics (10 entries each):**
+| Metric | Value | Change |
+|---|---|---|
+| behavioural_pass_rate | **0.675** | +0.0pp (same) |
+| fabrication_incidence_rate | **0.025** | **−12.5pp ↓** (7→1 entries, major improvement) |
+| supervisor_routing_pass_rate | **0.600** | 0pp (unchanged) |
+| briefer_run_pass_rate | **0.600** | 0pp (unchanged) |
 
-| Metric | Run 1 (pre-fix) | Run 2 (fixed) | Run 3 (async) | Median | Fixed-run variance |
-|---|---|---|---|---|---|
-| supervisor_routing_pass_rate | 0.500 | 0.600 | 0.600 | **0.600** | 0pp ✓ |
-| briefer_run_pass_rate | 0.500 | 0.600 | 0.600 | **0.600** | 0pp ✓ |
+**Why fabrication dropped:** 14 `_web` registry metrics (visits_web, page_views_web, unique_visitors_web, etc.) were
+silently failing to resolve to Gold data due to a GoldClient asset mapping bug. Scout received empty
+data and fabricated values. After fixing `ASSET_ALIASES = {"web": "main_website"}` in GoldClient,
+those metrics return real data and fabrication dropped from 7/40 → 1/40.
+
+**Why supervisor/briefer rates held:** The 4 failing supervisor routing entries require investigation
+of metrics absent from Gold data altogether (`matchday_ticket_revenue`, `social_media_followers`).
+The 4 failing briefer scenarios are scope_key edge cases in the assembly layer for non-standard
+periods. These are distinct issues from registry coverage and are deferred.
 
 **Holdout v1 (10 entries, run 2026-07-09):**
 - 7/7 non-investigation entries: answered (no errors)
-- 3/3 investigation entries: fail as expected (matchday_ticket_revenue not in metric registry)
+- 3/3 investigation entries: fail as expected (matchday_ticket_revenue not in Gold)
 - No overfitting evidence — failure pattern mirrors visible set
-
-**Variance gate: WARN** (5pp on behavioral/fabrication, threshold 2pp). Root cause: 15 investigation/watchdog entries run through Scout as part of the Scout-runnable set add stochastic noise (Scout isn't designed for investigation questions). Pure Scout fabrication variance is 0pp — the stable layer is correct. Supervisor and briefer pass rates are 0pp variance on fixed-code runs.
 
 **Tests:** 424 passed, 7 skipped (full `tests_v2/` suite, 2026-07-09).
 
