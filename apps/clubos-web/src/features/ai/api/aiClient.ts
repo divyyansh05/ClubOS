@@ -2,6 +2,7 @@ import { AI_ENDPOINTS } from './endpoints';
 import type {
   SupervisorRequest,
   SupervisorResponse,
+  WatchdogAlertRead,
   WatchdogRunRequest,
   WatchdogRunResponse,
   AlertsListResponse,
@@ -63,6 +64,12 @@ export const aiClient = {
       unacknowledged_only?: boolean;
     } = {}): Promise<AlertsListResponse> =>
       get(AI_ENDPOINTS.watchdog.alerts + buildQuery(params)),
+
+    // No dedicated GET /alerts/{id} endpoint — fetch list and find by ID
+    getAlertById: async (alertId: string): Promise<WatchdogAlertRead | null> => {
+      const resp = await get<AlertsListResponse>(AI_ENDPOINTS.watchdog.alerts + '?limit=200');
+      return resp.alerts.find((a) => a.alert_id === alertId) ?? null;
+    },
 
     acknowledgeAlert: (alertId: string, acknowledgedBy: string): Promise<AcknowledgeResponse> =>
       post(AI_ENDPOINTS.watchdog.acknowledge(alertId), { acknowledged_by: acknowledgedBy }),
