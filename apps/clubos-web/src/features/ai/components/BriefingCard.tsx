@@ -76,7 +76,7 @@ export function BriefingCard({ briefing, isCached }: { briefing: BriefingRead; i
           {briefing.latency_seconds != null && (
             <span>{briefing.latency_seconds.toFixed(1)}s</span>
           )}
-          {briefing.cost_usd != null && (
+          {briefing.cost_usd != null && briefing.cost_usd > 0 && (
             <span>${briefing.cost_usd.toFixed(4)}</span>
           )}
           <span className="ml-auto text-stone-300 dark:text-stone-600 group-hover:text-info-light dark:group-hover:text-info-dark transition-colors">→</span>

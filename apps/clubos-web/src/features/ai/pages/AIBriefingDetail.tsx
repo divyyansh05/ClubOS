@@ -130,7 +130,7 @@ export default function AIBriefingDetail() {
         <div className="flex flex-wrap gap-4 font-mono text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-500 pt-1">
           {briefing.latency_seconds != null && <span>{briefing.latency_seconds.toFixed(1)}s</span>}
           {briefing.total_tokens != null && <span>{briefing.total_tokens.toLocaleString()} tokens</span>}
-          {briefing.cost_usd != null && <span>${briefing.cost_usd.toFixed(4)}</span>}
+          {briefing.cost_usd != null && briefing.cost_usd > 0 && <span>${briefing.cost_usd.toFixed(4)}</span>}
           {briefing.completed_at && (
             <span>Generated {new Date(briefing.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           )}
