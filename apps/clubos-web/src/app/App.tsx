@@ -11,6 +11,7 @@ import SocialIntelligencePage from "../features/social/SocialIntelligencePage";
 import ConnectorsPage from "../features/connectors/ConnectorsPage";
 import UpcomingPage from "../features/upcoming/UpcomingPage";
 import { AILayout } from "../features/ai/AILayout";
+import { AIErrorBoundary } from "../features/ai/AIErrorBoundary";
 
 const AIChat = lazy(() => import("../features/ai/pages/AIChat"));
 const AIAlerts = lazy(() => import("../features/ai/pages/AIAlerts"));
@@ -44,7 +45,7 @@ export default function App() {
         <Route path="/upcoming" element={<UpcomingPage />} />
 
         {/* AI section — additive, no v1 pages modified */}
-        <Route path="/ai" element={<AILayout />}>
+        <Route path="/ai" element={<AIErrorBoundary><AILayout /></AIErrorBoundary>}>
           <Route index element={<Navigate to="chat" replace />} />
           <Route path="chat" element={<Suspense fallback={<AIPageLoader />}><AIChat /></Suspense>} />
           <Route path="alerts" element={<Suspense fallback={<AIPageLoader />}><AIAlerts /></Suspense>} />

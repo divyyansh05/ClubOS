@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import type { PropsWithChildren } from "react";
 import { useState, useEffect } from "react";
 import { fetchUnconfirmedAnomalies } from "../../lib/api";
+import { AlertsHeaderBadge } from "../../features/ai/components/AlertsHeaderBadge";
 
 const navItems = [
   { to: "/priorities", label: "Board" },
@@ -129,6 +130,8 @@ export function PageShell({ children }: PropsWithChildren) {
                         {anomalyCount}
                       </span>
                     )}
+                    {/* AI critical-alerts count badge — polls every 30s */}
+                    {item.to === "/ai" && <AlertsHeaderBadge />}
                   </span>
                 </NavLink>
               ))}
