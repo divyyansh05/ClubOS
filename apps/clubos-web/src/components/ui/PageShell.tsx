@@ -12,7 +12,8 @@ const navItems = [
   { to: "/social", label: "Social" },
   { to: "/connectors", label: "Connectors" },
   { to: "/briefing", label: "Briefing" },
-  { to: "/upcoming", label: "Upcoming" }
+  { to: "/upcoming", label: "Upcoming" },
+  { to: "/ai", label: "AI" },
 ];
 
 export function PageShell({ children }: PropsWithChildren) {
