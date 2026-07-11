@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import CheckConstraint, DateTime, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -33,6 +33,7 @@ class MetricRegistry(Base):
     skill_file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     owned_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
     last_reviewed: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now()
     )
@@ -57,6 +58,7 @@ class MetricRegistryBase(BaseModel):
     skill_file_path: str | None = Field(default=None, max_length=500)
     owned_by: str | None = Field(default=None, max_length=100)
     last_reviewed: datetime | None = None
+    is_active: bool = True
 
     @field_validator("polarity")
     @classmethod

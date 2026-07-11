@@ -76,16 +76,21 @@ def get_session(database_url: str | None = None) -> Generator[Session, None, Non
 def bootstrap_db(database_url: str | None = None) -> None:
     """Executes SQL migrations to bootstrap the metric_registry table.
 
-    Runs idempotently using CREATE TABLE IF NOT EXISTS.
+    Runs idempotently — migrations use IF NOT EXISTS / IF NOT EXISTS guards.
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    migration_path = os.path.join(current_dir, "migrations", "001_create_metric_registry.sql")
+    migrations_dir = os.path.join(current_dir, "migrations")
 
-    with open(migration_path, encoding="utf-8") as f:
-        sql = f.read()
+    migration_files = sorted(
+        f for f in os.listdir(migrations_dir) if f.endswith(".sql")
+    )
 
     engine = get_engine(database_url) if database_url else _default_engine
     with engine.begin() as conn:
-        statements = [stmt.strip() for stmt in sql.split(";") if stmt.strip()]
-        for stmt in statements:
-            conn.execute(text(stmt))
+        for migration_file in migration_files:
+            migration_path = os.path.join(migrations_dir, migration_file)
+            with open(migration_path, encoding="utf-8") as f:
+                sql = f.read()
+            statements = [stmt.strip() for stmt in sql.split(";") if stmt.strip()]
+            for stmt in statements:
+                conn.execute(text(stmt))
