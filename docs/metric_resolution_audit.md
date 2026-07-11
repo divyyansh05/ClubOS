@@ -1,0 +1,213 @@
+# Metric Resolution Audit — 2026-07-11T22:41:28.474995+00:00
+
+Total metrics tested: **76**
+
+## Summary
+
+- **RESOLVES_VIA_ASSET_PREFIX**: 16 (21.1%)
+- **RESOLVES_VIA_ASSET_SUFFIX**: 18 (23.7%)
+- **RESOLVES_DIRECT**: 33 (43.4%)
+- **FAILS_MISSING_ROW**: 9 (11.8%)
+- **FAILS_OTHER**: 0 (0.0%)
+
+**Total resolving**: 67/76  
+**Total failing**: 9/76
+
+## RESOLVES_VIA_ASSET_PREFIX (16)
+
+- `ecommerce_recurrence` — eCommerce Recurrence Rate (platform: ecommerce)
+  - gold path: asset=`ecommerce`, raw=`recurrence`
+  - source: `gold.priority_board`
+- `ecommerce_unique_visitors` — eCommerce Unique Visitors (platform: ecommerce)
+  - gold path: asset=`ecommerce`, raw=`unique_visitors`
+  - source: `gold.priority_board`
+- `ecommerce_visits` — eCommerce Visits (platform: ecommerce)
+  - gold path: asset=`ecommerce`, raw=`visits`
+  - source: `gold.priority_board`
+- `fan_app_dau` — Fan App Daily Active Users (platform: fan_app)
+  - gold path: asset=`fan_app`, raw=`heavy_users`
+  - source: `gold.priority_board`
+- `fan_app_logged_users` — Fan App Logged-In Users (platform: fan_app)
+  - gold path: asset=`fan_app`, raw=`logged_users`
+  - source: `gold.priority_board`
+- `fan_app_marketing_visits` — Fan App Marketing Visits (platform: fan_app)
+  - gold path: asset=`fan_app`, raw=`marketing_visits`
+  - source: `gold.priority_board`
+- `fan_app_new_users` — Fan App New Users (platform: fan_app)
+  - gold path: asset=`fan_app`, raw=`new_users`
+  - source: `gold.priority_board`
+- `fan_app_recurrence` — Fan App Recurrence Rate (platform: fan_app)
+  - gold path: asset=`fan_app`, raw=`recurrence`
+  - source: `gold.priority_board`
+- `fan_app_unique_visitors` — Fan App Unique Visitors (platform: fan_app)
+  - gold path: asset=`fan_app`, raw=`unique_visitors`
+  - source: `gold.priority_board`
+- `fan_app_user_rating` — Fan App Store Rating (platform: fan_app)
+  - gold path: asset=`fan_app`, raw=`user_rating`
+  - source: `gold.priority_board`
+- `fan_app_visits` — Fan App Total Visits (platform: fan_app)
+  - gold path: asset=`fan_app`, raw=`visits`
+  - source: `gold.priority_board`
+- `social_media_instagram_engagement_rate` — Instagram Engagement Rate (platform: social)
+  - gold path: asset=`social_media`, raw=`instagram_engagement_rate`
+  - source: `gold.peer_benchmark`
+- `social_media_posting_frequency_per_day` — Social Posting Frequency (platform: social)
+  - gold path: asset=`social_media`, raw=`posting_frequency_per_day`
+  - source: `gold.peer_benchmark`
+- `streaming_daily_users` — Streaming Daily Active Users (platform: streaming)
+  - gold path: asset=`streaming`, raw=`daily_users`
+  - source: `gold.priority_board`
+- `streaming_subscription_rate` — Streaming Subscription Rate (platform: streaming)
+  - gold path: asset=`streaming`, raw=`subscription_rate`
+  - source: `gold.priority_board`
+- `streaming_unique_visitors` — Streaming Unique Visitors (platform: streaming)
+  - gold path: asset=`streaming`, raw=`unique_visitors`
+  - source: `gold.priority_board`
+
+## RESOLVES_VIA_ASSET_SUFFIX (18)
+
+- `bounce_rate_web` — Web Bounce Rate (platform: web)
+  - gold path: asset=`main_website`, raw=`bounce_rate`
+  - source: `gold.priority_board`
+- `consumption_web` — Web Consumption Rate (platform: web)
+  - gold path: asset=`main_website`, raw=`consumption`
+  - source: `gold.priority_board`
+- `conversion_rate_ecommerce` — eCommerce Conversion Rate (platform: ecommerce)
+  - gold path: asset=`ecommerce`, raw=`conversion_rate`
+  - source: `gold.priority_board`
+- `conversion_rate_streaming` — Streaming Conversion Rate (platform: streaming)
+  - gold path: asset=`streaming`, raw=`subscription_rate`
+  - source: `gold.priority_board`
+- `international_visits_web` — Web International Visits (platform: web)
+  - gold path: asset=`main_website`, raw=`international_visits`
+  - source: `gold.priority_board`
+- `items_ecommerce` — eCommerce Items Purchased (platform: ecommerce)
+  - gold path: asset=`ecommerce`, raw=`items`
+  - source: `gold.priority_board`
+- `logged_users_web` — Web Logged Users (platform: web)
+  - gold path: asset=`main_website`, raw=`logged_users`
+  - source: `gold.priority_board`
+- `marketing_visits_web` — Web Marketing Visits (platform: web)
+  - gold path: asset=`main_website`, raw=`marketing_visits`
+  - source: `gold.priority_board`
+- `mobile_visits_web` — Web Mobile Visits (platform: web)
+  - gold path: asset=`main_website`, raw=`mobile_visits`
+  - source: `gold.priority_board`
+- `new_users_web` — Web New Users (platform: web)
+  - gold path: asset=`main_website`, raw=`new_users`
+  - source: `gold.priority_board`
+- `other_channels_visits_web` — Web Other Channels Visits (platform: web)
+  - gold path: asset=`main_website`, raw=`other_channels_visits`
+  - source: `gold.priority_board`
+- `page_views_web` — Web Page Views (platform: web)
+  - gold path: asset=`main_website`, raw=`page_views`
+  - source: `gold.priority_board`
+- `purchases_ecommerce` — eCommerce Purchases (platform: ecommerce)
+  - gold path: asset=`ecommerce`, raw=`purchases`
+  - source: `gold.priority_board`
+- `recurrence_web` — Web Recurrence Rate (platform: web)
+  - gold path: asset=`main_website`, raw=`recurrence`
+  - source: `gold.priority_board`
+- `search_organic_visits_web` — Web Organic Search Visits (platform: web)
+  - gold path: asset=`main_website`, raw=`search_organic_visits`
+  - source: `gold.priority_board`
+- `social_organic_visits_web` — Web Organic Social Visits (platform: web)
+  - gold path: asset=`main_website`, raw=`social_organic_visits`
+  - source: `gold.priority_board`
+- `unique_visitors_web` — Web Unique Visitors (platform: web)
+  - gold path: asset=`main_website`, raw=`unique_visitors`
+  - source: `gold.priority_board`
+- `visits_web` — Web Visits (platform: web)
+  - gold path: asset=`main_website`, raw=`visits`
+  - source: `gold.priority_board`
+
+## RESOLVES_DIRECT (33)
+
+- `app_downloads` — Fan App Downloads (platform: fan_app)
+  - source: `gold.priority_board`
+- `app_push_visits` — Fan App Push Visits (platform: fan_app)
+  - source: `gold.priority_board`
+- `avg_engagement_per_post` — Social Avg Engagement (platform: social)
+  - source: `gold.metrics_monthly`
+- `card_addition_rate` — eCommerce Add to Cart Rate (platform: ecommerce)
+  - source: `gold.priority_board`
+- `cart_value` — eCommerce Cart Value (platform: ecommerce)
+  - source: `gold.priority_board`
+- `checkout_rate` — eCommerce Checkout Initiation Rate (platform: ecommerce)
+  - source: `gold.priority_board`
+- `deeplink_visits` — Fan App Deeplink Visits (platform: fan_app)
+  - source: `gold.priority_board`
+- `heavy_users` — Fan App Heavy Users (platform: fan_app)
+  - source: `gold.priority_board`
+- `international_engagement_ratio` — Social International Ratio (platform: social)
+  - source: `gold.metrics_monthly`
+- `marketing_plays` — Streaming Marketing Plays (platform: streaming)
+  - source: `gold.priority_board`
+- `marketing_purchases` — eCommerce Marketing Purchases (platform: ecommerce)
+  - source: `gold.priority_board`
+- `matchday_visits` — Fan App Matchday Visits (platform: fan_app)
+  - source: `gold.priority_board`
+- `net_sales` — eCommerce Net Sales (platform: ecommerce)
+  - source: `gold.priority_board`
+- `organic_launch_visits` — Fan App Organic Launches (platform: fan_app)
+  - source: `gold.priority_board`
+- `other_channel_visits` — Fan App Other Visits (platform: fan_app)
+  - source: `gold.priority_board`
+- `other_channels_purchases` — eCommerce Other Purchases (platform: ecommerce)
+  - source: `gold.priority_board`
+- `other_traffic_plays` — Streaming Other Plays (platform: streaming)
+  - source: `gold.priority_board`
+- `pct_android` — Fan App Android Share (platform: fan_app)
+  - source: `gold.metrics_monthly`
+- `product_views_rate` — eCommerce Product Views Rate (platform: ecommerce)
+  - source: `gold.priority_board`
+- `search_organic_plays` — Streaming Organic Search Plays (platform: streaming)
+  - source: `gold.priority_board`
+- `search_organic_purchases` — eCommerce Organic Search Purchases (platform: ecommerce)
+  - source: `gold.priority_board`
+- `session_time_avg` — Fan App Average Session Time (platform: fan_app)
+  - source: `gold.priority_board`
+- `social_organic_plays` — Streaming Organic Social Plays (platform: streaming)
+  - source: `gold.metrics_monthly`
+- `social_organic_purchases` — eCommerce Organic Social Purchases (platform: ecommerce)
+  - source: `gold.priority_board`
+- `streamers` — Streaming Active Streamers (platform: streaming)
+  - source: `gold.priority_board`
+- `streamers_rate` — Streaming Active Streamer Ratio (platform: streaming)
+  - source: `gold.priority_board`
+- `subscriptions` — Streaming Active Subscriptions (platform: streaming)
+  - source: `gold.priority_board`
+- `total_engagement` — Social Total Engagement (platform: social)
+  - source: `gold.metrics_monthly`
+- `total_estimated_views` — Social Total Estimated Views (platform: social)
+  - source: `gold.metrics_monthly`
+- `video_complete_rate` — Streaming Video Completion Rate (platform: streaming)
+  - source: `gold.priority_board`
+- `video_play_rate` — Streaming Video Play Rate (platform: streaming)
+  - source: `gold.priority_board`
+- `video_plays` — Streaming Video Plays (platform: streaming)
+  - source: `gold.priority_board`
+- `video_recurrence` — Streaming Video Recurrence (platform: streaming)
+  - source: `gold.priority_board`
+
+## FAILS_MISSING_ROW (9)
+
+- `digital_merchandise_revenue` — Digital Merchandise Revenue (platform: ecommerce)
+  - reason: No gold row matches via any resolution path
+- `matchday_ticket_revenue` — Matchday Ticket Revenue (platform: matchday)
+  - reason: No gold row matches via any resolution path
+- `post_match_engagement_rate` — Post-Match Fan Engagement Rate (platform: social)
+  - reason: No gold row matches via any resolution path
+- `reels_engagement_rate` — Instagram Reels Engagement Rate (platform: social)
+  - reason: No gold row matches via any resolution path
+- `social_media_followers` — Social Media Total Followers (platform: social)
+  - gold path: asset=`social_media`, raw=`followers`
+  - reason: No gold row matches via any resolution path
+- `social_total_posts` — Social Total Posts (platform: social)
+  - reason: No gold row matches via any resolution path
+- `video_progress_25_rate` — Streaming Video 25% Completion Rate (platform: streaming)
+  - reason: No gold row matches via any resolution path
+- `video_progress_50_rate` — Streaming Video 50% Completion Rate (platform: streaming)
+  - reason: No gold row matches via any resolution path
+- `video_progress_75_rate` — Streaming Video 75% Completion Rate (platform: streaming)
+  - reason: No gold row matches via any resolution path
