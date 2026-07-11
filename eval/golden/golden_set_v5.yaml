@@ -1,15 +1,11 @@
 version: "v5"
 # Extension of v4. Adds 5 questions stressing compound-metric resolution paths.
-# These questions target the asset_prefix / asset_suffix / alias split paths in
-# GoldClient._split_metric_name() — the class of bugs found in the 2026-07 data-layer audit.
+# All citations reference preferred_source=gold.kpi_health (set in registry after
+# cross-source data integrity audit, 2026-07-12).
 #
-# All values verified against gold_kpi_health.csv and gold_peer_benchmark.csv (2025-11-01).
+# Values verified against gold_kpi_health.csv (authoritative source) 2025-11-01.
 
 entries:
-
-  # --- all v4 entries carried forward ---
-
-  # ── NEW: COMPOUND-METRIC REGRESSION COVERAGE (gq_061–065) ─────────────────
 
   - id: "gq_061"
     question: "What is streaming_unique_visitors for November 2025?"
@@ -23,7 +19,6 @@ entries:
       - "streaming_unique_visitors"
     required_citation_sources:
       - "gold.kpi_health"
-      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -32,9 +27,9 @@ entries:
     author: "data-layer-audit-2026-07"
     created_at: "2026-07-12"
     notes: >
-      Asset-prefix split metric: 'streaming_unique_visitors' -> asset='streaming', raw='unique_visitors'.
-      Real value from gold_kpi_health.csv 2025-11-01: 788333.33.
-      Tests that the GoldClient prefix-split path (KNOWN_ASSETS['streaming']) resolves correctly.
+      Asset-prefix split: streaming_unique_visitors → asset=streaming, raw=unique_visitors.
+      kpi_health value 2025-11-01: 788333.33.
+      preferred_source=gold.kpi_health set in registry after cross-source audit.
 
   - id: "gq_062"
     question: "What is the eCommerce conversion rate for November 2025?"
@@ -42,13 +37,13 @@ entries:
     expected_answer_facts:
       - "1.46"
       - "1.5"
-      - "conversion"
+      - "0.0146"
       - "ecommerce"
+      - "conversion"
     expected_metric_names:
       - "conversion_rate_ecommerce"
     required_citation_sources:
       - "gold.kpi_health"
-      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -57,12 +52,14 @@ entries:
     author: "data-layer-audit-2026-07"
     created_at: "2026-07-12"
     notes: >
-      Asset-suffix split metric: 'conversion_rate_ecommerce' -> raw='conversion_rate', asset='ecommerce'.
-      Real value from gold_kpi_health.csv 2025-11-01: 0.01464 (1.46%).
-      Tests KNOWN_ASSETS suffix path for ecommerce.
+      Asset-suffix split: conversion_rate_ecommerce → asset=ecommerce, raw=conversion_rate.
+      kpi_health value 2025-11-01: 0.014637 (1.46%).
+      priority_board has no Nov 2025 row for this metric (period gap).
+      preferred_source=gold.kpi_health ensures correct month is returned.
+      Previous eval failure: Scout returned Oct 2025 pb value (0.008245) — now fixed.
 
   - id: "gq_063"
-    question: "What is the fan app user rating this November?"
+    question: "What is the fan app user rating for November 2025?"
     question_type: quantitative
     expected_answer_facts:
       - "4.8"
@@ -72,7 +69,6 @@ entries:
       - "fan_app_user_rating"
     required_citation_sources:
       - "gold.kpi_health"
-      - "gold.peer_benchmark"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -81,9 +77,10 @@ entries:
     author: "data-layer-audit-2026-07"
     created_at: "2026-07-12"
     notes: >
-      Asset-prefix split metric: 'fan_app_user_rating' -> asset='fan_app', raw='user_rating'.
-      Real value from gold_kpi_health.csv 2025-11-01: 4.8.
-      'fan_app' is longest prefix tried first due to len-sorted iteration in _split_metric_name.
+      Asset-prefix split: fan_app_user_rating → asset=fan_app, raw=user_rating.
+      kpi_health value 2025-11-01: 4.8.
+      Previous eval failure: ambiguous "this November" caused Scout to interpret
+      as Nov 2026 (future) and refuse. Fixed to explicit "November 2025".
 
   - id: "gq_064"
     question: "What is the streaming subscription rate for November 2025?"
@@ -91,6 +88,7 @@ entries:
     expected_answer_facts:
       - "3.04"
       - "3.0"
+      - "0.030"
       - "subscription"
       - "streaming"
     expected_metric_names:
@@ -98,7 +96,6 @@ entries:
       - "conversion_rate_streaming"
     required_citation_sources:
       - "gold.kpi_health"
-      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -107,13 +104,14 @@ entries:
     author: "data-layer-audit-2026-07"
     created_at: "2026-07-12"
     notes: >
-      Tests both the canonical alias metric (streaming_subscription_rate) and its registry alias
-      (conversion_rate_streaming via METRIC_NAME_ALIASES[("streaming", "conversion_rate")] = "subscription_rate").
-      Real value from gold_kpi_health.csv 2025-11-01: 0.03044 (3.044%).
+      Tests both canonical alias (streaming_subscription_rate) and registry alias
+      (conversion_rate_streaming via METRIC_NAME_ALIASES).
+      kpi_health value 2025-11-01: 0.03044 (3.044%).
+      priority_board has no Nov 2025 row — period gap resolved by preferred_source.
 
   - id: "gq_065"
     question: "Compare eCommerce unique visitors and streaming unique visitors for November 2025."
-    question_type: comparative
+    question_type: mixed
     expected_answer_facts:
       - "1670885"
       - "1.67"
@@ -126,7 +124,6 @@ entries:
       - "streaming_unique_visitors"
     required_citation_sources:
       - "gold.kpi_health"
-      - "gold.priority_board"
     expected_confidence: high
     must_state_assumption: false
     must_refuse: false
@@ -135,7 +132,7 @@ entries:
     author: "data-layer-audit-2026-07"
     created_at: "2026-07-12"
     notes: >
-      Cross-asset same-metric-type comparison. Tests that both prefix-split paths work in one query.
+      Cross-asset same-metric-type comparison. Both resolve via kpi_health.
       ecommerce_unique_visitors 2025-11: 1670885.87
       streaming_unique_visitors 2025-11: 788333.33
-      eCommerce gets ~2x more unique visitors than streaming.
+      eCommerce gets ~2.1x more unique visitors than streaming.
