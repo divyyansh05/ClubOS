@@ -251,8 +251,16 @@ export function isInvestigatorResult(r: SupervisorResponse): r is SupervisorResp
   return r.dispatch_path === 'direct_investigator';
 }
 
+// LangGraph supervisor result: array of { agent: string, output: ScoutAnswer | ... }
+type SupervisorStepOutput = { agent: string; output: Record<string, unknown> };
+
+function isSupervisorStepArray(r: unknown): r is SupervisorStepOutput[] {
+  return Array.isArray(r) && r.length > 0 && typeof (r[0] as Record<string, unknown>).agent === 'string';
+}
+
 export function extractAnswerText(response: SupervisorResponse): string {
   const { dispatch_path, result } = response;
+
   if (dispatch_path === 'direct_scout') {
     return (result as unknown as ScoutAnswer).answer ?? JSON.stringify(result);
   }
@@ -266,19 +274,48 @@ export function extractAnswerText(response: SupervisorResponse): string {
     return (finding?.cause_hypothesis as string) ?? '(investigation running)';
   }
   if (dispatch_path === 'langgraph_supervisor') {
-    return (result.final_synthesis as string) ?? JSON.stringify(result.step_results ?? result);
+    // Shape 1: { final_synthesis: string }
+    if (typeof (result as Record<string, unknown>).final_synthesis === 'string') {
+      return (result as Record<string, unknown>).final_synthesis as string;
+    }
+    // Shape 2: array of { agent, output } — each output is a ScoutAnswer-like object
+    if (isSupervisorStepArray(result)) {
+      // Collect all answers from all steps and join them
+      const answers = result
+        .map((step) => step.output?.answer as string | undefined)
+        .filter(Boolean) as string[];
+      if (answers.length > 0) return answers.join('\n\n');
+    }
+    return response.error ?? '(supervisor returned no readable answer)';
   }
   return response.error ?? '(no answer)';
 }
 
 export function extractCitations(response: SupervisorResponse): Citation[] {
   const { dispatch_path, result } = response;
+
   if (dispatch_path === 'direct_scout') {
     return (result as unknown as ScoutAnswer).citations ?? [];
   }
   if (dispatch_path === 'direct_briefer') {
     const r = result as unknown as BriefingRunResult;
     return r.content?.citations ?? [];
+  }
+  if (dispatch_path === 'langgraph_supervisor') {
+    if (isSupervisorStepArray(result)) {
+      // Flatten citations from all steps, deduplicated by source+claim
+      const seen = new Set<string>();
+      const all: Citation[] = [];
+      for (const step of result) {
+        const cits = step.output?.citations as Citation[] | undefined;
+        if (!Array.isArray(cits)) continue;
+        for (const c of cits) {
+          const key = `${c.source}::${c.claim}`;
+          if (!seen.has(key)) { seen.add(key); all.push(c); }
+        }
+      }
+      return all;
+    }
   }
   return [];
 }
