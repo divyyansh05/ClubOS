@@ -152,6 +152,7 @@ CURATED_METRICS: list[dict[str, Any]] = [
     },
     {
         "metric_name": "post_match_engagement_rate",
+        "is_active": False,
         "business_name": "Post-Match Fan Engagement Rate",
         "definition": (
             "The engagement rate on social media posts published " "immediately following matches."
@@ -178,6 +179,7 @@ CURATED_METRICS: list[dict[str, Any]] = [
     },
     {
         "metric_name": "reels_engagement_rate",
+        "is_active": False,
         "business_name": "Instagram Reels Engagement Rate",
         "definition": "The average engagement rate specifically for Instagram Reels content.",
         "platform": "social",
@@ -229,6 +231,7 @@ CURATED_METRICS: list[dict[str, Any]] = [
     },
     {
         "metric_name": "social_total_posts",
+        "is_active": False,
         "business_name": "Social Total Posts",
         "definition": (
             "The total number of posts published across all official "
@@ -548,6 +551,7 @@ STUB_METRICS: list[dict[str, Any]] = [
     },
     {
         "metric_name": "video_progress_25_rate",
+        "is_active": False,
         "business_name": "Streaming Video 25% Completion Rate",
         "definition": "Percentage of streams reaching 25% progress.",
         "platform": "streaming",
@@ -556,6 +560,7 @@ STUB_METRICS: list[dict[str, Any]] = [
     },
     {
         "metric_name": "video_progress_50_rate",
+        "is_active": False,
         "business_name": "Streaming Video 50% Completion Rate",
         "definition": "Percentage of streams reaching 50% progress.",
         "platform": "streaming",
@@ -564,6 +569,7 @@ STUB_METRICS: list[dict[str, Any]] = [
     },
     {
         "metric_name": "video_progress_75_rate",
+        "is_active": False,
         "business_name": "Streaming Video 75% Completion Rate",
         "definition": "Percentage of streams reaching 75% progress.",
         "platform": "streaming",
@@ -654,6 +660,7 @@ STUB_METRICS: list[dict[str, Any]] = [
     # Social (7)
     {
         "metric_name": "social_media_followers",
+        "is_active": False,
         "business_name": "Social Media Total Followers",
         "definition": "Total count of followers across all official social media channels.",
         "platform": "social",
@@ -663,6 +670,7 @@ STUB_METRICS: list[dict[str, Any]] = [
     # Matchday / Revenue (2)
     {
         "metric_name": "matchday_ticket_revenue",
+        "is_active": False,
         "business_name": "Matchday Ticket Revenue",
         "definition": "Total revenue generated from matchday ticket sales, including season tickets and single-match purchases.",
         "platform": "matchday",
@@ -671,6 +679,7 @@ STUB_METRICS: list[dict[str, Any]] = [
     },
     {
         "metric_name": "digital_merchandise_revenue",
+        "is_active": False,
         "business_name": "Digital Merchandise Revenue",
         "definition": "Total revenue from digital merchandise sales including licensed digital products and NFTs.",
         "platform": "ecommerce",
@@ -867,6 +876,7 @@ def run_seed(dry_run: bool = False, database_url: str | None = None) -> int:
                     existing.skill_file_path = metric_def.get("skill_file_path")
                     existing.owned_by = metric_def.get("owned_by")
                     existing.last_reviewed = metric_def.get("last_reviewed")
+                    existing.is_active = metric_def.get("is_active", True)
                     existing.updated_at = datetime.now(UTC)
             else:
                 if not dry_run:
@@ -886,6 +896,7 @@ def run_seed(dry_run: bool = False, database_url: str | None = None) -> int:
                         skill_file_path=metric_def.get("skill_file_path"),
                         owned_by=metric_def.get("owned_by"),
                         last_reviewed=metric_def.get("last_reviewed"),
+                        is_active=metric_def.get("is_active", True),
                         created_at=datetime.now(UTC),
                         updated_at=datetime.now(UTC),
                     )
