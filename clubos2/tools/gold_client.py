@@ -90,75 +90,39 @@ class GoldClient:
         self,
         metric_name: str,
         month: str | None = None,
+        preferred_source: str | None = None,
     ) -> list[dict[str, Any]]:
         """Fetch rows for a metric from Gold CSVs.
 
-        Phase 1 strategy: try gold_priority_board.csv first (it has the 59 main metrics),
-        then gold_kpi_health.csv. If found in neither, raise MetricNotInGoldError.
+        Source order: gold.kpi_health → gold.priority_board → gold.peer_benchmark.
+        When preferred_source is explicitly set to 'gold.priority_board', that source
+        is tried first. Default is kpi_health-first (authoritative, full coverage).
         """
         import json
 
         asset, raw_metric = self._split_metric_name(metric_name)
 
-        # 1. Try gold_priority_board.csv first
-        df_pb = self._load_priority_df()
-        if asset:
-            mask = (df_pb["asset_name"] == asset) & (df_pb["primary_metric"] == raw_metric)
-        else:
-            mask = df_pb["primary_metric"] == raw_metric
+        # Determine source order: kpi_health first by default (authoritative, full coverage).
+        # Only flip to priority_board-first if explicitly requested.
+        if preferred_source == "gold.priority_board":
+            return await self._fetch_priority_board_first(
+                metric_name, asset, raw_metric, month
+            )
 
-        filtered_pb = df_pb[mask].copy()
+        # Default: kpi_health first
+        return await self._fetch_kpi_health_first(
+            metric_name, asset, raw_metric, month
+        )
 
-        if not filtered_pb.empty:
-            source_file = "gold.priority_board"
-            if month:
-                filtered_pb = filtered_pb[filtered_pb["month"] == month]
-                if filtered_pb.empty:
-                    raise MetricNotInGoldError(
-                        f"Metric '{metric_name}' found in gold_priority_board.csv "
-                        f"but no row for month='{month}'."
-                    )
-            else:
-                all_months = sorted(filtered_pb["month"].unique(), reverse=True)
-                recent_months = all_months[:12]
-                filtered_pb = filtered_pb[filtered_pb["month"].isin(recent_months)]
-
-            filtered_pb = filtered_pb.sort_values("month", ascending=False)
-
-            rows = []
-            for _, row in filtered_pb.iterrows():
-                try:
-                    js_data = json.loads(row["supporting_metrics_json"])
-                    sev_inputs = js_data.get("severity_inputs", {})
-                except Exception:
-                    sev_inputs = {}
-
-                peer_ctx = js_data.get("peer_context") or {}
-                rows.append(
-                    {
-                        "month": str(row["month"]),
-                        "asset_name": str(row["asset_name"]),
-                        "metric_name": str(row["primary_metric"]),
-                        "metric_value": sev_inputs.get("metric_value", 0.0),
-                        "trend_direction": sev_inputs.get("trend_direction", "flat"),
-                        "health_status": sev_inputs.get("health_status", "stable"),
-                        "deviation_from_rolling_avg": sev_inputs.get(
-                            "deviation_from_rolling_avg", 0.0
-                        ),
-                        "seasonal_z_score": sev_inputs.get("seasonal_z_score", 0.0),
-                        "prior_month_value": None,
-                        "prior_season_same_month_value": None,
-                        "rolling_12m_avg": None,
-                        "source": source_file,
-                        "compound_metric_name": metric_name,
-                        "peer_rank": peer_ctx.get("peer_rank"),
-                        "peer_club_count": peer_ctx.get("peer_club_count"),
-                        "peer_gap_to_median": peer_ctx.get("gap_to_peer_median"),
-                    }
-                )
-            return rows
-
-        # 2. Fall back to gold_kpi_health.csv
+    async def _fetch_kpi_health_first(
+        self,
+        metric_name: str,
+        asset: str | None,
+        raw_metric: str,
+        month: str | None,
+    ) -> list[dict[str, Any]]:
+        """Try kpi_health → priority_board → peer_benchmark."""
+        # 1. Try gold_kpi_health.csv
         df_kh = self._load_kpi_df()
         if asset:
             mask = (df_kh["asset_name"] == asset) & (df_kh["metric_name"] == raw_metric)
@@ -167,68 +131,181 @@ class GoldClient:
 
         filtered_kh = df_kh[mask].copy()
 
-        if filtered_kh.empty:
-            # 3. Final fallback: gold_peer_benchmark.csv (has social_media metrics not in kpi_health)
-            df_pb2 = self._load_peer_benchmark_df()
-            if asset:
-                mask2 = (df_pb2["asset_name"] == asset) & (df_pb2["metric_name"] == raw_metric)
+        if not filtered_kh.empty:
+            import json as _json  # noqa: F811
+            source_file = "gold.kpi_health"
+            if month:
+                filtered_kh = filtered_kh[filtered_kh["month"] == month]
+                if filtered_kh.empty:
+                    raise MetricNotInGoldError(
+                        f"Metric '{metric_name}' found in gold_kpi_health.csv "
+                        f"but no row for month='{month}'."
+                    )
             else:
-                mask2 = df_pb2["metric_name"] == raw_metric
-            filtered_pb2 = df_pb2[mask2].copy()
-            if not filtered_pb2.empty:
-                source_file2 = "gold.peer_benchmark"
-                if month:
-                    filtered_pb2 = filtered_pb2[filtered_pb2["month"] == month]
-                else:
-                    all_months2 = sorted(filtered_pb2["month"].unique(), reverse=True)
-                    filtered_pb2 = filtered_pb2[filtered_pb2["month"].isin(all_months2[:12])]
-                filtered_pb2 = filtered_pb2.sort_values("month", ascending=False)
-                rows2 = []
-                for _, row in filtered_pb2.iterrows():
-                    rows2.append({
-                        "month": str(row["month"]),
-                        "asset_name": str(row["asset_name"]),
-                        "metric_name": str(row["metric_name"]),
-                        "metric_value": float(row["rm_value"]) if pd.notna(row.get("rm_value")) else 0.0,
-                        "trend_direction": "flat",
-                        "health_status": "stable",
-                        "deviation_from_rolling_avg": 0.0,
-                        "seasonal_z_score": 0.0,
-                        "prior_month_value": None,
-                        "prior_season_same_month_value": None,
-                        "rolling_12m_avg": None,
-                        "source": source_file2,
-                        "compound_metric_name": metric_name,
-                        "peer_rank": int(row["rm_rank"]) if pd.notna(row.get("rm_rank")) else None,
-                        "peer_club_count": int(row["club_count"]) if pd.notna(row.get("club_count")) else None,
-                        "peer_gap_to_median": float(row["gap_to_peer_median"]) if pd.notna(row.get("gap_to_peer_median")) else None,
-                    })
-                return rows2
-            raise MetricNotInGoldError(
-                f"Metric '{metric_name}' (asset={asset!r}, raw={raw_metric!r}) "
-                f"not found in gold_priority_board.csv, gold_kpi_health.csv, or gold_peer_benchmark.csv."
-            )
+                all_months = sorted(filtered_kh["month"].unique(), reverse=True)
+                filtered_kh = filtered_kh[filtered_kh["month"].isin(all_months[:12])]
 
-        source_file = "gold.metrics_monthly"
+            filtered_kh = filtered_kh.sort_values("month", ascending=False)
+            rows = filtered_kh.to_dict(orient="records")
+            for row in rows:
+                row["source"] = source_file
+                row["compound_metric_name"] = metric_name
+            return rows  # type: ignore[no-any-return]
+
+        # 2. Fall back to gold_priority_board.csv
+        rows = self._fetch_from_priority_board(metric_name, asset, raw_metric, month)
+        if rows is not None:
+            return rows
+
+        # 3. Final fallback: gold_peer_benchmark.csv
+        rows = self._fetch_from_peer_benchmark(metric_name, asset, raw_metric, month)
+        if rows is not None:
+            return rows
+
+        raise MetricNotInGoldError(
+            f"Metric '{metric_name}' (asset={asset!r}, raw={raw_metric!r}) "
+            f"not found in gold_kpi_health.csv, gold_priority_board.csv, or gold_peer_benchmark.csv."
+        )
+
+    async def _fetch_priority_board_first(
+        self,
+        metric_name: str,
+        asset: str | None,
+        raw_metric: str,
+        month: str | None,
+    ) -> list[dict[str, Any]]:
+        """Legacy source order: priority_board → kpi_health → peer_benchmark."""
+        rows = self._fetch_from_priority_board(metric_name, asset, raw_metric, month)
+        if rows is not None:
+            return rows
+        rows = self._fetch_from_kpi_health(metric_name, asset, raw_metric, month)
+        if rows is not None:
+            return rows
+        rows = self._fetch_from_peer_benchmark(metric_name, asset, raw_metric, month)
+        if rows is not None:
+            return rows
+        raise MetricNotInGoldError(
+            f"Metric '{metric_name}' (asset={asset!r}, raw={raw_metric!r}) "
+            f"not found in gold_priority_board.csv, gold_kpi_health.csv, or gold_peer_benchmark.csv."
+        )
+
+    def _fetch_from_kpi_health(
+        self,
+        metric_name: str,
+        asset: str | None,
+        raw_metric: str,
+        month: str | None,
+    ) -> list[dict[str, Any]] | None:
+        df = self._load_kpi_df()
+        mask = (df["asset_name"] == asset) & (df["metric_name"] == raw_metric) if asset else df["metric_name"] == raw_metric
+        filtered = df[mask].copy()
+        if filtered.empty:
+            return None
         if month:
-            filtered_kh = filtered_kh[filtered_kh["month"] == month]
-            if filtered_kh.empty:
-                raise MetricNotInGoldError(
-                    f"Metric '{metric_name}' found in Gold but no row for month='{month}'."
-                )
+            filtered = filtered[filtered["month"] == month]
+            if filtered.empty:
+                return None
         else:
-            all_months = sorted(filtered_kh["month"].unique(), reverse=True)
-            recent_months = all_months[:12]
-            filtered_kh = filtered_kh[filtered_kh["month"].isin(recent_months)]
-
-        filtered_kh = filtered_kh.sort_values("month", ascending=False)
-
-        rows = filtered_kh.to_dict(orient="records")
+            months = sorted(filtered["month"].unique(), reverse=True)
+            filtered = filtered[filtered["month"].isin(months[:12])]
+        filtered = filtered.sort_values("month", ascending=False)
+        rows = filtered.to_dict(orient="records")
         for row in rows:
-            row["source"] = source_file
+            row["source"] = "gold.kpi_health"
             row["compound_metric_name"] = metric_name
-
         return rows  # type: ignore[no-any-return]
+
+    def _fetch_from_priority_board(
+        self,
+        metric_name: str,
+        asset: str | None,
+        raw_metric: str,
+        month: str | None,
+    ) -> list[dict[str, Any]] | None:
+        import json as _json
+        df = self._load_priority_df()
+        mask = (df["asset_name"] == asset) & (df["primary_metric"] == raw_metric) if asset else df["primary_metric"] == raw_metric
+        filtered = df[mask].copy()
+        if filtered.empty:
+            return None
+        if month:
+            filtered = filtered[filtered["month"] == month]
+            if filtered.empty:
+                return None
+        else:
+            months = sorted(filtered["month"].unique(), reverse=True)
+            filtered = filtered[filtered["month"].isin(months[:12])]
+        filtered = filtered.sort_values("month", ascending=False)
+        rows = []
+        for _, row in filtered.iterrows():
+            try:
+                js_data = _json.loads(row["supporting_metrics_json"])
+                sev_inputs = js_data.get("severity_inputs", {})
+            except Exception:
+                js_data = {}
+                sev_inputs = {}
+            peer_ctx = js_data.get("peer_context") or {}
+            rows.append({
+                "month": str(row["month"]),
+                "asset_name": str(row["asset_name"]),
+                "metric_name": str(row["primary_metric"]),
+                "metric_value": sev_inputs.get("metric_value", 0.0),
+                "trend_direction": sev_inputs.get("trend_direction", "flat"),
+                "health_status": sev_inputs.get("health_status", "stable"),
+                "deviation_from_rolling_avg": sev_inputs.get("deviation_from_rolling_avg", 0.0),
+                "seasonal_z_score": sev_inputs.get("seasonal_z_score", 0.0),
+                "prior_month_value": None,
+                "prior_season_same_month_value": None,
+                "rolling_12m_avg": None,
+                "source": "gold.priority_board",
+                "compound_metric_name": metric_name,
+                "peer_rank": peer_ctx.get("peer_rank"),
+                "peer_club_count": peer_ctx.get("peer_club_count"),
+                "peer_gap_to_median": peer_ctx.get("gap_to_peer_median"),
+            })
+        return rows
+
+    def _fetch_from_peer_benchmark(
+        self,
+        metric_name: str,
+        asset: str | None,
+        raw_metric: str,
+        month: str | None,
+    ) -> list[dict[str, Any]] | None:
+        df = self._load_peer_benchmark_df()
+        mask = (df["asset_name"] == asset) & (df["metric_name"] == raw_metric) if asset else df["metric_name"] == raw_metric
+        filtered = df[mask].copy()
+        if filtered.empty:
+            return None
+        if month:
+            filtered = filtered[filtered["month"] == month]
+            if filtered.empty:
+                return None
+        else:
+            months = sorted(filtered["month"].unique(), reverse=True)
+            filtered = filtered[filtered["month"].isin(months[:12])]
+        filtered = filtered.sort_values("month", ascending=False)
+        rows = []
+        for _, row in filtered.iterrows():
+            rows.append({
+                "month": str(row["month"]),
+                "asset_name": str(row["asset_name"]),
+                "metric_name": str(row["metric_name"]),
+                "metric_value": float(row["rm_value"]) if pd.notna(row.get("rm_value")) else 0.0,
+                "trend_direction": "flat",
+                "health_status": "stable",
+                "deviation_from_rolling_avg": 0.0,
+                "seasonal_z_score": 0.0,
+                "prior_month_value": None,
+                "prior_season_same_month_value": None,
+                "rolling_12m_avg": None,
+                "source": "gold.peer_benchmark",
+                "compound_metric_name": metric_name,
+                "peer_rank": int(row["rm_rank"]) if pd.notna(row.get("rm_rank")) else None,
+                "peer_club_count": int(row["club_count"]) if pd.notna(row.get("club_count")) else None,
+                "peer_gap_to_median": float(row["gap_to_peer_median"]) if pd.notna(row.get("gap_to_peer_median")) else None,
+            })
+        return rows
 
     def list_available_metrics(self) -> dict[str, str]:
         """Return ``{compound_metric_name: source_csv}`` for every metric in Gold.

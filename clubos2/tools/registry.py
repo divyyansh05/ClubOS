@@ -262,8 +262,11 @@ async def query_metrics(metric_name: str, month: str | None = None) -> list[Metr
 
     # --- Step 2: Fetch from Gold CSVs ---
     gold_client = get_gold_client()
+    preferred_source = getattr(registry_row, "preferred_source", None)
     try:
-        rows = await gold_client.fetch_metric(canonical_name, month=month)
+        rows = await gold_client.fetch_metric(
+            canonical_name, month=month, preferred_source=preferred_source
+        )
     except MetricNotInGoldError as exc:
         # Metric is registered but missing from Gold — data gap
         logger.warning("Data gap: %s", exc)

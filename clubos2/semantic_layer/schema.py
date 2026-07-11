@@ -34,6 +34,8 @@ class MetricRegistry(Base):
     owned_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
     last_reviewed: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    preferred_source: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    source_authority_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now()
     )
@@ -59,6 +61,8 @@ class MetricRegistryBase(BaseModel):
     owned_by: str | None = Field(default=None, max_length=100)
     last_reviewed: datetime | None = None
     is_active: bool = True
+    preferred_source: str | None = None
+    source_authority_note: str | None = None
 
     @field_validator("polarity")
     @classmethod
