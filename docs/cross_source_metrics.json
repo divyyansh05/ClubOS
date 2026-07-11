@@ -1,0 +1,276 @@
+{
+  "app_downloads": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "app_push_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "avg_engagement_per_post": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_peer_social_benchmark",
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_hashtags",
+    "gold.gold_social_metrics"
+  ],
+  "bounce_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "card_addition_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "cart_value": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "checkout_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "consumption": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "conversion_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "daily_users": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "deeplink_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "heavy_users": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "international_engagement_ratio": [
+    "gold.gold_kpi_health",
+    "gold.gold_social_metrics"
+  ],
+  "international_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "items": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "logged_users": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "marketing_plays": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "marketing_purchases": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "marketing_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "matchday_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "mobile_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "net_sales": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "new_users": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "organic_launch_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "other_channel_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "other_channels_purchases": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "other_channels_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "other_traffic_plays": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "page_views": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "product_views_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "purchases": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "recurrence": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "search_organic_plays": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "search_organic_purchases": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "search_organic_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "session_time_avg": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "social_organic_purchases": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "social_organic_visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "streamers": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "streamers_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "subscription_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "subscriptions": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "total_engagement": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_peer_social_benchmark",
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_hashtags",
+    "gold.gold_social_metrics"
+  ],
+  "total_estimated_views": [
+    "gold.gold_kpi_health",
+    "gold.gold_social_metrics"
+  ],
+  "unique_visitors": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "user_rating": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "video_complete_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "video_play_rate": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "video_plays": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "video_recurrence": [
+    "gold.gold_kpi_health",
+    "gold.gold_priority_board"
+  ],
+  "visits": [
+    "gold.gold_kpi_health",
+    "gold.gold_peer_benchmark",
+    "gold.gold_priority_board"
+  ],
+  "instagram_engagement_rate": [
+    "gold.gold_peer_benchmark",
+    "gold.gold_peer_social_benchmark",
+    "gold.gold_social_metrics"
+  ],
+  "posting_frequency_per_day": [
+    "gold.gold_peer_benchmark",
+    "gold.gold_peer_social_benchmark"
+  ],
+  "total_posts": [
+    "gold.gold_peer_social_benchmark",
+    "gold.gold_social_metrics"
+  ],
+  "day_number": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_posts"
+  ],
+  "day_of_week": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_posts"
+  ],
+  "match_moment": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_posts"
+  ],
+  "media_type": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_posts"
+  ],
+  "post_count": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_hashtags"
+  ],
+  "total_comments": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_metrics"
+  ],
+  "total_likes": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_metrics"
+  ],
+  "total_reposts": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_metrics"
+  ],
+  "variety": [
+    "gold.gold_social_dayofweek",
+    "gold.gold_social_posts"
+  ]
+}
