@@ -35,7 +35,7 @@ def _seed_registry(db_url: str) -> None:
 
 @pytest.mark.asyncio
 async def test_query_metrics_returns_real_data(tmp_path):
-    """streaming_daily_users should return rows with canonical gold.priority_board source."""
+    """streaming_daily_users should return rows with a canonical gold.* source."""
     db_url = f"duckdb:///{tmp_path}/test_semantic.duckdb"
     _seed_registry(db_url)
 
@@ -61,7 +61,10 @@ async def test_query_metrics_returns_real_data(tmp_path):
     assert row.value > 0, "metric_value should be non-zero"
     VALID = ("gold.", "skills.", "metric_registry", "watchdog_alerts", "investigations", "web_search:")
     assert any(row.source.startswith(p) for p in VALID), f"Non-canonical source: {row.source}"
-    assert row.source == "gold.priority_board", f"Expected gold.priority_board, got: {row.source}"
+    # Source order is registry-declared (preferred_source). kpi_health is the
+    # default authoritative source since the 2026-07 cross-source audit.
+    assert row.source in ("gold.kpi_health", "gold.priority_board"), \
+        f"Expected a gold source, got: {row.source}"
 
 
 @pytest.mark.asyncio
