@@ -1,0 +1,149 @@
+{
+  "run_id": "eval_2026-07-11T23-11-10.191429",
+  "timestamp": "2026-07-11T23:11:51.153629",
+  "golden_set_version": "v5",
+  "scout_prompt_version": "v6",
+  "total_questions": 5,
+  "total_errors": 0,
+  "ragas_avg_faithfulness": null,
+  "ragas_avg_context_relevance": null,
+  "ragas_avg_answer_relevance": null,
+  "fabrication_summary": {
+    "total_entries": 5,
+    "entries_with_fabrication": 0,
+    "fabrication_incidence_rate": 0.0,
+    "average_fab_rate_per_entry": 0.0,
+    "fabricated_numbers_total": 0
+  },
+  "behavioural_summary": {
+    "total": 5,
+    "overall_pass_rate": 1.0,
+    "refusal_correct_rate": 1.0,
+    "citation_correct_rate": 1.0,
+    "average_citation_coverage": 1.0
+  },
+  "supervisor_routing_pass_rate": null,
+  "briefer_run_pass_rate": null,
+  "per_entry": [
+    {
+      "entry_id": "gq_061",
+      "question": "What is streaming_unique_visitors for November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": true,
+      "answer_preview": "The streaming_unique_visitors for November 2025 was 788,333.33 [source: gold.kpi_health].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_062",
+      "question": "What is the eCommerce conversion rate for November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": true,
+      "answer_preview": "The eCommerce conversion rate for November 2025 was 0.0146373 [source: gold.kpi_health].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_063",
+      "question": "What is the fan app user rating for November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": true,
+      "answer_preview": "The fan app user rating for November 2025 was 4.8 [source: gold.kpi_health].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_064",
+      "question": "What is the streaming subscription rate for November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": true,
+      "answer_preview": "The streaming subscription rate for November 2025 was 0.03044 [source: gold.kpi_health].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_065",
+      "question": "Compare eCommerce unique visitors and streaming unique visitors for November 2025.",
+      "question_type": "mixed",
+      "overall_pass": true,
+      "answer_preview": "In November 2025, the eCommerce platform had 1,670,885.87 unique visitors, while the streaming platform had 788,333.33 unique visitors [source: gold.kpi_health].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    }
+  ]
+}
