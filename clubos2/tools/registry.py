@@ -335,6 +335,64 @@ async def get_signal(signal_id: str) -> dict[str, Any]:
     )
 
 
+@traced(name="tool:query_signals", run_type="tool")
+@requires_source
+async def query_signals(
+    limit: int = 10,
+    validation_status: str | None = "active",
+    source_metric: str | None = None,
+    target_metric: str | None = None,
+) -> list[dict[str, Any]]:
+    """Return validated Signal Engine relationships ranked by correlation strength.
+
+    Use this for questions like 'what are the strongest signals?', 'top correlations',
+    'what predicts net_sales?', or 'show signal engine results'.
+
+    Args:
+        limit: Max signals to return (default 10).
+        validation_status: Filter by status ('active', 'provisional', None=all).
+        source_metric: Filter by source metric name (leading indicator).
+        target_metric: Filter by target metric name (downstream outcome).
+
+    Returns:
+        List of signals sorted by strength_score descending, tagged source='gold.signal_relationships'.
+    """
+    import pandas as pd
+    from pathlib import Path
+
+    csv_path = Path("data/gold_snapshots/gold_signal_relationships.csv")
+    if not csv_path.exists():
+        csv_path = Path("DATA/gold_snapshots/gold_signal_relationships.csv")
+
+    df = pd.read_csv(str(csv_path))
+
+    if validation_status:
+        df = df[df["validation_status"] == validation_status]
+    if source_metric:
+        df = df[df["source_metric"].str.contains(source_metric, case=False, na=False)]
+    if target_metric:
+        df = df[df["target_metric"].str.contains(target_metric, case=False, na=False)]
+
+    df = df.sort_values("strength_score", ascending=False).head(limit)
+
+    results = []
+    for rank, (_, row) in enumerate(df.iterrows(), start=1):
+        results.append({
+            "rank": rank,
+            "source_asset": str(row["source_asset"]),
+            "source_metric": str(row["source_metric"]),
+            "target_asset": str(row["target_asset"]),
+            "target_metric": str(row["target_metric"]),
+            "strength_score": float(row["strength_score"]),
+            "lag_months": int(row["lag_months"]),
+            "relationship_direction": str(row["relationship_direction"]),
+            "validation_status": str(row["validation_status"]),
+            "business_interpretation": str(row.get("business_interpretation", "")),
+            "source": "gold.signal_relationships",
+        })
+    return results
+
+
 @traced(name="tool:get_benchmark", run_type="tool")
 async def get_benchmark(metric_name: str, peers: list[str] | None = None) -> dict[str, Any]:
     """Retrieve peer benchmark comparison details for a metric."""
@@ -393,6 +451,7 @@ TOOL_REGISTRY: dict[str, Callable[..., Coroutine[Any, Any, Any]]] = {
     "query_metrics": query_metrics,
     "search_knowledge": search_knowledge,
     "get_signal": get_signal,
+    "query_signals": query_signals,
     "get_benchmark": get_benchmark,
     "list_all_metrics": list_all_metrics,
 }

@@ -199,14 +199,60 @@ async def assemble_context(
     return "\n\n".join(context_parts)
 
 
+_ALERT_QUERY_TERMS = frozenset(
+    ["alert", "alerts", "watchdog", "warning", "critical", "fired", "triggered", "anomaly detected"]
+)
+
+_SIGNAL_QUERY_TERMS = frozenset(
+    ["signal", "signals", "signal engine", "correlation", "correlations", "leading indicator",
+     "predicts", "predict", "lag", "downstream", "top signal", "strongest signal"]
+)
+
+_INVESTIGATION_QUERY_TERMS = frozenset(
+    ["investigation", "investigations", "investigated", "investigate",
+     "root cause", "cause", "finding", "findings", "what happened",
+     "latest investigation", "recent investigation", "investigation result"]
+)
+
+
+def _is_alert_focused_query(question: str) -> bool:
+    q = question.lower()
+    return any(term in q for term in _ALERT_QUERY_TERMS)
+
+
+def _is_signal_focused_query(question: str) -> bool:
+    q = question.lower()
+    return any(term in q for term in _SIGNAL_QUERY_TERMS)
+
+
+def _is_investigation_focused_query(question: str) -> bool:
+    q = question.lower()
+    return any(term in q for term in _INVESTIGATION_QUERY_TERMS)
+
+
 async def _enrich_with_alerts(
     context_parts: list[str],  # mutable list being built for LLM context
     metric_names: list[str],
     alerts_repo,
+    *,
+    fetch_all_recent: bool = False,
 ) -> None:
-    """Inject recent Watchdog alerts for queried metrics into context."""
+    """Inject recent Watchdog alerts into context.
+
+    When fetch_all_recent=True (alert-focused query with no metric match),
+    fetches the most recent alerts across all metrics instead of per-metric.
+    """
     from datetime import datetime, timedelta
-    since = datetime.utcnow() - timedelta(days=7)
+    since = datetime.utcnow() - timedelta(days=30)
+
+    if fetch_all_recent:
+        try:
+            recent_alerts = await alerts_repo.list_recent(limit=10, since=since)
+            if recent_alerts:
+                context_parts.append(_format_all_alerts_block(recent_alerts))
+        except Exception as e:
+            logger.warning("Failed to fetch recent alerts: %s", e)
+        return
 
     for metric_name in metric_names:
         try:
@@ -221,37 +267,86 @@ async def _enrich_with_alerts(
             logger.warning("Failed to fetch alerts for %s: %s", metric_name, e)
 
 
+def _alert_detail_line(alert) -> str:
+    """Render one alert as a dense detail line with all available fields."""
+    alert_type_val = alert.alert_type.value if hasattr(alert.alert_type, "value") else str(alert.alert_type)
+    severity_val = alert.severity.value if hasattr(alert.severity, "value") else str(alert.severity)
+    ack = " [acknowledged]" if getattr(alert, "acknowledged_at", None) else ""
+
+    score_curr = getattr(alert, "score_current", None)
+    score_prev = getattr(alert, "score_previous", None)
+    rank_curr = getattr(alert, "current_rank", None)
+    rank_prev = getattr(alert, "previous_rank", None)
+    rank_delta = getattr(alert, "rank_delta", None)
+
+    score_part = ""
+    if score_curr is not None and score_prev is not None:
+        delta = score_curr - score_prev
+        sign = "+" if delta >= 0 else ""
+        score_part = f" | score: {score_prev:.2f} → {score_curr:.2f} ({sign}{delta:.2f})"
+
+    rank_part = ""
+    if rank_prev is not None and rank_curr is not None:
+        rd = f" Δ{rank_delta}" if rank_delta is not None else ""
+        rank_part = f" | rank: #{rank_prev} → #{rank_curr}{rd}"
+
+    return (
+        f"- [{alert.created_at.strftime('%Y-%m-%d')}] {alert.metric_name} | "
+        f"severity: {severity_val} | type: {alert_type_val}{score_part}{rank_part}"
+        f" | rule: {getattr(alert, 'triggered_by_rule', '?')}{ack}"
+    )
+
+
 def _format_alerts_block(metric_name: str, alerts) -> str:
-    """Format alerts as a context block for Scout."""
+    """Format per-metric alert context block for Scout."""
     lines = [f"=== RECENT ALERTS FOR {metric_name} ===", "[source: watchdog_alerts]"]
     for alert in alerts:
-        alert_type_val = alert.alert_type.value if hasattr(alert.alert_type, "value") else str(alert.alert_type)
-        severity_val = alert.severity.value if hasattr(alert.severity, "value") else str(alert.severity)
-        lines.append(
-            f"- {alert.created_at.strftime('%Y-%m-%d')} — "
-            f"alert_type: {alert_type_val}, severity: {severity_val}, "
-            f"rank: {alert.current_rank} (rule: {alert.triggered_by_rule})"
-        )
-        if hasattr(alert, 'triggered_by_rule'):
-            reason = f"  Rule fired: {alert.triggered_by_rule}"
-            lines.append(reason)
+        lines.append(_alert_detail_line(alert))
+    return "\n".join(lines)
+
+
+def _format_all_alerts_block(alerts) -> str:
+    """Format all recent alerts as a context block (for alert-focused queries)."""
+    lines = ["=== RECENT WATCHDOG ALERTS (ALL METRICS) ===", "[source: watchdog_alerts]"]
+    for alert in alerts:
+        lines.append(_alert_detail_line(alert))
     return "\n".join(lines)
 
 
 def format_investigations_for_context(invs: list) -> str:
-    """Format completed investigation findings as a Scout context block."""
-    lines = ["=== RELATED PAST INVESTIGATIONS ===\n[source: investigations]"]
+    """Format investigations as a Scout context block with full detail."""
+    lines = ["=== RECENT INVESTIGATIONS ===", "[source: investigations]"]
     for inv in invs:
-        date_str = inv.started_at.strftime("%Y-%m-%d") if hasattr(inv.started_at, "strftime") else str(inv.started_at)[:10]
-        lines.append(
-            f"- {date_str} (alert {inv.alert_id}, confidence: {inv.confidence}):"
-        )
-        lines.append(f"  Cause: {inv.cause_hypothesis}")
-        if inv.evidence_summary:
-            truncated = inv.evidence_summary[:200]
-            if len(inv.evidence_summary) > 200:
-                truncated += "..."
-            lines.append(f"  Evidence: {truncated}")
+        started = str(getattr(inv, "started_at", ""))[:10]
+        completed = str(getattr(inv, "completed_at", "") or "")[:10]
+        status = getattr(inv, "status", "unknown")
+        status_val = status.value if hasattr(status, "value") else str(status)
+        metric = getattr(inv, "metric_name", "?")
+        inv_id = getattr(inv, "investigation_id", "?")
+        confidence = getattr(inv, "confidence", None)
+        confidence_val = confidence.value if hasattr(confidence, "value") else str(confidence) if confidence else "—"
+
+        lines.append(f"")
+        lines.append(f"Investigation {inv_id} | metric: {metric} | status: {status_val}")
+        lines.append(f"  Started: {started} | Completed: {completed or 'n/a'}")
+
+        if status_val == "completed":
+            lines.append(f"  Confidence: {confidence_val}")
+            cause = getattr(inv, "cause_hypothesis", None)
+            if cause:
+                lines.append(f"  Cause hypothesis: {cause}")
+            evidence = getattr(inv, "evidence_summary", None)
+            if evidence:
+                truncated = evidence[:400] + ("..." if len(evidence) > 400 else "")
+                lines.append(f"  Evidence: {truncated}")
+        elif status_val == "failed":
+            err = getattr(inv, "error_message", None) or ""
+            short_err = err[:150] + ("..." if len(err) > 150 else "") if err else "unknown error"
+            lines.append(f"  Failed: {short_err}")
+        elif status_val == "running":
+            steps = getattr(inv, "total_steps", None)
+            lines.append(f"  In progress — {steps or '?'} steps so far")
+
     return "\n".join(lines)
 
 
@@ -259,9 +354,24 @@ async def _enrich_with_investigations(
     context_parts: list[str],
     metric_names: list[str],
     investigations_repo,
+    *,
+    fetch_all_recent: bool = False,
 ) -> None:
-    """Inject completed past investigations for queried metrics into context."""
+    """Inject past investigations into context.
+
+    When fetch_all_recent=True (investigation-focused query with no metric match),
+    fetches the most recent investigations across all metrics and statuses.
+    """
     from clubos2.investigator.schema import InvestigationStatus
+
+    if fetch_all_recent:
+        try:
+            recent_invs = await investigations_repo.list_recent(limit=5)
+            if recent_invs:
+                context_parts.append(format_investigations_for_context(recent_invs))
+        except Exception as e:
+            logger.warning("Failed to fetch recent investigations: %s", e)
+        return
 
     for metric_name in metric_names:
         try:
@@ -324,6 +434,7 @@ async def run_scout(
     # Phase 3: Alert context enrichment (non-breaking, skipped silently on any failure)
     alerts_were_used = False
     metric_names_queried = list({m.metric_name for m in matched_metrics})
+    alert_focused = _is_alert_focused_query(input.question)
     if enable_alert_context:
         alerts_repo = None
         try:
@@ -335,12 +446,37 @@ async def run_scout(
         if alerts_repo:
             try:
                 alert_context_parts: list[str] = []
-                await _enrich_with_alerts(alert_context_parts, metric_names_queried, alerts_repo)
+                await _enrich_with_alerts(
+                    alert_context_parts,
+                    metric_names_queried,
+                    alerts_repo,
+                    fetch_all_recent=alert_focused and not metric_names_queried,
+                )
                 if alert_context_parts:
                     context_block = context_block + "\n\n" + "\n\n".join(alert_context_parts)
                     alerts_were_used = True
             except Exception as e:
                 logger.warning("Alert context enrichment failed, continuing: %s", e)
+
+    # Phase 3b: Signal context enrichment for signal-focused queries
+    if _is_signal_focused_query(input.question):
+        try:
+            from clubos2.tools.registry import query_signals
+            signals = await query_signals(limit=10)
+            if signals:
+                lines = ["=== SIGNAL ENGINE — TOP SIGNALS BY CORRELATION ===", "[source: gold.signal_relationships]"]
+                for s in signals:
+                    lines.append(
+                        f"#{s['rank']} | {s['source_asset']}.{s['source_metric']} → "
+                        f"{s['target_asset']}.{s['target_metric']} | "
+                        f"strength: {s['strength_score']:.3f} | lag: {s['lag_months']}m | "
+                        f"direction: {s['relationship_direction']} | status: {s['validation_status']}"
+                    )
+                    if s.get("business_interpretation"):
+                        lines.append(f"   interpretation: {s['business_interpretation']}")
+                context_block = context_block + "\n\n" + "\n".join(lines)
+        except Exception as e:
+            logger.warning("Signal context enrichment failed, continuing: %s", e)
 
     # Phase 4: Investigation context enrichment (non-breaking, skipped silently on any failure)
     investigations_were_used = False
@@ -355,7 +491,13 @@ async def run_scout(
         if investigations_repo:
             try:
                 inv_context_parts: list[str] = []
-                await _enrich_with_investigations(inv_context_parts, metric_names_queried, investigations_repo)
+                investigation_focused = _is_investigation_focused_query(input.question)
+                await _enrich_with_investigations(
+                    inv_context_parts,
+                    metric_names_queried,
+                    investigations_repo,
+                    fetch_all_recent=investigation_focused and not metric_names_queried,
+                )
                 if inv_context_parts:
                     context_block = context_block + "\n\n" + "\n\n".join(inv_context_parts)
                     investigations_were_used = True
