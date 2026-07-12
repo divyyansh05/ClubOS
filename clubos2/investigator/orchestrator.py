@@ -141,29 +141,95 @@ async def run_investigation(input: InvestigatorInput) -> InvestigationRunResult:
 
     finding: InvestigatorFinding | None = None
     parse_error: str | None = None
-    try:
-        content = last_message.content if isinstance(last_message.content, str) else ""
-        # Strip markdown fences if the LLM added them despite instructions
-        if "```" in content:
-            parts = content.split("```")
+
+    def _strip_fences(text: str) -> str:
+        if "```" in text:
+            parts = text.split("```")
             if len(parts) >= 2:
-                content = parts[1]
-                if content.startswith("json"):
-                    content = content[4:].strip()
-                content = content.split("```")[0].strip()
+                inner = parts[1]
+                if inner.startswith("json"):
+                    inner = inner[4:].strip()
+                return inner.split("```")[0].strip()
+        return text
 
-        parsed = json.loads(content)
-        parsed.setdefault("alert_id", input.alert_id)
-        parsed.setdefault("metric_name", input.metric_name)
-        # Inject reasoning_trace and tools_called from graph state
-        parsed["reasoning_trace"] = final_state.get("reasoning_trace", [])
-        parsed["tools_called"] = final_state.get("tools_called", [])
-        parsed["total_steps"] = final_state.get("step_count", 0)
+    def _extract_json_object(text: str) -> str:
+        """Find the first {...} block in text (handles prose + JSON mixed output)."""
+        start = text.find("{")
+        if start == -1:
+            return text
+        depth = 0
+        for i, ch in enumerate(text[start:], start):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return text[start : i + 1]
+        return text[start:]
 
-        finding = InvestigatorFinding.model_validate(parsed)
-    except Exception as e:
-        parse_error = f"Failed to parse final finding: {e}"
-        logger.warning(parse_error)
+    async def _synthesis_call(context_messages: list, tools_used: list[str]) -> str:
+        """Call the LLM without tools to force a structured JSON finding output."""
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import HumanMessage
+        from clubos2.gateway.client import GatewaySettings as _GS
+        s = _GS()
+        llm = ChatOpenAI(model=s.investigator_model, temperature=0, max_tokens=1024, api_key=s.openai_api_key or None)
+        tool_ctx = ("Tools used: " + ", ".join(tools_used)) if tools_used else "No tools called."
+        msgs = context_messages + [HumanMessage(content=(
+            f"{tool_ctx}\n\n"
+            f"Summarise your investigation findings as a single raw JSON object.\n"
+            f"Output ONLY the JSON — no markdown, no explanation, no fences.\n"
+            f"Keys required:\n"
+            f"  cause_hypothesis: one sentence explaining the likely cause\n"
+            f"  confidence: one of low, medium, high\n"
+            f"  evidence_summary: 2-3 sentences of supporting evidence from your tool results\n"
+            f"  alert_id: \"{input.alert_id}\"\n"
+            f"  metric_name: \"{input.metric_name}\"\n"
+            f"  citations: [] (empty list is fine)\n"
+            f"  data_gaps: [] (empty list is fine)\n"
+            f"Example: {{\"cause_hypothesis\": \"...\", \"confidence\": \"medium\", "
+            f"\"evidence_summary\": \"...\", \"alert_id\": \"...\", \"metric_name\": \"...\", "
+            f"\"citations\": [], \"data_gaps\": []}}"
+        ))]
+        resp = await llm.ainvoke(msgs)
+        return resp.content if isinstance(resp.content, str) else ""
+
+    content = last_message.content if isinstance(last_message.content, str) else ""
+    content = _strip_fences(content)
+
+    try:
+        # If the model produced prose or empty content, extract the JSON block if present
+        json_content = _extract_json_object(content)
+        parsed = json.loads(json_content)
+    except Exception:
+        # Model didn't produce JSON — force a synthesis call with the full conversation
+        logger.warning("Non-JSON final message for %s — running synthesis", investigation_id)
+        try:
+            synth_content = await _synthesis_call(
+                list(final_state["messages"]),
+                final_state.get("tools_called", []),
+            )
+            synth_content = _strip_fences(synth_content)
+            json_content = _extract_json_object(synth_content)
+            parsed = json.loads(json_content)
+        except Exception as synth_err:
+            parse_error = f"Synthesis failed: {synth_err}"
+            logger.warning(parse_error)
+            parsed = None
+
+    if parsed is not None:
+        try:
+            parsed.setdefault("alert_id", input.alert_id)
+            parsed.setdefault("metric_name", input.metric_name)
+            parsed.setdefault("citations", [])
+            parsed.setdefault("data_gaps", [])
+            parsed["reasoning_trace"] = final_state.get("reasoning_trace", [])
+            parsed["tools_called"] = final_state.get("tools_called", [])
+            parsed["total_steps"] = final_state.get("step_count", 0)
+            finding = InvestigatorFinding.model_validate(parsed)
+        except Exception as e:
+            parse_error = f"Failed to validate finding: {e}"
+            logger.warning(parse_error)
 
     if finding is None:
         status = "timeout" if final_state.get("step_count", 0) >= input.max_steps else "failed"

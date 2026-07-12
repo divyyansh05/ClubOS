@@ -36,7 +36,7 @@ class GatewaySettings(BaseSettings):
 
     default_provider: str = Field(default="openai")
     scout_model: str = Field(default="gpt-4o-mini")
-    investigator_model: str = Field(default="gpt-4o")
+    investigator_model: str = Field(default="gpt-4o-mini")
     ragas_judge_model: str = Field(default="gpt-4o-mini")
     # Legacy aliases kept for pipeline code that reads these directly
     default_routing_model: str = Field(default="gpt-4o-mini")
