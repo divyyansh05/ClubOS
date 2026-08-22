@@ -35,6 +35,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements/base.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# ── CPU-only PyTorch (installed FIRST, before v2-runtime) ──────────────────
+# sentence-transformers (via chromadb / rag reranker) transitively pulls torch.
+# Without this pre-install, pip resolves to GPU-enabled torch + CUDA libs
+# (~900 MB). We only need CPU inference in Cloud Run — this cuts image size
+# by ~700 MB and speeds Docker builds by ~5x.
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu \
+    torch
+
 # ── v2 Python dependencies (langchain, langgraph, chromadb, duckdb, etc.) ──
 # Installed via pyproject.toml optional group [v2-runtime] to keep the group
 # definition single-sourced. Own layer for build caching.

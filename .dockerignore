@@ -43,4 +43,8 @@ databricks/notebooks/
 *.log
 .DS_Store
 **/.DS_Store
-scripts/
+
+# NOTE: scripts/ is intentionally INCLUDED in the image.
+# startup_init.py runs during Docker build (bakes seeded DuckDB state) and
+# at cold-start via FastAPI lifespan. ingest_gold_to_rag.py is invoked
+# by startup_init when the RAG collection is empty.
