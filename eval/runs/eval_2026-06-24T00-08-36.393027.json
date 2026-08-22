@@ -1,0 +1,310 @@
+{
+  "run_id": "eval_2026-06-24T00-08-36.393027",
+  "golden_set_version": "v1",
+  "scout_prompt_version": "v1",
+  "timestamp": "2026-06-24T00:08:45.286072",
+  "results": [
+    {
+      "entry_id": "gq_001",
+      "question": "What was the streaming_daily_users value for November 2025?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "The streaming_daily_users value for November 2025 was 31,762.76 [source: data/gold_snapshots/gold_priority_board.csv].",
+        "citations": [
+          {
+            "claim": "The streaming_daily_users value for November 2025 was 31,762.76",
+            "source": "data/gold_snapshots/gold_priority_board.csv",
+            "section": null,
+            "quote": null
+          }
+        ],
+        "confidence": "low",
+        "assumptions_made": [
+          "Guardrail flagged numbers without traceable source: ['31762.8']. Confidence lowered."
+        ],
+        "metrics_queried": [
+          "streaming_daily_users"
+        ],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 4434,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_002",
+      "question": "What was the net_sales value for eCommerce in January 2026?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 2021,
+      "trace_url": null,
+      "error": "Metric 'social_organic_purchases' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_003",
+      "question": "What was the conversion_rate_ecommerce for November 2025?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "The eCommerce conversion rate for November 2025 is not available in the provided data. The available data includes conversion rates for October 2025 and December 2024, but not for November 2025.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [
+          "Guardrail flagged numbers without traceable source: ['2024']. Confidence lowered."
+        ],
+        "metrics_queried": [
+          "conversion_rate_ecommerce"
+        ],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 6351,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_004",
+      "question": "What is Real Madrid's peer rank for conversion_rate in eCommerce as of the most recent available month?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 34,
+      "trace_url": null,
+      "error": "Metric 'social_organic_purchases' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_005",
+      "question": "What has been the trend for streaming_daily_users over the last available months? Is it going up or down?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 22,
+      "trace_url": null,
+      "error": "Metric 'social_organic_visits_web' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_006",
+      "question": "What was the streaming_daily_users value for December 2022?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover streaming_daily_users values from January 2024 to January 2026. To answer this I would need data for December 2022.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [
+          "Guardrail flagged numbers without traceable source: ['2024', '2026']. Confidence lowered."
+        ],
+        "metrics_queried": [
+          "streaming_daily_users"
+        ],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 2134,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_007",
+      "question": "What does the seasonal Z-score correction account for in the Priority Board scoring system?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover none. To answer this I would need information on the Priority Board scoring system and its seasonal Z-score correction mechanism.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 1407,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_008",
+      "question": "Why are signals filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover none related to the Pearson correlation coefficient or signal filtering criteria. To answer this I would need information on the criteria or rationale used for filtering signals in the signal engine.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 1269,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_009",
+      "question": "How does the 5-component scoring formula work in the Priority Board? What are the weights?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover none related to the Priority Board's scoring formula or its weights. To answer this I would need specific details or documentation about the Priority Board's scoring system and its components.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 1730,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_010",
+      "question": "What is the difference between a leading signal and a coincident signal in the ClubOS signal engine?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover none. To answer this I would need information on the definitions and distinctions between leading and coincident signals in the ClubOS signal engine.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 1382,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_011",
+      "question": "Why is unique_visitors_web considered a leading indicator for net_sales in eCommerce?",
+      "question_type": "narrative",
+      "scout_answer": null,
+      "latency_ms": 44,
+      "trace_url": null,
+      "error": "Metric 'social_organic_purchases' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_012",
+      "question": "What is the current conversion_rate_ecommerce and is it a problem this month given seasonal and peer context?",
+      "question_type": "mixed",
+      "scout_answer": null,
+      "latency_ms": 22,
+      "trace_url": null,
+      "error": "Metric 'social_organic_visits_web' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_013",
+      "question": "What is the net_sales figure for the latest available month, and does the January seasonal pattern apply?",
+      "question_type": "mixed",
+      "scout_answer": {
+        "answer": "The net_sales figure for the latest available month, November 2025, is 4,161,275.12 [source: data/gold_snapshots/gold_priority_board.csv]. The January seasonal pattern, which typically shows a dip of 15-20% post-holiday, does apply as a known trend [source: data/gold_snapshots/gold_priority_board.csv].",
+        "citations": [
+          {
+            "claim": "The net_sales figure for the latest available month, November 2025, is 4,161,275.12",
+            "source": "data/gold_snapshots/gold_priority_board.csv",
+            "section": null,
+            "quote": null
+          },
+          {
+            "claim": "The January seasonal pattern, which typically shows a dip of 15-20% post-holiday, does apply as a known trend.",
+            "source": "data/gold_snapshots/gold_priority_board.csv",
+            "section": null,
+            "quote": null
+          }
+        ],
+        "confidence": "low",
+        "assumptions_made": [
+          "Guardrail flagged numbers without traceable source: ['-20', '15', '2025', '4.16128e+06']. Confidence lowered."
+        ],
+        "metrics_queried": [
+          "net_sales"
+        ],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 2470,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_014",
+      "question": "What is the streaming_daily_users value this month, and why might it have changed from the previous month?",
+      "question_type": "mixed",
+      "scout_answer": null,
+      "latency_ms": 38,
+      "trace_url": null,
+      "error": "Metric 'social_organic_visits_web' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_015",
+      "question": "How does our eCommerce conversion rate compare to peer clubs, and what should we focus on first based on the Priority Board logic?",
+      "question_type": "mixed",
+      "scout_answer": null,
+      "latency_ms": 33,
+      "trace_url": null,
+      "error": "Metric 'post_match_engagement_rate' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_016",
+      "question": "How is conversion rate doing this month?",
+      "question_type": "ambiguous",
+      "scout_answer": null,
+      "latency_ms": 19,
+      "trace_url": null,
+      "error": "Metric 'post_match_engagement_rate' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_017",
+      "question": "What is the engagement rate this month?",
+      "question_type": "ambiguous",
+      "scout_answer": null,
+      "latency_ms": 25,
+      "trace_url": null,
+      "error": "Metric 'post_match_engagement_rate' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_018",
+      "question": "How are visits performing?",
+      "question_type": "ambiguous",
+      "scout_answer": null,
+      "latency_ms": 14,
+      "trace_url": null,
+      "error": "Metric 'social_organic_visits_web' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_019",
+      "question": "Who is the highest-paid player at Real Madrid this season?",
+      "question_type": "unanswerable",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover [list]. To answer this I would need [information on player salaries or contracts for the current season].",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 865,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_020",
+      "question": "What was streaming_daily_users in March 2015?",
+      "question_type": "unanswerable",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover streaming daily users from March 2024 to January 2026. To answer this I would need data from March 2015.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [
+          "Guardrail flagged numbers without traceable source: ['2024', '2026']. Confidence lowered."
+        ],
+        "metrics_queried": [
+          "streaming_daily_users"
+        ],
+        "chunks_retrieved": 0,
+        "retrieved_contexts": []
+      },
+      "latency_ms": 1327,
+      "trace_url": null,
+      "error": null
+    }
+  ],
+  "total_latency_seconds": 25.641,
+  "total_errors": 10
+}

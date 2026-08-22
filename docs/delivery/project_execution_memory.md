@@ -1561,3 +1561,98 @@ All critical blockers resolved. No issues preventing:
 - GitHub repository upload
 - Final demo presentation
 - Final submission delivery
+
+### 2026-06-20 - Session 09 (Stage 2.1 — Metric Registry Database & Schema Creation)
+
+#### Session goal
+
+- Implement the metric registry database connection engine, session lifecycle context manager, raw SQL migrations executor, and unit tests.
+
+#### What changed
+
+- Created `clubos2/semantic_layer/db.py` establishing the DuckDB/Postgres compatible connection engine, sessionmaker, and `get_session` context manager.
+- Implemented `bootstrap_db` in `clubos2/semantic_layer/db.py` which executes migrations in `001_create_metric_registry.sql` idempotently.
+- Updated `clubos2/semantic_layer/__init__.py` to expose the SQLAlchemy mapping, database helpers, and Pydantic schemas.
+- Created unit tests in `tests_v2/test_semantic_layer_schema.py` covering table creation, idempotency, database directory creation, and insert/query operations.
+- Checked type safety and linting on the new files using Ruff and MyPy.
+
+#### Files touched
+
+- `clubos2/semantic_layer/db.py`
+- `clubos2/semantic_layer/__init__.py`
+- `tests_v2/test_semantic_layer_schema.py`
+- `docs/delivery/project_execution_memory.md`
+
+#### What is now genuinely real
+
+- The `metric_registry` table schema is defined in code and migration, and can be initialized in local DuckDB or cloud PostgreSQL.
+- Idempotency and schema read/write capabilities are verified by automated tests.
+
+#### What remains placeholder-only
+
+- The database starts empty; the seed data and metrics registry content are not yet populated.
+
+#### Blockers
+
+- None.
+
+#### Self-audit
+
+- Scope discipline: **Passed** (focused strictly on DB/session setup; did not write seed logic).
+- Deterministic logic: **Passed** (standard SQL and SQLAlchemy mapping).
+- Path resolution safety: **Passed** (resolves absolute database paths and relative directories for local files).
+
+#### Confidence after session
+
+- **10.0 / 10**
+
+#### Is next prompt safe to run?
+
+- **Yes** — Stage 2.2 (seed script implementation) is safe to run.
+
+### 2026-06-22 - Session 10 (Stage 5 — Verification, Endpoint Smoke Tests & Completion Report)
+
+#### Session goal
+
+- Verify and execute full Phase 1 tests.
+- Resolve database path resolution conflicts when uvicorn starts from subdirectory.
+- Seed local DuckDB semantic registry with 59 metrics.
+- Perform manual uvicorn smoke tests and verify endpoint registration.
+- Author the Phase 1 Completion Report.
+
+#### What changed
+
+- Updated `clubos2/semantic_layer/db.py` to use absolute paths relative to repository root for default DuckDB database files, ensuring robust imports.
+- Seeding local database `./var/clubos_semantic.duckdb` with 59 metrics.
+- Created `/Users/divyanshshrivastava/RE Internship project/docs/phase1_completion.md` completion report.
+- Updated `walkthrough.md` with implementation/verification details up to Stage 5.
+- Verified 167 v1 tests passing cleanly.
+- Verified 62 v2 tests passing cleanly (with E2E skipped as expected under normal environment).
+- Verified local backend FastAPI startup and OpenAPI registration of `/api/ai/query`.
+
+#### Files touched
+
+- `clubos2/semantic_layer/db.py`
+- `docs/phase1_completion.md`
+- `docs/delivery/project_execution_memory.md`
+- `walkthrough.md`
+- `task.md`
+
+#### What is now genuinely real
+
+- The database path defaults to an absolute path, preventing catalog exception warnings when importing `clubos2` from subdirectory-started apps (such as backend API).
+- FastAPI backend starts cleanly and includes `/api/ai/query`.
+- Fully documented Phase 1 Completion Report and Walkthrough detailing RAG hybrid search retriever, cross-encoder, tools, semantic registry, and endpoints.
+
+#### Blockers
+
+- None.
+
+#### Confidence after session
+
+- **10.0 / 10**
+
+#### Is next prompt safe to run?
+
+- **Yes** — Phase 1 is complete and verified. Ready for Phase 2 entry.
+

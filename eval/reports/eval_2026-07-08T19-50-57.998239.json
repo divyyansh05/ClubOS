@@ -1,0 +1,560 @@
+{
+  "run_id": "eval_2026-07-08T19-50-57.998239",
+  "timestamp": "2026-07-08T19:53:01.155917",
+  "golden_set_version": "v1",
+  "scout_prompt_version": "v5",
+  "total_questions": 20,
+  "total_errors": 0,
+  "ragas_avg_faithfulness": null,
+  "ragas_avg_context_relevance": null,
+  "ragas_avg_answer_relevance": null,
+  "fabrication_summary": {
+    "total_entries": 20,
+    "entries_with_fabrication": 0,
+    "fabrication_incidence_rate": 0.0,
+    "average_fab_rate_per_entry": 0.0,
+    "fabricated_numbers_total": 0
+  },
+  "behavioural_summary": {
+    "total": 20,
+    "overall_pass_rate": 0.3,
+    "refusal_correct_rate": 0.4,
+    "citation_correct_rate": 0.4,
+    "average_citation_coverage": 0.4
+  },
+  "per_entry": [
+    {
+      "entry_id": "gq_001",
+      "question": "What was the streaming_daily_users value for November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover metrics like `streaming_daily_users`, `conversion_rate_ecommerce`, `unique_visitors_web`, and others, but",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['streaming_daily_users']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_002",
+      "question": "What was the net_sales value for eCommerce in November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover narrative context about net sales patterns and priority scoring but do not include specific net sales val",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['net_sales']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_003",
+      "question": "What was the conversion_rate_ecommerce for January 2026?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover priority board details and peer benchmarks, but do not include specific metric values for January 2026. T",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_004",
+      "question": "What is the peer gap for eCommerce conversion_rate as of the most recent available month?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover priority board topics, scoring weights, and some metrics definitions, but do not include specific peer ga",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_005",
+      "question": "What has been the trend for streaming_daily_users over the last available months? Is it going up or down?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover the existence of the 'streaming_daily_users' metric but do not include specific trend data or values for ",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Expected to state an assumption, none stated",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['streaming_daily_users']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_006",
+      "question": "What was the streaming_daily_users value for December 2022?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover metrics like `streaming_daily_users`, `conversion_rate_ecommerce`, `net_sales`, and others, but specific ",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing metrics queried: ['streaming_daily_users']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_007",
+      "question": "What does the seasonal Z-score correction account for in the Priority Board scoring system?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "The seasonal Z-score correction in the Priority Board scoring system accounts for the typical post-holiday dip in eCommerce net sales, which usually drop by 12-18% in January. This adjustment ensures ",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_008",
+      "question": "Why are signals filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "Signals in the Signal Engine are filtered by a Pearson correlation coefficient of r >= 0.60 to ensure statistical strength. This threshold is set to identify strong relationships between metrics, whic",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_009",
+      "question": "How does the 5-component scoring formula work in the Priority Board? What are the weights?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "The 5-component scoring formula used in the Priority Board calculates the Priority Score, which ranges from 0.00 to 1.00. The weights for the components are as follows: severity (30), persistence (25)",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_010",
+      "question": "What three validation criteria must a relationship pass to become a published signal in the ClubOS Signal Engine?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "For a relationship to become a published signal in the ClubOS Signal Engine, it must pass three validation criteria: 1) Statistical strength with a Pearson correlation coefficient $r \\ge 0.60$, 2) Tem",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_011",
+      "question": "Why is unique_visitors_web considered a leading indicator for net_sales in eCommerce?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "The metric 'unique_visitors_web' is considered a leading indicator for 'net_sales' in eCommerce because it has been validated to have a strong statistical correlation with a Pearson correlation coeffi",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_012",
+      "question": "What is the current conversion_rate_ecommerce and is it a problem this month given seasonal and peer context?",
+      "question_type": "mixed",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover the Priority Board, conversion rate issues, and seasonal sales patterns. To answer this, I would need the",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board', 'skills.priority_board']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_013",
+      "question": "What is the net_sales figure for the latest available month, and does the January seasonal pattern apply?",
+      "question_type": "mixed",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover narrative context about net sales and seasonal patterns but do not include specific net sales figures for",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board', 'skills.priority_board']",
+          "Missing metrics queried: ['net_sales']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_014",
+      "question": "What is the streaming_daily_users value this month, and why might it have changed from the previous month?",
+      "question_type": "mixed",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover metric definitions and priority board descriptions, but do not include specific values for streaming_dail",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['streaming_daily_users']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_015",
+      "question": "How does our eCommerce conversion rate compare to peer clubs, and what should we focus on first based on the Priority Board logic?",
+      "question_type": "mixed",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover the Priority Board's function and the Peer Benchmark screen's purpose, but they do not include specific e",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_016",
+      "question": "How is conversion rate doing this month?",
+      "question_type": "ambiguous",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover priority board topics and metrics like conversion_rate_ecommerce, but no specific data for this month is ",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_017",
+      "question": "How are daily active users looking this month?",
+      "question_type": "ambiguous",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover metrics like `streaming_daily_users`, `fan_app_dau`, and others, but no specific data for the current mon",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['gold.priority_board']",
+          "Missing metrics queried: ['streaming_daily_users']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_018",
+      "question": "How are visits performing?",
+      "question_type": "ambiguous",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover skills related to web visitors, eCommerce conversion rates, and various app metrics, but do not provide s",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Expected to state an assumption, none stated",
+          "Missing citations: ['gold.priority_board']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_019",
+      "question": "Who is the highest-paid player at Real Madrid this season?",
+      "question_type": "unanswerable",
+      "overall_pass": true,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover digital business metrics such as net sales, conversion rates, and unique visitors. To answer this, I woul",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_020",
+      "question": "What was streaming_daily_users in March 2015?",
+      "question_type": "unanswerable",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover metrics like `streaming_daily_users`, but they do not include historical data for March 2015. To answer t",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing metrics queried: ['streaming_daily_users']"
+        ]
+      },
+      "error": null
+    }
+  ]
+}

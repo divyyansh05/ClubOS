@@ -1,0 +1,138 @@
+version: "v5"
+# Extension of v4. Adds 5 questions stressing compound-metric resolution paths.
+# All citations reference preferred_source=gold.kpi_health (set in registry after
+# cross-source data integrity audit, 2026-07-12).
+#
+# Values verified against gold_kpi_health.csv (authoritative source) 2025-11-01.
+
+entries:
+
+  - id: "gq_061"
+    question: "What is streaming_unique_visitors for November 2025?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "788333"
+      - "788"
+      - "streaming"
+      - "unique_visitors"
+    expected_metric_names:
+      - "streaming_unique_visitors"
+    required_citation_sources:
+      - "gold.kpi_health"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "data-layer-audit-2026-07"
+    created_at: "2026-07-12"
+    notes: >
+      Asset-prefix split: streaming_unique_visitors → asset=streaming, raw=unique_visitors.
+      kpi_health value 2025-11-01: 788333.33.
+      preferred_source=gold.kpi_health set in registry after cross-source audit.
+
+  - id: "gq_062"
+    question: "What is the eCommerce conversion rate for November 2025?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "1.46"
+      - "1.5"
+      - "0.0146"
+      - "ecommerce"
+      - "conversion"
+    expected_metric_names:
+      - "conversion_rate_ecommerce"
+    required_citation_sources:
+      - "gold.kpi_health"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "data-layer-audit-2026-07"
+    created_at: "2026-07-12"
+    notes: >
+      Asset-suffix split: conversion_rate_ecommerce → asset=ecommerce, raw=conversion_rate.
+      kpi_health value 2025-11-01: 0.014637 (1.46%).
+      priority_board has no Nov 2025 row for this metric (period gap).
+      preferred_source=gold.kpi_health ensures correct month is returned.
+      Previous eval failure: Scout returned Oct 2025 pb value (0.008245) — now fixed.
+
+  - id: "gq_063"
+    question: "What is the fan app user rating for November 2025?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "4.8"
+      - "fan app"
+      - "rating"
+    expected_metric_names:
+      - "fan_app_user_rating"
+    required_citation_sources:
+      - "gold.kpi_health"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "data-layer-audit-2026-07"
+    created_at: "2026-07-12"
+    notes: >
+      Asset-prefix split: fan_app_user_rating → asset=fan_app, raw=user_rating.
+      kpi_health value 2025-11-01: 4.8.
+      Previous eval failure: ambiguous "this November" caused Scout to interpret
+      as Nov 2026 (future) and refuse. Fixed to explicit "November 2025".
+
+  - id: "gq_064"
+    question: "What is the streaming subscription rate for November 2025?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "3.04"
+      - "3.0"
+      - "0.030"
+      - "subscription"
+      - "streaming"
+    expected_metric_names:
+      - "streaming_subscription_rate"
+      - "conversion_rate_streaming"
+    required_citation_sources:
+      - "gold.kpi_health"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "data-layer-audit-2026-07"
+    created_at: "2026-07-12"
+    notes: >
+      Tests both canonical alias (streaming_subscription_rate) and registry alias
+      (conversion_rate_streaming via METRIC_NAME_ALIASES).
+      kpi_health value 2025-11-01: 0.03044 (3.044%).
+      priority_board has no Nov 2025 row — period gap resolved by preferred_source.
+
+  - id: "gq_065"
+    question: "Compare eCommerce unique visitors and streaming unique visitors for November 2025."
+    question_type: mixed
+    expected_answer_facts:
+      - "1670885"
+      - "1.67"
+      - "788333"
+      - "788"
+      - "ecommerce"
+      - "streaming"
+    expected_metric_names:
+      - "ecommerce_unique_visitors"
+      - "streaming_unique_visitors"
+    required_citation_sources:
+      - "gold.kpi_health"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "data-layer-audit-2026-07"
+    created_at: "2026-07-12"
+    notes: >
+      Cross-asset same-metric-type comparison. Both resolve via kpi_health.
+      ecommerce_unique_visitors 2025-11: 1670885.87
+      streaming_unique_visitors 2025-11: 788333.33
+      eCommerce gets ~2.1x more unique visitors than streaming.

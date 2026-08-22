@@ -1,0 +1,524 @@
+{
+  "run_id": "eval_2026-07-03T16-07-59.051701",
+  "golden_set_version": "v1",
+  "scout_prompt_version": "v5",
+  "timestamp": "2026-07-03T16:08:43.759351",
+  "results": [
+    {
+      "entry_id": "gq_001",
+      "question": "What was the streaming_daily_users value for November 2025?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover streaming_daily_users but do not include specific numeric values for November 2025. To answer this I would need the exact streaming_daily_users data for that month.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`",
+          "- \"How many web visitors did we have in November?\" (Requires Command Center or Priority Board detail view)\n- \"What is Masia FC's organic search visits?\" (Requires Peer Benchmark screen)\n- \"What are our critical priorities for this month?\" (Requires Priority Board screen)",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "- `unique_visitors_web`\n- `net_sales`",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\"\n\n[source: skills.monthly_briefing]\n\"- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`\"\n\n[source: skills.signal_engine]\n\"- \"How many web visitors did we have in November?\" (Requires Command Center or Priority Board detail view)\n- \"What is Masia FC's organic search visits?\" (Requires Peer Benchmark screen)\n- \"What are our critical priorities for this month?\" (Requires Priority Board screen)\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\"\n\n[source: skills.signal_engine]\n\"- `unique_visitors_web`\n- `net_sales`\""
+        ]
+      },
+      "latency_ms": 17572,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_002",
+      "question": "What was the net_sales value for eCommerce in November 2025?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover eCommerce metrics and seasonal trends but do not include specific numeric values for net sales in November 2025. To answer this I would need the exact net sales data for that month.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.",
+          "- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`",
+          "- \"What leading indicators predict eCommerce net sales?\"\n- \"Which digital signals have a 2-month lag?\"\n- \"Show me the strongest validated correlation signals.\"\n- \"How does website traffic affect eCommerce sales over time?\"\n- \"What is the correlation coefficient of the web-to-sales signal?\"\n- \"List the validated temporal lag relationships.\"",
+          "- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.",
+          "- `unique_visitors_web`\n- `net_sales`",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.\"\n\n[source: skills.priority_board]\n\"- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`\"\n\n[source: skills.signal_engine]\n\"- \"What leading indicators predict eCommerce net sales?\"\n- \"Which digital signals have a 2-month lag?\"\n- \"Show me the strongest validated correlation signals.\"\n- \"How does website traffic affect eCommerce sales over time?\"\n- \"What is the correlation coefficient of the web-to-sales signal?\"\n- \"List the validated temporal lag relationships.\"\"\n\n[source: skills.priority_board]\n\"- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.\"\n\n[source: skills.signal_engine]\n\"- `unique_visitors_web`\n- `net_sales`\""
+        ]
+      },
+      "latency_ms": 17726,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_003",
+      "question": "What was the conversion_rate_ecommerce for January 2026?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover eCommerce metrics but do not include specific values for January 2026. To answer this I would need the conversion_rate_ecommerce data for that month.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.",
+          "- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`",
+          "- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.",
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.\"\n\n[source: skills.priority_board]\n\"- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`\"\n\n[source: skills.priority_board]\n\"- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.\"\n\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\"\n\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\""
+        ]
+      },
+      "latency_ms": 17653,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_004",
+      "question": "What is the peer gap for eCommerce conversion_rate as of the most recent available month?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover eCommerce conversion rates and peer benchmarks, but do not specify the peer gap for eCommerce conversion rate. To answer this I would need specific data on the peer gap for eCommerce conversion rate.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)",
+          "- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.",
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`",
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)\"\n\n[source: skills.priority_board]\n\"- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.\"\n\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\"\n\n[source: skills.priority_board]\n\"- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`\"\n\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\""
+        ]
+      },
+      "latency_ms": 3152,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_005",
+      "question": "What has been the trend for streaming_daily_users over the last available months? Is it going up or down?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover metrics related to streaming daily users but do not include specific trend data over the last available months. To answer this, I would need historical numeric values for streaming_daily_users over multiple months.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`",
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.monthly_briefing]\n\"- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`\"\n\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\"\n\n[source: skills.signal_engine]\n\"The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\"\n\n[source: skills.priority_board]\n\"- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)\""
+        ]
+      },
+      "latency_ms": 3035,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_006",
+      "question": "What was the streaming_daily_users value for December 2022?",
+      "question_type": "quantitative",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover streaming_daily_users but do not include specific values for December 2022. To answer this I would need the streaming_daily_users data for December 2022.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "- `unique_visitors_web`\n- `net_sales`",
+          "The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\"\n\n[source: skills.monthly_briefing]\n\"- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\"\n\n[source: skills.signal_engine]\n\"- `unique_visitors_web`\n- `net_sales`\"\n\n[source: skills.signal_engine]\n\"The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"\""
+        ]
+      },
+      "latency_ms": 2889,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_007",
+      "question": "What does the seasonal Z-score correction account for in the Priority Board scoring system?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "The seasonal Z-score correction in the Priority Board scoring system accounts for the typical post-holiday dip in eCommerce net sales, which usually drops by 12-18% in January following the holiday season. This adjustment ensures that standard post-holiday sales drops are not flagged as crises [source: skills.priority_board].",
+        "citations": [
+          {
+            "claim": "The seasonal Z-score correction accounts for the typical post-holiday dip in eCommerce net sales.",
+            "source": "skills.priority_board",
+            "section": null,
+            "quote": "January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season."
+          }
+        ],
+        "confidence": "high",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.",
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.",
+          "- Never invent a metric value or priority score not present in the registry or Gold layer tables.\n- Never compute \"what-if\" projection scenarios (e.g. \"What would our score be if sales rose 10%?\"). The Investigator agent handles scenarios; the Scout only reports.\n- Never rank metrics or priorities using any formula other than the existing 5-component priority score.",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.\"\n\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\"\n\n[source: skills.priority_board]\n\"- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.\"\n\n[source: skills.priority_board]\n\"- Never invent a metric value or priority score not present in the registry or Gold layer tables.\n- Never compute \"what-if\" projection scenarios (e.g. \"What would our score be if sales rose 10%?\"). The Investigator agent handles scenarios; the Scout only reports.\n- Never rank metrics or priorities using any formula other than the existing 5-component priority score.\""
+        ]
+      },
+      "latency_ms": 4296,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_008",
+      "question": "Why are signals filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "Signals are filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine to ensure statistical strength, which is one of the three strict criteria that a signal relationship must pass before being published and displayed. This threshold helps to validate the reliability of the correlation between metrics, ensuring that only strong relationships are considered for predicting changes in business outcomes.",
+        "citations": [
+          {
+            "claim": "Signals are filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine to ensure statistical strength.",
+            "source": "skills.signal_engine",
+            "section": null,
+            "quote": null
+          }
+        ],
+        "confidence": "high",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- Three validation gates: For a signal relationship to be published and displayed, it must pass three strict criteria:\n  1. Statistical strength: Pearson correlation coefficient $r \\ge 0.60$.\n  2. Temporal precedence: A lag of 1 to 3 months (the cause must precede the effect).\n  3. Commercial logic: A sound business explanation connecting the metrics (no spurious correlations).\n- An example is `unique_visitors_web` leading `net_sales` by a 2-month lag with a 69% ($r = 0.69$) correlation.\n- Correlation is not immediate: The temporal lag is a physical customer behavior delay. Do not conflate same-month correlation with validated leading signal lags.",
+          "The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"",
+          "- Stakeholders say \"leading indicator\" or \"forward signals\" → we mean the Signal Engine.\n- Stakeholders say \"visitor-to-cash delay\" or \"sales delay\" → we mean the temporal lag of the signal.\n- Stakeholders say \"predictive metrics\" → we mean validated signal relationships.",
+          "- \"What leading indicators predict eCommerce net sales?\"\n- \"Which digital signals have a 2-month lag?\"\n- \"Show me the strongest validated correlation signals.\"\n- \"How does website traffic affect eCommerce sales over time?\"\n- \"What is the correlation coefficient of the web-to-sales signal?\"\n- \"List the validated temporal lag relationships.\"",
+          "- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.signal_engine]\n\"- Three validation gates: For a signal relationship to be published and displayed, it must pass three strict criteria:\n  1. Statistical strength: Pearson correlation coefficient $r \\ge 0.60$.\n  2. Temporal precedence: A lag of 1 to 3 months (the cause must precede the effect).\n  3. Commercial logic: A sound business explanation connecting the metrics (no spurious correlations).\n- An example is `unique_visitors_web` leading `net_sales` by a 2-month lag with a 69% ($r = 0.69$) correlation.\n- Correlation is not immediate: The temporal lag is a physical customer behavior delay. Do not conflate same-month correlation with validated leading signal lags.\"\n\n[source: skills.signal_engine]\n\"The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"\"\n\n[source: skills.signal_engine]\n\"- Stakeholders say \"leading indicator\" or \"forward signals\" → we mean the Signal Engine.\n- Stakeholders say \"visitor-to-cash delay\" or \"sales delay\" → we mean the temporal lag of the signal.\n- Stakeholders say \"predictive metrics\" → we mean validated signal relationships.\"\n\n[source: skills.signal_engine]\n\"- \"What leading indicators predict eCommerce net sales?\"\n- \"Which digital signals have a 2-month lag?\"\n- \"Show me the strongest validated correlation signals.\"\n- \"How does website traffic affect eCommerce sales over time?\"\n- \"What is the correlation coefficient of the web-to-sales signal?\"\n- \"List the validated temporal lag relationships.\"\"\n\n[source: skills.priority_board]\n\"- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)\""
+        ]
+      },
+      "latency_ms": 3648,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_009",
+      "question": "How does the 5-component scoring formula work in the Priority Board? What are the weights?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "The 5-component scoring formula in the Priority Board is calculated using fixed weights: 30 for severity, 25 for persistence, 20 for peer gap, 15 for commercial weight, and 10 for supporting evidence.",
+        "citations": [
+          {
+            "claim": "The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence).",
+            "source": "skills.priority_board",
+            "section": null,
+            "quote": null
+          }
+        ],
+        "confidence": "high",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.",
+          "- Never invent a metric value or priority score not present in the registry or Gold layer tables.\n- Never compute \"what-if\" projection scenarios (e.g. \"What would our score be if sales rose 10%?\"). The Investigator agent handles scenarios; the Scout only reports.\n- Never rank metrics or priorities using any formula other than the existing 5-component priority score.",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.",
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.\"\n\n[source: skills.priority_board]\n\"- Never invent a metric value or priority score not present in the registry or Gold layer tables.\n- Never compute \"what-if\" projection scenarios (e.g. \"What would our score be if sales rose 10%?\"). The Investigator agent handles scenarios; the Scout only reports.\n- Never rank metrics or priorities using any formula other than the existing 5-component priority score.\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\"\n\n[source: skills.priority_board]\n\"- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.\"\n\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\""
+        ]
+      },
+      "latency_ms": 5502,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_010",
+      "question": "What three validation criteria must a relationship pass to become a published signal in the ClubOS Signal Engine?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "A relationship must pass three validation criteria to become a published signal in the ClubOS Signal Engine: 1) Statistical strength: Pearson correlation coefficient $r \\ge 0.60$; 2) Temporal precedence: A lag of 1 to 3 months (the cause must precede the effect); 3) Commercial logic: A sound business explanation connecting the metrics (no spurious correlations).",
+        "citations": [
+          {
+            "claim": "A relationship must pass three validation criteria to become a published signal in the ClubOS Signal Engine.",
+            "source": "skills.signal_engine",
+            "section": null,
+            "quote": null
+          }
+        ],
+        "confidence": "high",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- Three validation gates: For a signal relationship to be published and displayed, it must pass three strict criteria:\n  1. Statistical strength: Pearson correlation coefficient $r \\ge 0.60$.\n  2. Temporal precedence: A lag of 1 to 3 months (the cause must precede the effect).\n  3. Commercial logic: A sound business explanation connecting the metrics (no spurious correlations).\n- An example is `unique_visitors_web` leading `net_sales` by a 2-month lag with a 69% ($r = 0.69$) correlation.\n- Correlation is not immediate: The temporal lag is a physical customer behavior delay. Do not conflate same-month correlation with validated leading signal lags.",
+          "The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"",
+          "- Stakeholders say \"leading indicator\" or \"forward signals\" → we mean the Signal Engine.\n- Stakeholders say \"visitor-to-cash delay\" or \"sales delay\" → we mean the temporal lag of the signal.\n- Stakeholders say \"predictive metrics\" → we mean validated signal relationships.",
+          "- Gold table: `gold_signal_relationships`\n- Design doc: [signal_validation_logic.md](file:///Users/divyanshshrivastava/RE%20Internship%20project/docs/architecture/signal_validation_logic.md)\n- Metric registry: `metric_registry` table",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.signal_engine]\n\"- Three validation gates: For a signal relationship to be published and displayed, it must pass three strict criteria:\n  1. Statistical strength: Pearson correlation coefficient $r \\ge 0.60$.\n  2. Temporal precedence: A lag of 1 to 3 months (the cause must precede the effect).\n  3. Commercial logic: A sound business explanation connecting the metrics (no spurious correlations).\n- An example is `unique_visitors_web` leading `net_sales` by a 2-month lag with a 69% ($r = 0.69$) correlation.\n- Correlation is not immediate: The temporal lag is a physical customer behavior delay. Do not conflate same-month correlation with validated leading signal lags.\"\n\n[source: skills.signal_engine]\n\"The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"\"\n\n[source: skills.signal_engine]\n\"- Stakeholders say \"leading indicator\" or \"forward signals\" → we mean the Signal Engine.\n- Stakeholders say \"visitor-to-cash delay\" or \"sales delay\" → we mean the temporal lag of the signal.\n- Stakeholders say \"predictive metrics\" → we mean validated signal relationships.\"\n\n[source: skills.signal_engine]\n\"- Gold table: `gold_signal_relationships`\n- Design doc: [signal_validation_logic.md](file:///Users/divyanshshrivastava/RE%20Internship%20project/docs/architecture/signal_validation_logic.md)\n- Metric registry: `metric_registry` table\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\""
+        ]
+      },
+      "latency_ms": 4460,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_011",
+      "question": "Why is unique_visitors_web considered a leading indicator for net_sales in eCommerce?",
+      "question_type": "narrative",
+      "scout_answer": {
+        "answer": "Unique_visitors_web is considered a leading indicator for net_sales in eCommerce because it has been validated to have a strong statistical correlation with net sales, specifically with a Pearson correlation coefficient of 0.69. This indicates a significant relationship where changes in unique web visitors can predict changes in net sales, with a temporal lag of 2 months, meaning that increases in web traffic typically precede increases in sales by this duration. This relationship is based on the criteria of statistical strength, temporal precedence, and commercial logic, ensuring that the correlation is not spurious and has a sound business explanation connecting the metrics.",
+        "citations": [
+          {
+            "claim": "Unique_visitors_web has a 69% correlation with net_sales, leading by a 2-month lag.",
+            "source": "skills.signal_engine",
+            "section": null,
+            "quote": null
+          }
+        ],
+        "confidence": "high",
+        "assumptions_made": [
+          "Assumed 'visitors' refers to unique_visitors_web per disambiguation rule."
+        ],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- Three validation gates: For a signal relationship to be published and displayed, it must pass three strict criteria:\n  1. Statistical strength: Pearson correlation coefficient $r \\ge 0.60$.\n  2. Temporal precedence: A lag of 1 to 3 months (the cause must precede the effect).\n  3. Commercial logic: A sound business explanation connecting the metrics (no spurious correlations).\n- An example is `unique_visitors_web` leading `net_sales` by a 2-month lag with a 69% ($r = 0.69$) correlation.\n- Correlation is not immediate: The temporal lag is a physical customer behavior delay. Do not conflate same-month correlation with validated leading signal lags.",
+          "- `unique_visitors_web`\n- `net_sales`",
+          "- \"What leading indicators predict eCommerce net sales?\"\n- \"Which digital signals have a 2-month lag?\"\n- \"Show me the strongest validated correlation signals.\"\n- \"How does website traffic affect eCommerce sales over time?\"\n- \"What is the correlation coefficient of the web-to-sales signal?\"\n- \"List the validated temporal lag relationships.\"",
+          "The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"",
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.signal_engine]\n\"- Three validation gates: For a signal relationship to be published and displayed, it must pass three strict criteria:\n  1. Statistical strength: Pearson correlation coefficient $r \\ge 0.60$.\n  2. Temporal precedence: A lag of 1 to 3 months (the cause must precede the effect).\n  3. Commercial logic: A sound business explanation connecting the metrics (no spurious correlations).\n- An example is `unique_visitors_web` leading `net_sales` by a 2-month lag with a 69% ($r = 0.69$) correlation.\n- Correlation is not immediate: The temporal lag is a physical customer behavior delay. Do not conflate same-month correlation with validated leading signal lags.\"\n\n[source: skills.signal_engine]\n\"- `unique_visitors_web`\n- `net_sales`\"\n\n[source: skills.signal_engine]\n\"- \"What leading indicators predict eCommerce net sales?\"\n- \"Which digital signals have a 2-month lag?\"\n- \"Show me the strongest validated correlation signals.\"\n- \"How does website traffic affect eCommerce sales over time?\"\n- \"What is the correlation coefficient of the web-to-sales signal?\"\n- \"List the validated temporal lag relationships.\"\"\n\n[source: skills.signal_engine]\n\"The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"\"\n\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\"\n\n=== AMBIGUITY NOTES ===\n- \"visitors\" detected: defaulting to unique_visitors_web per rule. State this assumption in your answer. Rule: No disambiguation rule found."
+        ]
+      },
+      "latency_ms": 6049,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_012",
+      "question": "What is the current conversion_rate_ecommerce and is it a problem this month given seasonal and peer context?",
+      "question_type": "mixed",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover the definition of the conversion rate as `conversion_rate_ecommerce` and mention that it can be marked as a high priority if it displays a low score. However, I do not have the specific current value for `conversion_rate_ecommerce` or its status for this month. To answer this, I would need the latest metric data for `conversion_rate_ecommerce` and its priority status.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.",
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)",
+          "- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.",
+          "- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.\"\n\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\"\n\n[source: skills.priority_board]\n\"- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)\"\n\n[source: skills.priority_board]\n\"- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.\"\n\n[source: skills.priority_board]\n\"- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`\""
+        ]
+      },
+      "latency_ms": 3886,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_013",
+      "question": "What is the net_sales figure for the latest available month, and does the January seasonal pattern apply?",
+      "question_type": "mixed",
+      "scout_answer": {
+        "answer": "The latest available net sales figure is not provided in the current context. However, it is noted that eCommerce net sales typically drop 12-18% in January following the holiday season, indicating that the January seasonal pattern does apply [source: skills.priority_board].",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [
+          "Assumed that the latest available month is January based on the context provided."
+        ],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.",
+          "- `unique_visitors_web`\n- `net_sales`",
+          "- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`",
+          "- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`",
+          "The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- January net sales post-holiday dip: eCommerce net sales always drop 12-18% in January following the holiday season. The system's seasonal Z-score scoring adjusts for this pattern automatically so that standard post-holiday sales drops are not flagged as crises. If you see `net_sales` ranked as the #1 priority in January, investigate whether the rolling-average calculation bug has returned.\n- Fixed 5-component scoring weights: The Priority Score (0.00 to 1.00) is calculated using a fixed formula with weights: 30 (severity), 25 (persistence), 20 (peer gap), 15 (commercial weight), and 10 (supporting evidence). Do not attempt to dynamically recalculate or normalize these weights on a per-question basis.\"\n\n[source: skills.signal_engine]\n\"- `unique_visitors_web`\n- `net_sales`\"\n\n[source: skills.priority_board]\n\"- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`\"\n\n[source: skills.monthly_briefing]\n\"- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`\"\n\n[source: skills.signal_engine]\n\"The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"\""
+        ]
+      },
+      "latency_ms": 3148,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_014",
+      "question": "What is the streaming_daily_users value this month, and why might it have changed from the previous month?",
+      "question_type": "mixed",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover streaming_daily_users but do not include specific numeric values or explanations for changes from the previous month. To answer this, I would need the actual streaming_daily_users value for this month and the previous month, along with any contextual information regarding changes.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`",
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\"\n\n[source: skills.monthly_briefing]\n\"- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`\"\n\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\"\n\n[source: skills.signal_engine]\n\"The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"\""
+        ]
+      },
+      "latency_ms": 3085,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_015",
+      "question": "How does our eCommerce conversion rate compare to peer clubs, and what should we focus on first based on the Priority Board logic?",
+      "question_type": "mixed",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover the Priority Board and its purpose, but do not include specific metrics for eCommerce conversion rates or comparisons with peer clubs. To answer this, I would need the actual eCommerce conversion rate data and the corresponding peer club benchmarks.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)",
+          "The Peer Benchmark screen compares the club's digital performance KPIs against anonymized peer clubs in the industry, highlighting our ranking and performance gaps.",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\"\n\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\"\n\n[source: skills.priority_board]\n\"- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)\"\n\n[source: skills.peer_benchmark]\n\"The Peer Benchmark screen compares the club's digital performance KPIs against anonymized peer clubs in the industry, highlighting our ranking and performance gaps.\""
+        ]
+      },
+      "latency_ms": 2795,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_016",
+      "question": "How is conversion rate doing this month?",
+      "question_type": "ambiguous",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover priority definitions and metrics but do not include specific values for the conversion rate this month. To answer this I would need the latest conversion rate data for the current month.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)",
+          "- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.",
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\"\n\n[source: skills.priority_board]\n\"- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)\"\n\n[source: skills.priority_board]\n\"- Stakeholders say \"priority list\" or \"what is on the agenda\" → we mean the Priority Board.\n- Stakeholders say \"the conversion problem\" → we mean `conversion_rate_ecommerce` (specifically when it displays a low score/high priority on the Board).\n- Stakeholders say \"sales drop\" → we refer to the `net_sales` priority status.\"\n\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\"\n\n[source: skills.priority_board]\n\"- `net_sales`\n- `conversion_rate_ecommerce`\n- `bounce_rate_web`\"\n\n=== AMBIGUITY NOTES ===\n- \"conversion rate\" detected: defaulting to conversion_rate_ecommerce per rule. State this assumption in your answer. Rule: No disambiguation rule found."
+        ]
+      },
+      "latency_ms": 2492,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_017",
+      "question": "How are daily active users looking this month?",
+      "question_type": "ambiguous",
+      "scout_answer": {
+        "answer": "I have data for streaming daily users in November. The streaming daily users were 31,762 in November 2025 [source: gold.priority_board].",
+        "citations": [
+          {
+            "claim": "Streaming daily users were 31,762 in November 2025.",
+            "source": "gold.priority_board",
+            "section": null,
+            "quote": null
+          }
+        ],
+        "confidence": "low",
+        "assumptions_made": [
+          "Assumed 'daily active users' refers to streaming_daily_users per disambiguation rule.",
+          "Guardrail flagged numbers without traceable source: ['31762']. Confidence lowered."
+        ],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- \"How many web visitors did we have in November?\" (Requires Command Center or Priority Board detail view)\n- \"What is Masia FC's organic search visits?\" (Requires Peer Benchmark screen)\n- \"What are our critical priorities for this month?\" (Requires Priority Board screen)",
+          "- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`",
+          "- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"",
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "The Monthly Briefing screen displays synthesised executive summaries and narrative briefings that explain business anomalies, benchmark standings, and signal developments for the month.",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.signal_engine]\n\"- \"How many web visitors did we have in November?\" (Requires Command Center or Priority Board detail view)\n- \"What is Masia FC's organic search visits?\" (Requires Peer Benchmark screen)\n- \"What are our critical priorities for this month?\" (Requires Priority Board screen)\"\n\n[source: skills.monthly_briefing]\n\"- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`\"\n\n[source: skills.priority_board]\n\"- \"What are our top priorities for this month?\"\n- \"Which digital platforms have the highest priority score?\"\n- \"Show me the critical opportunities on the Priority Board.\"\n- \"Why is eCommerce conversion rate marked as a high priority?\"\n- \"What is the score breakdown of the number one priority?\"\n- \"List the priority cards ranked by importance.\"\"\n\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\"\n\n[source: skills.monthly_briefing]\n\"The Monthly Briefing screen displays synthesised executive summaries and narrative briefings that explain business anomalies, benchmark standings, and signal developments for the month.\"\n\n=== AMBIGUITY NOTES ===\n- \"daily active users\" detected: defaulting to streaming_daily_users per rule. State this assumption in your answer. Rule: No disambiguation rule found."
+        ]
+      },
+      "latency_ms": 3902,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_018",
+      "question": "How are visits performing?",
+      "question_type": "ambiguous",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover web visits, but specific performance metrics or trends are not included. To answer this I would need data on the number of visits and any comparative metrics or trends over time.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- \"How many web visitors did we have in November?\" (Requires Command Center or Priority Board detail view)\n- \"What is Masia FC's organic search visits?\" (Requires Peer Benchmark screen)\n- \"What are our critical priorities for this month?\" (Requires Priority Board screen)",
+          "- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)",
+          "- `fan_app_dau`\n- `app_downloads`\n- `matchday_visits`\n- `pct_android`\n- `organic_launch_visits`\n- `app_push_visits`\n- `deeplink_visits`\n- `other_channel_visits`\n- `session_time_avg`\n- `heavy_users`",
+          "- `unique_visitors_web`\n- `net_sales`",
+          "- Stakeholders say \"leading indicator\" or \"forward signals\" → we mean the Signal Engine.\n- Stakeholders say \"visitor-to-cash delay\" or \"sales delay\" → we mean the temporal lag of the signal.\n- Stakeholders say \"predictive metrics\" → we mean validated signal relationships.",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.signal_engine]\n\"- \"How many web visitors did we have in November?\" (Requires Command Center or Priority Board detail view)\n- \"What is Masia FC's organic search visits?\" (Requires Peer Benchmark screen)\n- \"What are our critical priorities for this month?\" (Requires Priority Board screen)\"\n\n[source: skills.priority_board]\n\"- \"Which Instagram Reel had the highest view count last week?\" (Requires Social Intelligence screen)\n- \"What is the two-month lag correlation between web visits and eCommerce sales?\" (Requires Signal Engine screen)\n- \"Compare our eCommerce conversion rate directly with Masia FC's average.\" (Requires Peer Benchmark screen)\"\n\n[source: skills.command_center]\n\"- `fan_app_dau`\n- `app_downloads`\n- `matchday_visits`\n- `pct_android`\n- `organic_launch_visits`\n- `app_push_visits`\n- `deeplink_visits`\n- `other_channel_visits`\n- `session_time_avg`\n- `heavy_users`\"\n\n[source: skills.signal_engine]\n\"- `unique_visitors_web`\n- `net_sales`\"\n\n[source: skills.signal_engine]\n\"- Stakeholders say \"leading indicator\" or \"forward signals\" → we mean the Signal Engine.\n- Stakeholders say \"visitor-to-cash delay\" or \"sales delay\" → we mean the temporal lag of the signal.\n- Stakeholders say \"predictive metrics\" → we mean validated signal relationships.\""
+        ]
+      },
+      "latency_ms": 2605,
+      "trace_url": null,
+      "error": null
+    },
+    {
+      "entry_id": "gq_019",
+      "question": "Who is the highest-paid player at Real Madrid this season?",
+      "question_type": "unanswerable",
+      "scout_answer": null,
+      "latency_ms": 3980,
+      "trace_url": null,
+      "error": "Failed to validate response against Pydantic schema ScoutAnswer. Raw content: {\n  \"answer\": \"I don't have data in my current context that answers this question. The provided sources cover digital performance KPIs and metrics related to web traffic, sales, and user engagement, but do not include information about player salaries or contracts. To answer this I would need data on player salaries for the current season.\"\n}"
+    },
+    {
+      "entry_id": "gq_020",
+      "question": "What was streaming_daily_users in March 2015?",
+      "question_type": "unanswerable",
+      "scout_answer": {
+        "answer": "I don't have data in my current context that answers this question. The provided sources cover metrics like `streaming_daily_users`, but there is no specific data for March 2015. To answer this I would need the streaming daily users data for that specific month.",
+        "citations": [],
+        "confidence": "low",
+        "assumptions_made": [],
+        "metrics_queried": [],
+        "chunks_retrieved": 5,
+        "retrieved_contexts": [
+          "- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`",
+          "- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`",
+          "The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"",
+          "The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"",
+          "- `fan_app_dau`\n- `app_downloads`\n- `matchday_visits`\n- `pct_android`\n- `organic_launch_visits`\n- `app_push_visits`\n- `deeplink_visits`\n- `other_channel_visits`\n- `session_time_avg`\n- `heavy_users`",
+          "=== NARRATIVE CONTEXT ===\n[source: skills.monthly_briefing]\n\"- `net_sales`\n- `streaming_daily_users`\n- `fan_app_dau`\"\n\n[source: skills.peer_benchmark]\n\"- `streaming_daily_users`\n- `conversion_rate_ecommerce`\n- `conversion_rate_streaming`\n- `unique_visitors_web`\n- `bounce_rate_web`\"\n\n[source: skills.priority_board]\n\"The Priority Board is the operational homepage of ClubOS. It displays a dynamically calculated, ranked list of monthly business priorities (critical issues and opportunities) across all digital platforms (eCommerce, Streaming, Social, Web, and Fan App). It answers the core business question: \"Given the latest monthly data upload, what are the top 3-5 high-priority areas we must address immediately to maximize digital growth and mitigate operational risks?\"\"\n\n[source: skills.signal_engine]\n\"The Signal Engine page displays validated leading indicator relationships between digital metrics, helping management anticipate shifts in business outcomes. It answers the core business question: \"Which digital leading indicators statistically predict changes in our primary commercial outcomes (like net sales or streaming subscriptions) several months in advance, and what is the strength and lag of these prediction patterns?\"\"\n\n[source: skills.command_center]\n\"- `fan_app_dau`\n- `app_downloads`\n- `matchday_visits`\n- `pct_android`\n- `organic_launch_visits`\n- `app_push_visits`\n- `deeplink_visits`\n- `other_channel_visits`\n- `session_time_avg`\n- `heavy_users`\""
+        ]
+      },
+      "latency_ms": 8334,
+      "trace_url": null,
+      "error": null
+    }
+  ],
+  "total_latency_seconds": 120.209,
+  "total_errors": 1
+}
