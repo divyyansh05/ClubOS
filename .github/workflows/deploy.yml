@@ -54,18 +54,23 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
+          # Bumped memory 1Gi -> 2Gi for v2 stack (chromadb + sentence-transformers).
+          # Bumped timeout 300 -> 600s for Investigator runs (can hit 30-60s).
+          # v2 env vars: OPENAI_API_KEY (required), LANGSMITH_* (tracing, optional),
+          # WEB_SEARCH_PROVIDER=none (no Tavily key configured — graceful degradation),
+          # SCOUT_PROMPT_VERSION (must match baseline), persistent-state paths under /app/var.
           gcloud run deploy ${{ env.SERVICE }} \
             --image=${{ env.IMAGE }}:${{ github.sha }} \
             --platform=managed \
             --region=${{ env.REGION }} \
             --allow-unauthenticated \
-            --memory=1Gi \
+            --memory=2Gi \
             --cpu=1 \
             --min-instances=0 \
             --max-instances=2 \
             --port=8080 \
-            --timeout=300 \
-            --set-env-vars="CLUBOS_SNAPSHOT_DIR=/app/data/gold_snapshots,CLUBOS_FRONTEND_DIST=/app/apps/clubos-web/dist,CLUBOS_CORS_ORIGINS=*,YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }},SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" \
+            --timeout=600 \
+            --set-env-vars="^@@^CLUBOS_SNAPSHOT_DIR=/app/data/gold_snapshots@@CLUBOS_FRONTEND_DIST=/app/apps/clubos-web/dist@@CLUBOS_CORS_ORIGINS=*@@GOLD_SNAPSHOTS_DIR=/app/data/gold_snapshots@@CHROMA_PERSIST_DIR=/app/var/chroma@@SEMANTIC_DB_URL=duckdb:////app/var/clubos_semantic.duckdb@@WEB_SEARCH_PROVIDER=none@@SCOUT_PROMPT_VERSION=v6@@LANGSMITH_PROJECT=clubos-2@@YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}@@SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}@@OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}@@LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}" \
             --quiet
 
       - name: Print deployed URL
