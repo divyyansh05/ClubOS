@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings
 class WebSearchProvider(str, Enum):
     TAVILY = "tavily"
     BRAVE = "brave"
+    NONE = "none"  # graceful degradation when no key is configured
 
 
 class WebSearchSettings(BaseSettings):

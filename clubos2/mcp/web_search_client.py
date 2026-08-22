@@ -19,12 +19,13 @@ class WebSearchClient:
 
     def __init__(self, settings: WebSearchSettings | None = None):
         self.settings = settings or WebSearchSettings()
-        if self.settings.web_search_provider == WebSearchProvider.TAVILY:
-            if not self.settings.tavily_api_key:
-                raise ValueError("TAVILY_API_KEY required for Tavily provider")
-        elif self.settings.web_search_provider == WebSearchProvider.BRAVE:
-            if not self.settings.brave_search_api_key:
-                raise ValueError("BRAVE_SEARCH_API_KEY required for Brave provider")
+        # Auto-downgrade to NONE if the selected provider has no key. This lets
+        # deployments run without a web-search subscription — the tool simply
+        # returns an empty list instead of the LLM getting a 500.
+        if self.settings.web_search_provider == WebSearchProvider.TAVILY and not self.settings.tavily_api_key:
+            self.settings.web_search_provider = WebSearchProvider.NONE
+        elif self.settings.web_search_provider == WebSearchProvider.BRAVE and not self.settings.brave_search_api_key:
+            self.settings.web_search_provider = WebSearchProvider.NONE
 
     @traced(name="mcp:web_search", run_type="tool")
     async def search(
@@ -33,7 +34,13 @@ class WebSearchClient:
         max_results: int | None = None,
         include_recent_only: bool = False,
     ) -> list[WebSearchResult]:
-        """Execute a web search. Returns up to max_results items."""
+        """Execute a web search. Returns up to max_results items.
+
+        When web_search_provider=NONE (no key configured), returns [] so the
+        Investigator agent falls back to internal-data-only reasoning.
+        """
+        if self.settings.web_search_provider == WebSearchProvider.NONE:
+            return []
         max_results = max_results or self.settings.web_search_max_results
         if self.settings.web_search_provider == WebSearchProvider.TAVILY:
             return await self._search_tavily(query, max_results, include_recent_only)
