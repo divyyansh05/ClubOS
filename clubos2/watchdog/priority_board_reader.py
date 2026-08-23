@@ -93,7 +93,11 @@ class PriorityBoardReader:
     # Default to most recent data (highest rank = most critical)
     TOP_N = 10
 
-    def __init__(self, csv_path: str = "data/gold_snapshots/gold_priority_board.csv"):
+    def __init__(self, csv_path: str | None = None):
+        if csv_path is None:
+            import os
+            base = os.environ.get("GOLD_SNAPSHOTS_DIR", "data/gold_snapshots")
+            csv_path = f"{base.rstrip('/')}/gold_priority_board.csv"
         self.csv_path = Path(csv_path)
 
     def _read_current_sync(self) -> PriorityBoardSnapshot:
