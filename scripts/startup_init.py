@@ -29,27 +29,47 @@ if str(_REPO_ROOT) not in sys.path:
 
 
 def _step_bootstrap_db() -> bool:
+    """Bootstrap every v2 DB subsystem's migrations.
+
+    Each subsystem owns its own migrations dir + bootstrap function — they don't
+    auto-run when the repo class is instantiated. Must be called explicitly here
+    so tables exist before the first API request hits them.
+    """
+    ok = True
+
     try:
         from clubos2.semantic_layer.db import bootstrap_db as bootstrap_semantic
         bootstrap_semantic()
         print("[init] semantic_layer bootstrap OK", flush=True)
     except Exception as e:
         print(f"[init] semantic_layer bootstrap FAILED: {e}", flush=True)
-        return False
+        ok = False
 
-    # Watchdog / Investigator / Briefer bootstrap their tables on first repo access,
-    # but we can pre-warm here to fail fast if migrations are broken.
-    for subsystem_import in (
-        "clubos2.watchdog.alerts_repo",
-        "clubos2.investigator.repo",
-        "clubos2.briefer.repo",
-    ):
-        try:
-            __import__(subsystem_import)
-        except Exception as e:
-            print(f"[init] import {subsystem_import} failed: {e}", flush=True)
-            # Non-fatal — repos self-bootstrap when instantiated
-    return True
+    try:
+        from clubos2.watchdog.orchestrator import bootstrap_all as bootstrap_watchdog
+        bootstrap_watchdog()
+        print("[init] watchdog bootstrap OK (alerts + memory + snapshots)", flush=True)
+    except Exception as e:
+        print(f"[init] watchdog bootstrap FAILED: {e}", flush=True)
+        ok = False
+
+    try:
+        from clubos2.investigator.repo import bootstrap_investigations_db
+        bootstrap_investigations_db()
+        print("[init] investigations bootstrap OK", flush=True)
+    except Exception as e:
+        print(f"[init] investigations bootstrap FAILED: {e}", flush=True)
+        ok = False
+
+    try:
+        from clubos2.briefer.repo import bootstrap_briefings_db
+        bootstrap_briefings_db()
+        print("[init] briefings bootstrap OK", flush=True)
+    except Exception as e:
+        print(f"[init] briefings bootstrap FAILED: {e}", flush=True)
+        ok = False
+
+    return ok
 
 
 def _step_seed_registry() -> bool:
