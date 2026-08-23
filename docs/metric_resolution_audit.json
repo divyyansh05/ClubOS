@@ -1,0 +1,753 @@
+[
+  {
+    "metric_name": "app_downloads",
+    "business_name": "Fan App Downloads",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "app_downloads",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 10,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "app_push_visits",
+    "business_name": "Fan App Push Visits",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "app_push_visits",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 6,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "avg_engagement_per_post",
+    "business_name": "Social Avg Engagement",
+    "platform": "social",
+    "gold_asset": null,
+    "gold_raw": "avg_engagement_per_post",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.metrics_monthly"
+  },
+  {
+    "metric_name": "bounce_rate_web",
+    "business_name": "Web Bounce Rate",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "bounce_rate",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "card_addition_rate",
+    "business_name": "eCommerce Add to Cart Rate",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "card_addition_rate",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 10,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "cart_value",
+    "business_name": "eCommerce Cart Value",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "cart_value",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "checkout_rate",
+    "business_name": "eCommerce Checkout Initiation Rate",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "checkout_rate",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "consumption_web",
+    "business_name": "Web Consumption Rate",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "consumption",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 8,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "conversion_rate_ecommerce",
+    "business_name": "eCommerce Conversion Rate",
+    "platform": "ecommerce",
+    "gold_asset": "ecommerce",
+    "gold_raw": "conversion_rate",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "conversion_rate_streaming",
+    "business_name": "Streaming Conversion Rate",
+    "platform": "streaming",
+    "gold_asset": "streaming",
+    "gold_raw": "subscription_rate",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "deeplink_visits",
+    "business_name": "Fan App Deeplink Visits",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "deeplink_visits",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 3,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "digital_merchandise_revenue",
+    "business_name": "Digital Merchandise Revenue",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "digital_merchandise_revenue",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "ecommerce_recurrence",
+    "business_name": "eCommerce Recurrence Rate",
+    "platform": "ecommerce",
+    "gold_asset": "ecommerce",
+    "gold_raw": "recurrence",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 1,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "ecommerce_unique_visitors",
+    "business_name": "eCommerce Unique Visitors",
+    "platform": "ecommerce",
+    "gold_asset": "ecommerce",
+    "gold_raw": "unique_visitors",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "ecommerce_visits",
+    "business_name": "eCommerce Visits",
+    "platform": "ecommerce",
+    "gold_asset": "ecommerce",
+    "gold_raw": "visits",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "fan_app_dau",
+    "business_name": "Fan App Daily Active Users",
+    "platform": "fan_app",
+    "gold_asset": "fan_app",
+    "gold_raw": "heavy_users",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "fan_app_logged_users",
+    "business_name": "Fan App Logged-In Users",
+    "platform": "fan_app",
+    "gold_asset": "fan_app",
+    "gold_raw": "logged_users",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 5,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "fan_app_marketing_visits",
+    "business_name": "Fan App Marketing Visits",
+    "platform": "fan_app",
+    "gold_asset": "fan_app",
+    "gold_raw": "marketing_visits",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 9,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "fan_app_new_users",
+    "business_name": "Fan App New Users",
+    "platform": "fan_app",
+    "gold_asset": "fan_app",
+    "gold_raw": "new_users",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 8,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "fan_app_recurrence",
+    "business_name": "Fan App Recurrence Rate",
+    "platform": "fan_app",
+    "gold_asset": "fan_app",
+    "gold_raw": "recurrence",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "fan_app_unique_visitors",
+    "business_name": "Fan App Unique Visitors",
+    "platform": "fan_app",
+    "gold_asset": "fan_app",
+    "gold_raw": "unique_visitors",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "fan_app_user_rating",
+    "business_name": "Fan App Store Rating",
+    "platform": "fan_app",
+    "gold_asset": "fan_app",
+    "gold_raw": "user_rating",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 6,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "fan_app_visits",
+    "business_name": "Fan App Total Visits",
+    "platform": "fan_app",
+    "gold_asset": "fan_app",
+    "gold_raw": "visits",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "heavy_users",
+    "business_name": "Fan App Heavy Users",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "heavy_users",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "international_engagement_ratio",
+    "business_name": "Social International Ratio",
+    "platform": "social",
+    "gold_asset": null,
+    "gold_raw": "international_engagement_ratio",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.metrics_monthly"
+  },
+  {
+    "metric_name": "international_visits_web",
+    "business_name": "Web International Visits",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "international_visits",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 4,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "items_ecommerce",
+    "business_name": "eCommerce Items Purchased",
+    "platform": "ecommerce",
+    "gold_asset": "ecommerce",
+    "gold_raw": "items",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "logged_users_web",
+    "business_name": "Web Logged Users",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "logged_users",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 3,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "marketing_plays",
+    "business_name": "Streaming Marketing Plays",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "marketing_plays",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 7,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "marketing_purchases",
+    "business_name": "eCommerce Marketing Purchases",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "marketing_purchases",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 10,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "marketing_visits_web",
+    "business_name": "Web Marketing Visits",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "marketing_visits",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 9,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "matchday_ticket_revenue",
+    "business_name": "Matchday Ticket Revenue",
+    "platform": "matchday",
+    "gold_asset": null,
+    "gold_raw": "matchday_ticket_revenue",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "matchday_visits",
+    "business_name": "Fan App Matchday Visits",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "matchday_visits",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "mobile_visits_web",
+    "business_name": "Web Mobile Visits",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "mobile_visits",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 1,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "net_sales",
+    "business_name": "eCommerce Net Sales",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "net_sales",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "new_users_web",
+    "business_name": "Web New Users",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "new_users",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 2,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "organic_launch_visits",
+    "business_name": "Fan App Organic Launches",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "organic_launch_visits",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 7,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "other_channel_visits",
+    "business_name": "Fan App Other Visits",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "other_channel_visits",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 5,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "other_channels_purchases",
+    "business_name": "eCommerce Other Purchases",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "other_channels_purchases",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 6,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "other_channels_visits_web",
+    "business_name": "Web Other Channels Visits",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "other_channels_visits",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 2,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "other_traffic_plays",
+    "business_name": "Streaming Other Plays",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "other_traffic_plays",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 2,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "page_views_web",
+    "business_name": "Web Page Views",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "page_views",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 6,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "pct_android",
+    "business_name": "Fan App Android Share",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "pct_android",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.metrics_monthly"
+  },
+  {
+    "metric_name": "post_match_engagement_rate",
+    "business_name": "Post-Match Fan Engagement Rate",
+    "platform": "social",
+    "gold_asset": null,
+    "gold_raw": "post_match_engagement_rate",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "product_views_rate",
+    "business_name": "eCommerce Product Views Rate",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "product_views_rate",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 2,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "purchases_ecommerce",
+    "business_name": "eCommerce Purchases",
+    "platform": "ecommerce",
+    "gold_asset": "ecommerce",
+    "gold_raw": "purchases",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "recurrence_web",
+    "business_name": "Web Recurrence Rate",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "recurrence",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "reels_engagement_rate",
+    "business_name": "Instagram Reels Engagement Rate",
+    "platform": "social",
+    "gold_asset": null,
+    "gold_raw": "reels_engagement_rate",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "search_organic_plays",
+    "business_name": "Streaming Organic Search Plays",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "search_organic_plays",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 9,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "search_organic_purchases",
+    "business_name": "eCommerce Organic Search Purchases",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "search_organic_purchases",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 9,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "search_organic_visits_web",
+    "business_name": "Web Organic Search Visits",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "search_organic_visits",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 10,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "session_time_avg",
+    "business_name": "Fan App Average Session Time",
+    "platform": "fan_app",
+    "gold_asset": null,
+    "gold_raw": "session_time_avg",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "social_media_followers",
+    "business_name": "Social Media Total Followers",
+    "platform": "social",
+    "gold_asset": "social_media",
+    "gold_raw": "followers",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "social_media_instagram_engagement_rate",
+    "business_name": "Instagram Engagement Rate",
+    "platform": "social",
+    "gold_asset": "social_media",
+    "gold_raw": "instagram_engagement_rate",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.peer_benchmark"
+  },
+  {
+    "metric_name": "social_media_posting_frequency_per_day",
+    "business_name": "Social Posting Frequency",
+    "platform": "social",
+    "gold_asset": "social_media",
+    "gold_raw": "posting_frequency_per_day",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.peer_benchmark"
+  },
+  {
+    "metric_name": "social_organic_plays",
+    "business_name": "Streaming Organic Social Plays",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "social_organic_plays",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.metrics_monthly"
+  },
+  {
+    "metric_name": "social_organic_purchases",
+    "business_name": "eCommerce Organic Social Purchases",
+    "platform": "ecommerce",
+    "gold_asset": null,
+    "gold_raw": "social_organic_purchases",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 5,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "social_organic_visits_web",
+    "business_name": "Web Organic Social Visits",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "social_organic_visits",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 4,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "social_total_posts",
+    "business_name": "Social Total Posts",
+    "platform": "social",
+    "gold_asset": null,
+    "gold_raw": "social_total_posts",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "streamers",
+    "business_name": "Streaming Active Streamers",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "streamers",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "streamers_rate",
+    "business_name": "Streaming Active Streamer Ratio",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "streamers_rate",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "streaming_daily_users",
+    "business_name": "Streaming Daily Active Users",
+    "platform": "streaming",
+    "gold_asset": "streaming",
+    "gold_raw": "daily_users",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "streaming_subscription_rate",
+    "business_name": "Streaming Subscription Rate",
+    "platform": "streaming",
+    "gold_asset": "streaming",
+    "gold_raw": "subscription_rate",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "streaming_unique_visitors",
+    "business_name": "Streaming Unique Visitors",
+    "platform": "streaming",
+    "gold_asset": "streaming",
+    "gold_raw": "unique_visitors",
+    "status": "RESOLVES_VIA_ASSET_PREFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "subscriptions",
+    "business_name": "Streaming Active Subscriptions",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "subscriptions",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "total_engagement",
+    "business_name": "Social Total Engagement",
+    "platform": "social",
+    "gold_asset": null,
+    "gold_raw": "total_engagement",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.metrics_monthly"
+  },
+  {
+    "metric_name": "total_estimated_views",
+    "business_name": "Social Total Estimated Views",
+    "platform": "social",
+    "gold_asset": null,
+    "gold_raw": "total_estimated_views",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.metrics_monthly"
+  },
+  {
+    "metric_name": "unique_visitors_web",
+    "business_name": "Web Unique Visitors",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "unique_visitors",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "video_complete_rate",
+    "business_name": "Streaming Video Completion Rate",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "video_complete_rate",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 11,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "video_play_rate",
+    "business_name": "Streaming Video Play Rate",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "video_play_rate",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 9,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "video_plays",
+    "business_name": "Streaming Video Plays",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "video_plays",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 12,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "video_progress_25_rate",
+    "business_name": "Streaming Video 25% Completion Rate",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "video_progress_25_rate",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "video_progress_50_rate",
+    "business_name": "Streaming Video 50% Completion Rate",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "video_progress_50_rate",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "video_progress_75_rate",
+    "business_name": "Streaming Video 75% Completion Rate",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "video_progress_75_rate",
+    "status": "FAILS_MISSING_ROW",
+    "reason": "No gold row matches via any resolution path"
+  },
+  {
+    "metric_name": "video_recurrence",
+    "business_name": "Streaming Video Recurrence",
+    "platform": "streaming",
+    "gold_asset": null,
+    "gold_raw": "video_recurrence",
+    "status": "RESOLVES_DIRECT",
+    "rows_returned": 1,
+    "source": "gold.priority_board"
+  },
+  {
+    "metric_name": "visits_web",
+    "business_name": "Web Visits",
+    "platform": "web",
+    "gold_asset": "main_website",
+    "gold_raw": "visits",
+    "status": "RESOLVES_VIA_ASSET_SUFFIX",
+    "rows_returned": 11,
+    "source": "gold.priority_board"
+  }
+]

@@ -1,0 +1,513 @@
+{
+  "run_id": "eval_2026-07-02T15-47-45.170712",
+  "timestamp": "2026-07-02T15:48:27.938657",
+  "golden_set_version": "v1",
+  "scout_prompt_version": "v1",
+  "total_questions": 20,
+  "total_errors": 0,
+  "ragas_avg_faithfulness": null,
+  "ragas_avg_context_relevance": null,
+  "ragas_avg_answer_relevance": null,
+  "fabrication_summary": {
+    "total_entries": 20,
+    "entries_with_fabrication": 0,
+    "fabrication_incidence_rate": 0.0,
+    "average_fab_rate_per_entry": 0.0,
+    "fabricated_numbers_total": 0
+  },
+  "behavioural_summary": {
+    "total": 20,
+    "overall_pass_rate": 0.85,
+    "refusal_correct_rate": 1.0,
+    "citation_correct_rate": 0.95,
+    "average_citation_coverage": 0.95
+  },
+  "per_entry": [
+    {
+      "entry_id": "gq_001",
+      "question": "What was the streaming_daily_users value for November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "The streaming_daily_users value for November 2025 was 31,762.76 [source: gold.metrics_monthly].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing citations: ['data/gold_snapshots/gold_priority_board.csv']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_002",
+      "question": "What was the net_sales value for eCommerce in November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": true,
+      "answer_preview": "The net sales value for eCommerce in November 2025 was 4,161,275.12 [source: gold.metrics_monthly].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_003",
+      "question": "What was the conversion_rate_ecommerce for January 2026?",
+      "question_type": "quantitative",
+      "overall_pass": true,
+      "answer_preview": "The conversion_rate_ecommerce for January 2026 was 0.0078755 [source: gold.metrics_monthly].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_004",
+      "question": "What is the peer gap for eCommerce conversion_rate as of the most recent available month?",
+      "question_type": "quantitative",
+      "overall_pass": true,
+      "answer_preview": "The peer gap for eCommerce conversion rate as of the most recent available month (January 2026) is -0.004662, indicating that Real Madrid ranks 4th out of 5 clubs in this metric [source: gold.priority",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_005",
+      "question": "What has been the trend for streaming_daily_users over the last available months? Is it going up or down?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "The trend for streaming_daily_users over the last available months shows a significant increase. The values are as follows: 67,457.62 in January 2026, 37,463.87 in December 2025, 31,762.76 in November",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Expected to state an assumption, none stated"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_006",
+      "question": "What was the streaming_daily_users value for December 2022?",
+      "question_type": "quantitative",
+      "overall_pass": true,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover streaming_daily_users values for various months, but December 2022 is not included. To answer this, I wou",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_007",
+      "question": "What does the seasonal Z-score correction account for in the Priority Board scoring system?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "The seasonal Z-score correction in the Priority Board scoring system accounts for the typical post-holiday dip in eCommerce net sales, which usually drops by 12-18% in January following the holiday se",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_008",
+      "question": "Why are signals filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "Signals are filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine to ensure statistical strength. This threshold helps to validate that the relationship between the metrics i",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_009",
+      "question": "How does the 5-component scoring formula work in the Priority Board? What are the weights?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "The 5-component scoring formula in the Priority Board is calculated using fixed weights assigned to each component: 30 for severity, 25 for persistence, 20 for peer gap, 15 for commercial weight, and ",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_010",
+      "question": "What three validation criteria must a relationship pass to become a published signal in the ClubOS Signal Engine?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "A relationship must pass three validation criteria to become a published signal in the ClubOS Signal Engine: 1. Statistical strength: Pearson correlation coefficient $r \\ge 0.60$. 2. Temporal preceden",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_011",
+      "question": "Why is unique_visitors_web considered a leading indicator for net_sales in eCommerce?",
+      "question_type": "narrative",
+      "overall_pass": true,
+      "answer_preview": "Unique visitors to the web are considered a leading indicator for net sales in eCommerce because they have a validated correlation with net sales, showing a 2-month lag with a Pearson correlation coef",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_012",
+      "question": "What is the current conversion_rate_ecommerce and is it a problem this month given seasonal and peer context?",
+      "question_type": "mixed",
+      "overall_pass": true,
+      "answer_preview": "The current eCommerce conversion rate (conversion_rate_ecommerce) is 0.0078755 for January 2026. This rate is marked as a high priority due to its low score, which indicates a potential problem. Addit",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_013",
+      "question": "What is the net_sales figure for the latest available month, and does the January seasonal pattern apply?",
+      "question_type": "mixed",
+      "overall_pass": true,
+      "answer_preview": "The latest available net_sales figure is 4,161,275.12 for November 2025. The January seasonal pattern does apply, as eCommerce net sales typically drop 12-18% in January following the holiday season, ",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_014",
+      "question": "What is the streaming_daily_users value this month, and why might it have changed from the previous month?",
+      "question_type": "mixed",
+      "overall_pass": true,
+      "answer_preview": "The streaming_daily_users value for January 2026 is 67,457.62. This represents an increase from December 2025, which had a value of 37,463.87. The change could be attributed to seasonal factors, as ho",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_015",
+      "question": "How does our eCommerce conversion rate compare to peer clubs, and what should we focus on first based on the Priority Board logic?",
+      "question_type": "mixed",
+      "overall_pass": true,
+      "answer_preview": "Real Madrid's eCommerce conversion rate is currently ranked 4th out of 5 clubs, with a gap to the peer median of -0.004662. This indicates that the club's conversion rate is below the median of its pe",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_016",
+      "question": "How is conversion rate doing this month?",
+      "question_type": "ambiguous",
+      "overall_pass": true,
+      "answer_preview": "I have data for the eCommerce conversion rate for January 2026, which is 0.0078755. This represents the percentage of unique visits to the eCommerce store that result in a purchase. Please note that t",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_017",
+      "question": "How are daily active users looking this month?",
+      "question_type": "ambiguous",
+      "overall_pass": true,
+      "answer_preview": "The daily active users for streaming in January 2026 are 67,457.62. This is the most recent data available for this month [source: gold.metrics_monthly].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_018",
+      "question": "How are visits performing?",
+      "question_type": "ambiguous",
+      "overall_pass": false,
+      "answer_preview": "Web visits have shown a significant increase, with 21,877,905 visits recorded in June 2023, which is a notable rise compared to previous months. The club ranks 2nd among 5 clubs in terms of web visits",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Expected to state an assumption, none stated"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_019",
+      "question": "Who is the highest-paid player at Real Madrid this season?",
+      "question_type": "unanswerable",
+      "overall_pass": true,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover metrics related to digital performance and sales, but do not include information about player salaries. T",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_020",
+      "question": "What was streaming_daily_users in March 2015?",
+      "question_type": "unanswerable",
+      "overall_pass": true,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover streaming_daily_users data starting from January 2025. To answer this, I would need the streaming_daily_u",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": null
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    }
+  ]
+}

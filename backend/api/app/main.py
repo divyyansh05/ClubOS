@@ -1,5 +1,6 @@
 import os
 import sys
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,11 +16,32 @@ print(f"[STARTUP] CLUBOS_SNAPSHOT_DIR: {os.environ.get('CLUBOS_SNAPSHOT_DIR', 'N
 print(f"[STARTUP] CLUBOS_FRONTEND_DIST: {os.environ.get('CLUBOS_FRONTEND_DIST', 'NOT SET')}", flush=True)
 
 from app.clients.databricks import SnapshotAccessError
-from app.routers import analytics, benchmark, briefing, config, connectors, events, health, priorities, refresh, signals, social, notifications
+from app.routers import analytics, benchmark, briefing, config, connectors, events, health, priorities, refresh, signals, social, notifications, ai_query, watchdog, investigator, supervisor, briefer
 
 print("[STARTUP] All imports successful", flush=True)
 
-app = FastAPI(title="ClubOS API", version="0.1.0")
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Cold-start init for the v2 stack.
+
+    Docker build bakes bootstrap_db + registry seed into the image already, so
+    normally this is a no-op. But this handler also runs the RAG ingest (which
+    requires OPENAI_API_KEY, a runtime secret unavailable during docker build)
+    on first boot if the collection is empty. Any failure is logged and swallowed
+    — v1 endpoints must always come up even if v2 init has issues.
+    """
+    try:
+        # Re-run idempotent init. Fast when state is already there.
+        import scripts.startup_init as _init  # type: ignore
+        _init.main()
+    except Exception as e:
+        print(f"[LIFESPAN] v2 init non-fatal error: {e}", flush=True)
+    yield
+    # No shutdown hook needed — DuckDB / Chroma flush on process exit.
+
+
+app = FastAPI(title="ClubOS API", version="0.1.0", lifespan=_lifespan)
 
 print("[STARTUP] FastAPI app created", flush=True)
 
@@ -55,6 +77,11 @@ app.include_router(social.router, prefix="/social", tags=["social"])
 app.include_router(connectors.router, prefix="/api", tags=["connectors"])
 app.include_router(notifications.router, prefix="/api")
 app.include_router(config.router, tags=["config"])
+app.include_router(ai_query.router)
+app.include_router(watchdog.router)
+app.include_router(investigator.router)
+app.include_router(supervisor.router)
+app.include_router(briefer.router)
 
 
 @app.exception_handler(SnapshotAccessError)

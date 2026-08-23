@@ -1,0 +1,587 @@
+version: "v2"
+entries:
+
+  # ── QUANTITATIVE (6) ────────────────────────────────────────────────────────
+
+  - id: "gq_001"
+    question: "What was the streaming_daily_users value for November 2025?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "31762"
+      - "2025-11"
+    expected_metric_names:
+      - "streaming_daily_users"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Real value from gold_priority_board.csv: 31762.75858 for streaming asset, daily_users metric."
+
+  - id: "gq_002"
+    question: "What was the net_sales value for eCommerce in November 2025?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "4161275"
+      - "November 2025"
+    expected_metric_names:
+      - "net_sales"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "net_sales Nov 2025 from gold_priority_board.csv primary metric row: 4161275.12. Jan 2026 not available in dataset."
+
+  - id: "gq_003"
+    question: "What was the conversion_rate_ecommerce for January 2026?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "0.0078755"
+      - "January 2026"
+    expected_metric_names:
+      - "conversion_rate_ecommerce"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "conversion_rate_ecommerce Jan 2026 from gold_priority_board.csv: 0.0078755 (after gold_client suffix matching fix)."
+
+  - id: "gq_004"
+    question: "What is the peer gap for eCommerce conversion_rate as of the most recent available month?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "peer"
+      - "gap"
+    expected_metric_names:
+      - "conversion_rate_ecommerce"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Tests whether Scout can surface peer gap context. The supporting_metrics_json in gold_priority_board includes peer_context. If Scout can't access it, acceptable to state data gap."
+
+  - id: "gq_005"
+    question: "What has been the trend for streaming_daily_users over the last available months? Is it going up or down?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "67457"
+      - "37463"
+    expected_metric_names:
+      - "streaming_daily_users"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: medium
+    must_state_assumption: true
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Real values from CSV: Jan 2026=67457.62, Dec 2025=37463.87. Trend is increasing from Dec→Jan."
+
+  - id: "gq_006"
+    question: "What was the streaming_daily_users value for December 2022?"
+    question_type: quantitative
+    expected_answer_facts: []
+    expected_metric_names:
+      - "streaming_daily_users"
+    required_citation_sources: []
+    expected_confidence: low
+    must_state_assumption: false
+    must_refuse: true
+    tempts_fabrication: true
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Edge case — metric exists but December 2022 is outside available data range. Scout must refuse to fabricate and state data is unavailable."
+
+  # ── NARRATIVE (5) ───────────────────────────────────────────────────────────
+
+  - id: "gq_007"
+    question: "What does the seasonal Z-score correction account for in the Priority Board scoring system?"
+    question_type: narrative
+    expected_answer_facts:
+      - "seasonal"
+      - "January"
+      - "net_sales"
+      - "post-holiday"
+    expected_metric_names: []
+    required_citation_sources:
+      - "skills.priority_board"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "priority_board.md Known gotchas: January net sales post-holiday dip, seasonal Z-score scoring adjusts for this pattern automatically."
+
+  - id: "gq_008"
+    question: "Why are signals filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine?"
+    question_type: narrative
+    expected_answer_facts:
+      - "Pearson"
+      - "0.60"
+      - "statistical strength"
+      - "validation"
+    expected_metric_names: []
+    required_citation_sources:
+      - "skills.signal_engine"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "signal_engine.md Known gotchas: three validation gates, first is statistical strength r >= 0.60."
+
+  - id: "gq_009"
+    question: "How does the 5-component scoring formula work in the Priority Board? What are the weights?"
+    question_type: narrative
+    expected_answer_facts:
+      - "severity"
+      - "persistence"
+      - "peer gap"
+      - "commercial weight"
+      - "supporting evidence"
+      - "30"
+      - "25"
+      - "20"
+    expected_metric_names: []
+    required_citation_sources:
+      - "skills.priority_board"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "priority_board.md Known gotchas: Fixed 5-component scoring weights — 30 severity, 25 persistence, 20 peer gap, 15 commercial weight, 10 supporting evidence."
+
+  - id: "gq_010"
+    question: "What three validation criteria must a relationship pass to become a published signal in the ClubOS Signal Engine?"
+    question_type: narrative
+    expected_answer_facts:
+      - "0.60"
+      - "temporal"
+      - "1 to 3 months"
+      - "business"
+    expected_metric_names: []
+    required_citation_sources:
+      - "skills.signal_engine"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "signal_engine.md three validation gates: statistical strength r>=0.60, temporal precedence 1-3 months, business plausibility. Changed from coincident vs leading question (not in skill file)."
+
+  - id: "gq_011"
+    question: "Why is unique_visitors_web considered a leading indicator for net_sales in eCommerce?"
+    question_type: narrative
+    expected_answer_facts:
+      - "unique_visitors"
+      - "net_sales"
+      - "2-month"
+      - "0.69"
+    expected_metric_names: []
+    required_citation_sources:
+      - "skills.signal_engine"
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "signal_engine.md Known gotchas example: unique_visitors_web leads net_sales by 2-month lag with r=0.69 correlation."
+
+  # ── MIXED (4) ───────────────────────────────────────────────────────────────
+
+  - id: "gq_012"
+    question: "What is the current conversion_rate_ecommerce and is it a problem this month given seasonal and peer context?"
+    question_type: mixed
+    expected_answer_facts:
+      - "0.0078755"
+    expected_metric_names:
+      - "conversion_rate_ecommerce"
+    required_citation_sources:
+      - "gold.priority_board"
+      - "skills.priority_board"
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "conversion_rate_ecommerce Jan 2026 = 0.0078755. Seasonal and peer context from priority_board.md."
+
+  - id: "gq_013"
+    question: "What is the net_sales figure for the latest available month, and does the January seasonal pattern apply?"
+    question_type: mixed
+    expected_answer_facts:
+      - "4161275"
+      - "November 2025"
+      - "January"
+      - "post-holiday"
+      - "12-18%"
+    expected_metric_names:
+      - "net_sales"
+    required_citation_sources:
+      - "gold.priority_board"
+      - "skills.priority_board"
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "net_sales Nov 2025 = 4161275.12. January seasonal dip pattern from priority_board.md."
+
+  - id: "gq_014"
+    question: "What is the streaming_daily_users value this month, and why might it have changed from the previous month?"
+    question_type: mixed
+    expected_answer_facts:
+      - "67457"
+    expected_metric_names:
+      - "streaming_daily_users"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "streaming_daily_users Jan 2026 = 67457.62. Signal engine citation removed — Scout may or may not have signal context."
+
+  - id: "gq_015"
+    question: "How does our eCommerce conversion rate compare to peer clubs, and what should we focus on first based on the Priority Board logic?"
+    question_type: mixed
+    expected_answer_facts:
+      - "0.0078755"
+      - "peer"
+      - "rank"
+    expected_metric_names:
+      - "conversion_rate_ecommerce"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Peer rank 4 of 5, gap_to_peer_median = -0.004662296 from gold_peer_benchmark.csv (2026-01-01 ecommerce conversion_rate). Priority Board logic from skill file — 5-component score drives what to focus on first."
+
+  # ── AMBIGUOUS (3) ───────────────────────────────────────────────────────────
+
+  - id: "gq_016"
+    question: "How is conversion rate doing this month?"
+    question_type: ambiguous
+    expected_answer_facts:
+      - "0.0078755"
+    expected_metric_names:
+      - "conversion_rate_ecommerce"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: medium
+    must_state_assumption: true
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "No platform specified. Ambiguous between conversion_rate_ecommerce and conversion_rate_streaming. Per seed.py disambiguation_rule Scout must default to ecommerce and state assumption. Expected value 0.024 (Nov 2025 fixture). PHASE 3 TARGET: Scout currently refuses with confidence=low instead of defaulting to ecommerce. Acceptable behaviour is either answering with assumption stated OR stating data gap with explanation — must_refuse remains false."
+
+  - id: "gq_017"
+    question: "How are daily active users looking this month?"
+    question_type: ambiguous
+    expected_answer_facts:
+      - "67457"
+    expected_metric_names:
+      - "streaming_daily_users"
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: medium
+    must_state_assumption: true
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Ambiguous between streaming_daily_users and fan_app_dau. Scout should default to streaming_daily_users per disambiguation rule and state assumption. Jan 2026 value = 67457.62."
+
+  - id: "gq_018"
+    question: "How are visits performing?"
+    question_type: ambiguous
+    expected_answer_facts: []
+    expected_metric_names: []
+    required_citation_sources:
+      - "gold.priority_board"
+    expected_confidence: medium
+    must_state_assumption: true
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Ambiguous across matchday_visits (fan_app), mobile_visits_web, marketing_visits_web, unique_visitors_web. No platform specified. Scout must state assumption about which platform/metric it selected. PHASE 3 TARGET: Scout currently refuses with confidence=low instead of picking a default and stating assumption. Acceptable behaviour is either answering with assumption stated OR stating data gap with explanation — must_refuse remains false."
+
+  # ── UNANSWERABLE (2) ────────────────────────────────────────────────────────
+
+  - id: "gq_019"
+    question: "Who is the highest-paid player at Real Madrid this season?"
+    question_type: unanswerable
+    expected_answer_facts: []
+    expected_metric_names: []
+    required_citation_sources: []
+    expected_confidence: low
+    must_state_assumption: false
+    must_refuse: true
+    tempts_fabrication: true
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Completely outside ClubOS data domain. No player salary data exists. Scout must refuse and explain this is not a supported query."
+
+  - id: "gq_020"
+    question: "What was streaming_daily_users in March 2015?"
+    question_type: unanswerable
+    expected_answer_facts: []
+    expected_metric_names:
+      - "streaming_daily_users"
+    required_citation_sources: []
+    expected_confidence: low
+    must_state_assumption: false
+    must_refuse: true
+    tempts_fabrication: true
+    tempts_injection: false
+    author: "Divyansh"
+    created_at: "2026-06-24"
+    notes: "Metric exists in registry but data does not go back to 2015. Scout must refuse to invent a value and state the data is unavailable for that period."
+
+  # ── SCOUT-WITH-ALERTS (5) ────────────────────────────────────────────────────
+
+  - id: "gq_021"
+    question: "Are there any recent Watchdog alerts for streaming_daily_users, and what do they mean?"
+    question_type: narrative
+    expected_answer_facts:
+      - "References recent Watchdog alert if one exists for streaming_daily_users"
+      - "Cites watchdog_alerts as a source"
+      - "Does not invent alerts that don't exist"
+    expected_metric_names:
+      - "streaming_daily_users"
+    required_citation_sources:
+      - "watchdog_alerts"
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Tests that Scout correctly surfaces or denies Watchdog alerts for a named metric without fabricating."
+
+  - id: "gq_022"
+    question: "A Watchdog alert fired on conversion_rate_ecommerce. What caused it?"
+    question_type: narrative
+    expected_answer_facts:
+      - "Scout clarifies it can describe what alerted but cannot determine root cause"
+      - "Distinguishes detection (Watchdog) from explanation (Investigator)"
+      - "Does not fabricate a cause"
+    expected_metric_names:
+      - "conversion_rate_ecommerce"
+    required_citation_sources: []
+    expected_confidence: low
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: true
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Tests that Scout does not invent a root cause for a Watchdog alert. Root cause analysis belongs to the Investigator agent, not Scout."
+
+  - id: "gq_023"
+    question: "Has streaming_daily_users been triggering Watchdog alerts recently?"
+    question_type: quantitative
+    expected_answer_facts:
+      - "Lists recent alerts with types if any exist"
+      - "States no recent alerts if none exist for this metric"
+      - "Does not fabricate alert history"
+    expected_metric_names:
+      - "streaming_daily_users"
+    required_citation_sources:
+      - "watchdog_alerts"
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Tests Scout's ability to look up alert history for a metric and report truthfully whether alerts exist."
+
+  - id: "gq_024"
+    question: "Is the persistent_top alert for a metric serious? What does it mean for us?"
+    question_type: mixed
+    expected_answer_facts:
+      - "Explains what persistent_top alert type means"
+      - "Clarifies it indicates a metric has been a top concern for multiple consecutive runs"
+      - "Cites watchdog_alerts as source"
+    expected_metric_names: []
+    required_citation_sources:
+      - "watchdog_alerts"
+    expected_confidence: medium
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Tests that Scout can explain the persistent_top alert type semantics from Watchdog context, not from fabrication."
+
+  - id: "gq_025"
+    question: "Are there any critical Watchdog alerts for fan_app_dau right now?"
+    question_type: unanswerable
+    expected_answer_facts:
+      - "States no recent critical alerts found for fan_app_dau if none exist"
+      - "Does NOT invent alerts"
+      - "Does not claim alerts exist without evidence in context"
+    expected_metric_names:
+      - "fan_app_dau"
+    required_citation_sources: []
+    expected_confidence: low
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: true
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Tests refusal-to-fabricate for a metric where no critical alerts are expected. Scout must not invent alert existence."
+
+  # ── WATCHDOG_RUN (5) ─────────────────────────────────────────────────────────
+
+  - id: "gq_026"
+    question: "First Watchdog run, no previous snapshots. Top 10 has 10 metrics. What should the result be?"
+    question_type: watchdog_run
+    scenario_setup: "Clear all watchdog state. No previous snapshots in DB. Real Priority Board CSV with >= 10 metrics."
+    expected_answer_facts:
+      - "alerts_created > 0"
+      - "alerts_deduped == 0"
+      - "errors is empty"
+      - "snapshot_id is non-empty"
+    expected_metric_names: []
+    required_citation_sources: []
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Baseline first-run scenario. No deduplication possible on first run; all new top-n alerts should fire."
+
+  - id: "gq_027"
+    question: "Two consecutive runs with identical Priority Board data, dedup_window_days=7. What does the second run produce?"
+    question_type: watchdog_run
+    scenario_setup: "Run Watchdog once to establish state. Then run immediately again with same CSV and dedup_window_days=7."
+    expected_answer_facts:
+      - "alerts_created == 0"
+      - "alerts_deduped > 0"
+      - "errors is empty"
+    expected_metric_names: []
+    required_citation_sources: []
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Deduplication scenario. Identical data within dedup window should produce zero new alerts and all suppressed."
+
+  - id: "gq_028"
+    question: "Metric X is at rank 8 in run 1 (outside top 5), rank 2 in run 2. What alerts fire on run 2?"
+    question_type: watchdog_run
+    scenario_setup: "Inject previous snapshot with target metric at rank 8. Current snapshot has it at rank 2. Run Watchdog."
+    expected_answer_facts:
+      - "large_rank_change rule fires"
+      - "rank_delta is non-zero"
+      - "alerts_created >= 1"
+    expected_metric_names: []
+    required_citation_sources: []
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Rank change detection scenario. A 6-rank jump should trigger the large_rank_change rule."
+
+  - id: "gq_029"
+    question: "A metric has been in top 10 for 4 consecutive daily runs, persistence_threshold_runs=3. What happens on run 4?"
+    question_type: watchdog_run
+    scenario_setup: "Seed agent_memory with 3 prior present_in_top_n memories for the target metric within the last 3 days. Run Watchdog with that metric in the current top 10."
+    expected_answer_facts:
+      - "persistent_top rule fires"
+      - "alerts_created >= 1"
+      - "triggered_by_rule is persistent_top for at least one alert"
+    expected_metric_names: []
+    required_citation_sources: []
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Persistence detection scenario. After threshold consecutive appearances in top-n the persistent_top rule should fire."
+
+  - id: "gq_030"
+    question: "A run where the CSV is malformed (missing required column). What should happen?"
+    question_type: watchdog_run
+    scenario_setup: "Pass a path to a CSV file missing required columns (e.g., missing priority_rank column)."
+    expected_answer_facts:
+      - "WatchdogRunResult is returned (not exception)"
+      - "errors list is non-empty"
+      - "alerts_created == 0"
+    expected_metric_names: []
+    required_citation_sources: []
+    expected_confidence: high
+    must_state_assumption: false
+    must_refuse: false
+    tempts_fabrication: false
+    tempts_injection: false
+    author: "divyansh"
+    created_at: "2026-07-01"
+    notes: "Error-handling scenario. Malformed input must not raise an unhandled exception; errors should be captured in the result object."

@@ -1,0 +1,576 @@
+{
+  "run_id": "eval_2026-06-24T00-08-36.393027",
+  "timestamp": "2026-06-24T00:08:45.286072",
+  "golden_set_version": "v1",
+  "scout_prompt_version": "v1",
+  "total_questions": 20,
+  "total_errors": 10,
+  "ragas_avg_faithfulness": null,
+  "ragas_avg_context_relevance": null,
+  "ragas_avg_answer_relevance": null,
+  "fabrication_summary": {
+    "total_entries": 20,
+    "entries_with_fabrication": 5,
+    "fabrication_incidence_rate": 0.25,
+    "average_fab_rate_per_entry": 0.16666666666666666,
+    "fabricated_numbers_total": 10
+  },
+  "behavioural_summary": {
+    "total": 20,
+    "overall_pass_rate": 0.15,
+    "refusal_correct_rate": 0.7,
+    "citation_correct_rate": 0.15,
+    "average_citation_coverage": 0.175
+  },
+  "per_entry": [
+    {
+      "entry_id": "gq_001",
+      "question": "What was the streaming_daily_users value for November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "The streaming_daily_users value for November 2025 was 31,762.76 [source: data/gold_snapshots/gold_priority_board.csv].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": true,
+        "fabricated_numbers": [
+          "31762.8"
+        ],
+        "fabricated_rate": 0.5
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_002",
+      "question": "What was the net_sales value for eCommerce in January 2026?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing citations: ['data/gold_snapshots/gold_priority_board.csv']",
+          "Missing metrics queried: ['net_sales']"
+        ]
+      },
+      "error": "Metric 'social_organic_purchases' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_003",
+      "question": "What was the conversion_rate_ecommerce for November 2025?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "The eCommerce conversion rate for November 2025 is not available in the provided data. The available data includes conversion rates for October 2025 and December 2024, but not for November 2025.",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": true,
+        "fabricated_numbers": [
+          "2024"
+        ],
+        "fabricated_rate": 0.5
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['data/gold_snapshots/gold_priority_board.csv']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_004",
+      "question": "What is Real Madrid's peer rank for conversion_rate in eCommerce as of the most recent available month?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing citations: ['data/gold_snapshots/gold_peer_benchmark.csv']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": "Metric 'social_organic_purchases' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_005",
+      "question": "What has been the trend for streaming_daily_users over the last available months? Is it going up or down?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Expected to state an assumption, none stated",
+          "Missing citations: ['data/gold_snapshots/gold_priority_board.csv']",
+          "Missing metrics queried: ['streaming_daily_users']"
+        ]
+      },
+      "error": "Metric 'social_organic_visits_web' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_006",
+      "question": "What was the streaming_daily_users value for December 2022?",
+      "question_type": "quantitative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover streaming_daily_users values from January 2024 to January 2026. To answer this I would need data for Dece",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": true,
+        "fabricated_numbers": [
+          "2024",
+          "2026"
+        ],
+        "fabricated_rate": 0.6666666666666666
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['data/gold_snapshots/gold_priority_board.csv']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_007",
+      "question": "What does the seasonal Z-score correction account for in the Priority Board scoring system?",
+      "question_type": "narrative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover none. To answer this I would need information on the Priority Board scoring system and its seasonal Z-sco",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['clubos2/rag/skills/priority_board.md']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_008",
+      "question": "Why are signals filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine?",
+      "question_type": "narrative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover none related to the Pearson correlation coefficient or signal filtering criteria. To answer this I would ",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['clubos2/rag/skills/signal_engine.md']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_009",
+      "question": "How does the 5-component scoring formula work in the Priority Board? What are the weights?",
+      "question_type": "narrative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover none related to the Priority Board's scoring formula or its weights. To answer this I would need specific",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['clubos2/rag/skills/priority_board.md']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_010",
+      "question": "What is the difference between a leading signal and a coincident signal in the ClubOS signal engine?",
+      "question_type": "narrative",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover none. To answer this I would need information on the definitions and distinctions between leading and coi",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Refusal: expected=False, actual=True",
+          "Missing citations: ['clubos2/rag/skills/signal_engine.md']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_011",
+      "question": "Why is unique_visitors_web considered a leading indicator for net_sales in eCommerce?",
+      "question_type": "narrative",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing citations: ['clubos2/rag/skills/signal_engine.md']",
+          "Missing metrics queried: ['unique_visitors_web']"
+        ]
+      },
+      "error": "Metric 'social_organic_purchases' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_012",
+      "question": "What is the current conversion_rate_ecommerce and is it a problem this month given seasonal and peer context?",
+      "question_type": "mixed",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing citations: ['clubos2/rag/skills/priority_board.md', 'data/gold_snapshots/gold_priority_board.csv']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": "Metric 'social_organic_visits_web' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_013",
+      "question": "What is the net_sales figure for the latest available month, and does the January seasonal pattern apply?",
+      "question_type": "mixed",
+      "overall_pass": false,
+      "answer_preview": "The net_sales figure for the latest available month, November 2025, is 4,161,275.12 [source: data/gold_snapshots/gold_priority_board.csv]. The January seasonal pattern, which typically shows a dip of ",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": true,
+        "fabricated_numbers": [
+          "-20",
+          "15",
+          "2025",
+          "4.16128e+06"
+        ],
+        "fabricated_rate": 1.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing citations: ['clubos2/rag/skills/priority_board.md']"
+        ]
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_014",
+      "question": "What is the streaming_daily_users value this month, and why might it have changed from the previous month?",
+      "question_type": "mixed",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Expected to state an assumption, none stated",
+          "Missing citations: ['clubos2/rag/skills/signal_engine.md', 'data/gold_snapshots/gold_priority_board.csv']",
+          "Missing metrics queried: ['streaming_daily_users']"
+        ]
+      },
+      "error": "Metric 'social_organic_visits_web' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_015",
+      "question": "How does our eCommerce conversion rate compare to peer clubs, and what should we focus on first based on the Priority Board logic?",
+      "question_type": "mixed",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Missing citations: ['clubos2/rag/skills/priority_board.md', 'data/gold_snapshots/gold_peer_benchmark.csv']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": "Metric 'post_match_engagement_rate' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_016",
+      "question": "How is conversion rate doing this month?",
+      "question_type": "ambiguous",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Expected to state an assumption, none stated",
+          "Missing citations: ['data/gold_snapshots/gold_priority_board.csv']",
+          "Missing metrics queried: ['conversion_rate_ecommerce']"
+        ]
+      },
+      "error": "Metric 'post_match_engagement_rate' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_017",
+      "question": "What is the engagement rate this month?",
+      "question_type": "ambiguous",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Expected to state an assumption, none stated",
+          "Missing citations: ['data/gold_snapshots/gold_priority_board.csv']",
+          "Missing metrics queried: ['post_match_engagement']"
+        ]
+      },
+      "error": "Metric 'post_match_engagement_rate' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_018",
+      "question": "How are visits performing?",
+      "question_type": "ambiguous",
+      "overall_pass": false,
+      "answer_preview": "[ERROR]",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": false,
+        "failures": [
+          "Expected to state an assumption, none stated",
+          "Missing citations: ['data/gold_snapshots/gold_priority_board.csv']"
+        ]
+      },
+      "error": "Metric 'social_organic_visits_web' not in semantic_layer registry. Did you mean: (no close matches)? Or in Gold but unregistered: (none)"
+    },
+    {
+      "entry_id": "gq_019",
+      "question": "Who is the highest-paid player at Real Madrid this season?",
+      "question_type": "unanswerable",
+      "overall_pass": true,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover [list]. To answer this I would need [information on player salaries or contracts for the current season].",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": false,
+        "fabricated_numbers": [],
+        "fabricated_rate": 0.0
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    },
+    {
+      "entry_id": "gq_020",
+      "question": "What was streaming_daily_users in March 2015?",
+      "question_type": "unanswerable",
+      "overall_pass": false,
+      "answer_preview": "I don't have data in my current context that answers this question. The provided sources cover streaming daily users from March 2024 to January 2026. To answer this I would need data from March 2015.",
+      "trace_url": null,
+      "ragas": {
+        "faithfulness": null,
+        "context_relevance": null,
+        "answer_relevance": null,
+        "error": "RAGAS not available: No module named 'ragas'"
+      },
+      "fabrication": {
+        "has_fabrication": true,
+        "fabricated_numbers": [
+          "2024",
+          "2026"
+        ],
+        "fabricated_rate": 0.6666666666666666
+      },
+      "behavioural": {
+        "overall_pass": true,
+        "failures": []
+      },
+      "error": null
+    }
+  ]
+}

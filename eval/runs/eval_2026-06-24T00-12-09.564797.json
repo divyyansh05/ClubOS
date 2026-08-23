@@ -1,0 +1,190 @@
+{
+  "run_id": "eval_2026-06-24T00-12-09.564797",
+  "golden_set_version": "v1",
+  "scout_prompt_version": "v1",
+  "timestamp": "2026-06-24T00:12:17.051777",
+  "results": [
+    {
+      "entry_id": "gq_001",
+      "question": "What was the streaming_daily_users value for November 2025?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 7202,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_002",
+      "question": "What was the net_sales value for eCommerce in January 2026?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 7204,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_003",
+      "question": "What was the conversion_rate_ecommerce for November 2025?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 7204,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_004",
+      "question": "What is Real Madrid's peer rank for conversion_rate in eCommerce as of the most recent available month?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 54,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_005",
+      "question": "What has been the trend for streaming_daily_users over the last available months? Is it going up or down?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 54,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_006",
+      "question": "What was the streaming_daily_users value for December 2022?",
+      "question_type": "quantitative",
+      "scout_answer": null,
+      "latency_ms": 54,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_007",
+      "question": "What does the seasonal Z-score correction account for in the Priority Board scoring system?",
+      "question_type": "narrative",
+      "scout_answer": null,
+      "latency_ms": 21,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_008",
+      "question": "Why are signals filtered by a Pearson correlation coefficient of r >= 0.60 in the signal engine?",
+      "question_type": "narrative",
+      "scout_answer": null,
+      "latency_ms": 21,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_009",
+      "question": "How does the 5-component scoring formula work in the Priority Board? What are the weights?",
+      "question_type": "narrative",
+      "scout_answer": null,
+      "latency_ms": 21,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_010",
+      "question": "What is the difference between a leading signal and a coincident signal in the ClubOS signal engine?",
+      "question_type": "narrative",
+      "scout_answer": null,
+      "latency_ms": 57,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_011",
+      "question": "Why is unique_visitors_web considered a leading indicator for net_sales in eCommerce?",
+      "question_type": "narrative",
+      "scout_answer": null,
+      "latency_ms": 57,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_012",
+      "question": "What is the current conversion_rate_ecommerce and is it a problem this month given seasonal and peer context?",
+      "question_type": "mixed",
+      "scout_answer": null,
+      "latency_ms": 57,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_013",
+      "question": "What is the net_sales figure for the latest available month, and does the January seasonal pattern apply?",
+      "question_type": "mixed",
+      "scout_answer": null,
+      "latency_ms": 64,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_014",
+      "question": "What is the streaming_daily_users value this month, and why might it have changed from the previous month?",
+      "question_type": "mixed",
+      "scout_answer": null,
+      "latency_ms": 63,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_015",
+      "question": "How does our eCommerce conversion rate compare to peer clubs, and what should we focus on first based on the Priority Board logic?",
+      "question_type": "mixed",
+      "scout_answer": null,
+      "latency_ms": 64,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_016",
+      "question": "How is conversion rate doing this month?",
+      "question_type": "ambiguous",
+      "scout_answer": null,
+      "latency_ms": 66,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_017",
+      "question": "What is the engagement rate this month?",
+      "question_type": "ambiguous",
+      "scout_answer": null,
+      "latency_ms": 66,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_018",
+      "question": "How are visits performing?",
+      "question_type": "ambiguous",
+      "scout_answer": null,
+      "latency_ms": 66,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_019",
+      "question": "Who is the highest-paid player at Real Madrid this season?",
+      "question_type": "unanswerable",
+      "scout_answer": null,
+      "latency_ms": 14,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    },
+    {
+      "entry_id": "gq_020",
+      "question": "What was streaming_daily_users in March 2015?",
+      "question_type": "unanswerable",
+      "scout_answer": null,
+      "latency_ms": 14,
+      "trace_url": null,
+      "error": "OPENAI_API_KEY environment variable is not set."
+    }
+  ],
+  "total_latency_seconds": 22.423,
+  "total_errors": 20
+}
