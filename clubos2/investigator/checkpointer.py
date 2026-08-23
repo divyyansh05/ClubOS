@@ -16,7 +16,12 @@ async def get_checkpointer(path: str | None = None) -> AsyncIterator[AsyncSqlite
             ...
     """
     if path is None:
-        path = "./var/clubos_investigator_checkpoints.sqlite"
+        import os
+        # Anchor to CHROMA_PERSIST_DIR's parent (set in Dockerfile to /app/var).
+        # Falls back to ./var for local dev where CWD is the repo root.
+        chroma_dir = os.environ.get("CHROMA_PERSIST_DIR", "./var/chroma")
+        var_dir = str(Path(chroma_dir).parent)
+        path = f"{var_dir}/clubos_investigator_checkpoints.sqlite"
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     async with AsyncSqliteSaver.from_conn_string(path) as saver:
         yield saver

@@ -53,8 +53,16 @@ _SCOUT_SHAPE_PATTERNS: list[tuple[str, str]] = [
 def _load_known_metric_names() -> list[str]:
     """Load metric names from the registry. Cached at first call."""
     try:
+        import os
         import duckdb
-        conn = duckdb.connect("var/clubos_semantic.duckdb", read_only=True)
+        # SEMANTIC_DB_URL follows SQLAlchemy convention:
+        #   duckdb:///relative/path      → 3 slashes, path is relative
+        #   duckdb:////absolute/path     → 4 slashes, path is absolute
+        # Strip 'duckdb:///' (3 chars after 'duckdb://') to get the raw path
+        # duckdb.connect() understands.
+        db_url = os.environ.get("SEMANTIC_DB_URL", "duckdb:///./var/clubos_semantic.duckdb")
+        db_path = db_url[len("duckdb:///"):] if db_url.startswith("duckdb:///") else db_url
+        conn = duckdb.connect(db_path, read_only=True)
         rows = conn.execute("SELECT metric_name FROM metric_registry").fetchall()
         conn.close()
         return [r[0] for r in rows]

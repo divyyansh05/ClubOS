@@ -13,11 +13,26 @@ from clubos2.investigator.tools import INVESTIGATOR_TOOLS
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT_PATH = Path("prompts/investigator_v1.md")
+_PROMPT_FILENAME = "investigator_v1.md"
 
 
 def load_system_prompt() -> str:
-    return SYSTEM_PROMPT_PATH.read_text()
+    """Load the Investigator system prompt.
+
+    Walks up from this module's directory looking for a prompts/ folder, so it
+    works regardless of CWD (Cloud Run runs from /app/backend/api but the
+    prompts/ dir sits at /app/prompts/). Falls back to CWD-relative path for
+    legacy local-dev callers.
+    """
+    current = Path(__file__).resolve().parent
+    for parent in [current] + list(current.parents):
+        candidate = parent / "prompts" / _PROMPT_FILENAME
+        if candidate.exists():
+            return candidate.read_text()
+    fallback = Path("./prompts") / _PROMPT_FILENAME
+    if fallback.exists():
+        return fallback.read_text()
+    raise FileNotFoundError(f"Could not find prompts/{_PROMPT_FILENAME}")
 
 
 def build_llm():
