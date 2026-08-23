@@ -357,12 +357,16 @@ async def query_signals(
     Returns:
         List of signals sorted by strength_score descending, tagged source='gold.signal_relationships'.
     """
+    import os
     import pandas as pd
     from pathlib import Path
 
-    csv_path = Path("data/gold_snapshots/gold_signal_relationships.csv")
+    # Honour GOLD_SNAPSHOTS_DIR (set in Cloud Run container where CWD != repo root).
+    base = os.environ.get("GOLD_SNAPSHOTS_DIR", "data/gold_snapshots")
+    csv_path = Path(base) / "gold_signal_relationships.csv"
     if not csv_path.exists():
-        csv_path = Path("DATA/gold_snapshots/gold_signal_relationships.csv")
+        # Legacy uppercase-DATA fallback (some dev checkouts have this).
+        csv_path = Path(str(base).replace("data", "DATA")) / "gold_signal_relationships.csv"
 
     df = pd.read_csv(str(csv_path))
 

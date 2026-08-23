@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -10,7 +11,15 @@ from clubos2.observability.tracing import traced
 from clubos2.mcp.web_search_client import WebSearchClient
 from clubos2.mcp.server_config import WebSearchSettings
 
-_PEER_BENCHMARK_PATH = "data/gold_snapshots/gold_peer_benchmark.csv"
+
+def _peer_benchmark_path() -> str:
+    """Resolve peer benchmark CSV path from GOLD_SNAPSHOTS_DIR env var (Cloud Run
+    CWD is /app/backend/api, so relative paths break)."""
+    base = os.environ.get("GOLD_SNAPSHOTS_DIR", "data/gold_snapshots")
+    return f"{base.rstrip('/')}/gold_peer_benchmark.csv"
+
+
+_PEER_BENCHMARK_PATH = _peer_benchmark_path()
 
 
 @tool

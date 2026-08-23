@@ -39,11 +39,24 @@ class WatchdogRunResult(BaseModel):
     errors: list[str]
 
 
+def _default_priority_board_path() -> str:
+    """Resolve the priority-board CSV path from GOLD_SNAPSHOTS_DIR env var.
+
+    In the Cloud Run container, CWD is /app/backend/api but gold snapshots
+    live at /app/data/gold_snapshots. Relative paths break. Honour the env
+    var (which is set in the Dockerfile and workflow) so callers don't need
+    to know the deployment layout.
+    """
+    import os
+    base = os.environ.get("GOLD_SNAPSHOTS_DIR", "data/gold_snapshots")
+    return f"{base.rstrip('/')}/gold_priority_board.csv"
+
+
 @traced(name="watchdog:run", run_type="chain")
 async def run_watchdog(
     dedup_window_days: int = 7,
     top_n: int = 10,
-    csv_path: str = "data/gold_snapshots/gold_priority_board.csv",
+    csv_path: str | None = None,
 ) -> WatchdogRunResult:
     """One full Watchdog detection cycle.
 
@@ -72,6 +85,9 @@ async def run_watchdog(
     run_id = f"wdog_{uuid4().hex[:16]}"
     started_at = datetime.now(timezone.utc).replace(tzinfo=None)
     errors: list[str] = []
+
+    if csv_path is None:
+        csv_path = _default_priority_board_path()
 
     try:
         reader = PriorityBoardReader(csv_path=csv_path)
